@@ -23,7 +23,7 @@ class TestBasic1T4D(unittest.TestCase):
         # dut1 Lan 1 ip:
         self.topo.dut1.set_default_bridge_ip("192.168.1.1/24")
         # dut4 Lan 1 ip:
-        self.topo.dut1.set_default_bridge_ip("192.168.4.1/24")
+        self.topo.dut4.set_default_bridge_ip("192.168.4.1/24")
 
         # create dut1<>dut2 link.
         self.topo.dut1.create_glx_tunnel(tunnel_id=12)
