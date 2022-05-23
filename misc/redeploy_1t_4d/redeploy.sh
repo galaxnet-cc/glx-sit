@@ -7,6 +7,7 @@ Help()
     echo "options:"
     echo "h print the help"
     echo "y reinstall the deb package, and do fac init"
+    echo "r reset and refactory init (without package reinstalled)"
 }
 
 facinit="n"
@@ -20,7 +21,22 @@ dut3ip="192.168.31.186"
 dut4ip="192.168.31.133"
 dutip_list="192.168.31.234 192.168.31.113 192.168.31.186 192.168.31.133"
 
-while getopts "fh" option;
+Reset()
+{
+    for dip in $dutip_list
+    do
+        # prepare directory
+        echo -e "$RED[ resetting $dip]$NC"
+
+        ssh root@$dip redis-cli flushall
+        scp ./facinit.sh root@$dip:/tmp/
+        ssh root@$dip nohup sh /tmp/facinit.sh
+
+        echo -e "$RED[ reset $dip done]$NC"
+    done
+}
+
+while getopts "fhr" option;
 do
     case "$option" in
         h) # display help.
@@ -28,6 +44,9 @@ do
             exit;;
         f)
             facinit="y";;
+        r)
+            Reset
+            exit;;
         \?) # Invalid option
             echo "Error: Invalid option"
             exit;;
@@ -92,7 +111,8 @@ do
     ssh root@$dip  ip link set eth2 down
     ssh root@$dip  ip link set eth3 down
 
-    # bring up the vpp and do fac init.
+    # bring up the vpp and do fac ini
+    ssh root@$dip systemctl daemon-reload
     ssh root@$dip systemctl start vpp
     ssh root@$dip systemctl start fwdmd
 

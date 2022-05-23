@@ -1,6 +1,7 @@
 # 本地设备，一般指tst节点本身，这时候不需要远程执行。
 
 import os
+import subprocess
 
 class LocalDevice:
     def __init__(self, if1, if2):
@@ -26,3 +27,8 @@ class LocalDevice:
 
     def del_ns_route(self, ns_name, route_prefix, nexthop_ip):
         os.system(f'ip netns exec {ns_name} ip route del {route_prefix} via {nexthop_ip}')
+
+    def get_ns_cmd_result(self, ns_name, cmd):
+        shell_cmd = f'ip netns exec {ns_name} {cmd}'
+        result = subprocess.run(shell_cmd, stdout=subprocess.PIPE, shell=True)
+        return result.stout

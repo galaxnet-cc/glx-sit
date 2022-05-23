@@ -1,4 +1,5 @@
 import unittest
+import time
 
 from topo.topo_1t_4d import Topo1T4D
 
@@ -47,7 +48,7 @@ class TestBasic1T4D(unittest.TestCase):
         # NC上需要显示创建双向tunnel
         self.topo.dut2.create_glx_tunnel(tunnel_id=23)
         self.topo.dut3.create_glx_tunnel(tunnel_id=23)
-        # 创建dut2->dut3的tunnel
+        # 创建dut2->dut3的link
         self.topo.dut2.create_glx_link(link_id=23, wan_name="WAN3",
                                        remote_ip="192.168.23.2", remote_port=2288,
                                        tunnel_id=23,
@@ -75,7 +76,45 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.tst.add_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
         self.topo.tst.add_ns_route("dut4", "192.168.1.0/24", "192.168.4.1")
 
-    def tearDown1(self):
+        # 等待link up
+        # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
+        time.sleep(10)
+
+    def tearDown(self):
+        # 删除tst节点ip（路由内核自动清除）
+        # ns不用删除，后面其他用户可能还会用.
+        self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
+        self.topo.tst.del_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
+
+        # 删除edge route.
+        self.topo.dut1.delete_edge_route("192.168.4.0/24")
+        self.topo.dut4.delete_edge_route("192.168.1.0/24")
+
+        # 删除label-fwd表项
+        # to dut4
+        self.topo.dut2.delete_glx_route_label_fwd(route_label="0x3400000")
+        # to dut1
+        self.topo.dut3.delete_glx_route_label_fwd(route_label="0x1200000")
+
+        # 删除dut2/3资源
+        self.topo.dut2.delete_glx_tunnel(tunnel_id=23)
+        self.topo.dut3.delete_glx_tunnel(tunnel_id=23)
+        # 创建dut2->dut3的link
+        self.topo.dut2.delete_glx_link(link_id=23)
+
+        # 删除dut3/4资源　
+        self.topo.dut4.delete_glx_tunnel(tunnel_id=34)
+        self.topo.dut4.delete_glx_link(link_id=34)
+        # 删除dut1/2资源
+        self.topo.dut1.delete_glx_tunnel(tunnel_id=12)
+        self.topo.dut1.delete_glx_link(link_id=12)
+
+        # 删除label policy.
+        self.topo.dut1.delete_glx_route_label_policy_type_table(route_label="0x1200010")
+        # create dut4 route label pocliy.
+        self.topo.dut4.delete_glx_route_label_policy_type_table(route_label="0x3400010")
+
+
         # revert to default.
         self.topo.dut1.set_default_bridge_ip("192.168.88.0/24")
         self.topo.dut4.set_default_bridge_ip("192.168.88.0/24")
@@ -92,7 +131,14 @@ class TestBasic1T4D(unittest.TestCase):
 
     #  测试icmp/udp/tcp流量
     def test_basic_traffic(self):
-        pass
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 此时不应当再丢包
+        assert("0% packet loss" in out)
 
 if __name__ == '__main__':
     unittest.main()

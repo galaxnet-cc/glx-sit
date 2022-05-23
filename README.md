@@ -8,14 +8,30 @@
 ### 前提
 将本机public key加入所有目标dut的受信列表中。
 
-### 执行
+### 部署
 
 将待安装的包拷贝到miscs/redeploy_1t_4d目录中的debs目录
-
+``
 cd misc/redeploy_1t_4d/
 sh redeploy.sh
+# 不进行出厂初始化，即仅更新包
+sh redeploy.sh -f
+``
+
+### 复位
+
+``
+cd misc/redeploy_1t_4d/
+sh redeploy.sh -r
+``
 
 ## 使用
+
+方式０（全量执行）
+
+``
+make
+``
 
 方式１：
 
