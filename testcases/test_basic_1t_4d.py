@@ -71,9 +71,9 @@ class TestBasic1T4D(unittest.TestCase):
 
         # 添加tst节点ip及路由
         self.topo.tst.add_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
-        self.topo.tst.add_ns_route("dut1", "192.168.1.0/24", "192.168.1.1")
+        self.topo.tst.add_ns_route("dut1", "192.168.4.0/24", "192.168.1.1")
         self.topo.tst.add_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
-        self.topo.tst.add_ns_route("dut4", "192.168.4.0/24", "192.168.4.1")
+        self.topo.tst.add_ns_route("dut4", "192.168.1.0/24", "192.168.4.1")
 
     def tearDown1(self):
         # revert to default.
