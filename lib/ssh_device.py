@@ -17,6 +17,7 @@ class SSHDevice:
 
     def add_if_to_ns(self, if_name, ns_name):
         self.ssh.exec_command(f'ip link set {if_name} netns {ns_name}')
+        self.ssh.exec_command(f'ip netns exec {ns_name} ip link set {if_name} up')
 
     def add_ns_if_ip(self, ns_name, if_name, ip_with_prefix):
         self.ssh.exec_command(f'ip netns exec {ns_name} ip addr add {ip_with_prefix} dev  {if_name}')
