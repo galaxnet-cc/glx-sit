@@ -1,0 +1,67 @@
+{
+  "Topos": {
+    "Topo1D": {
+      "Desc": "本地测试环境，可以根据需要自行设置",
+      "Duts": {
+        "DUT1": {
+          "MgmtIp": "192.168.122.88",
+          "SshUsername": "root",
+          "SshPassword": "OBCubuntuD102",
+          "IfMap": {
+            "WAN1": "GigabitEthernet8/0/0",
+            "WAN2": "GigabitEthernet6/0/0"
+          }
+        }
+      }
+    },
+    "Topo1T4D": {
+      "Desc": "办公室物理测试床拓朴",
+      "Duts": {
+        "DUT1": {
+          "MgmtIp": "192.168.31.234",
+          "SshUsername": "root",
+          "SshPassword": "OBCubuntuD102",
+          "IfMap": {
+            "WAN1": "GigabitEthernet2/0/0",
+            "WAN2": "GigabitEthernet3/0/0"
+          }
+        },
+        "DUT2": {
+          "MgmtIp": "192.168.31.113",
+          "SshUsername": "root",
+          "SshPassword": "OBCubuntuD102",
+          "IfMap": {
+            "WAN1": "GigabitEthernet2/0/0",
+            "WAN2": "GigabitEthernet3/0/0"
+          }
+        },
+        "DUT3": {
+          "MgmtIp": "192.168.31.186",
+          "SshUsername": "root",
+          "SshPassword": "OBCubuntuD102",
+          "IfMap": {
+            "WAN1": "GigabitEthernet2/0/0",
+            "WAN2": "GigabitEthernet3/0/0",
+            "WAN3": "GigabitEthernet4/0/0"
+          }
+        },
+        "DUT4": {
+          "MgmtIp": "192.168.31.218",
+          "SshUsername": "root",
+          "SshPassword": "OBCubuntuD102",
+          "IfMap": {
+            "WAN1": "GigabitEthernet2/0/0",
+            "WAN2": "GigabitEthernet3/0/0"
+          }
+        }
+      },
+      "Tst": {
+        "MgmtIp": "192.168.31.218",
+        "SshUsername": "root",
+        "SshPassword": "OBCubuntuD102",
+        "LinuxIf1": "eth2",
+        "LinuxIf2": "eth3"
+      }
+    }
+  }
+}

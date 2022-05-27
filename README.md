@@ -8,6 +8,9 @@
 ### 前提
 将本机public key加入所有目标dut的受信列表中。
 
+### 配置
+将conf目录的sitconf-example.json复制并改为sitconf.json，修改sitconf.json为自己的测试环境。
+
 ### 部署
 
 将待安装的包拷贝到miscs/redeploy_1t_4d目录中的debs目录

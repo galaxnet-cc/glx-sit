@@ -2,17 +2,47 @@
 # https://docs.google.com/document/d/1lGOlfb6dCZOyAk1Jy4y5zA6ELY_Qwutrf3fDUbSycUc/edit#
 
 import os
+import json
 
+from lib.dut import Dut
 from lib.local_device import LocalDevice
 from lib.ssh_device import SSHDevice
 from lib.rest_device import RestDevice
 
 class Topo1T4D:
     def __init__(self):
-        # TODO: 搞一个文件来加载这些IP，以方便基于虚拟机快速搭建另外一台测试环境。
-        self.dut1 = RestDevice(api_ip="192.168.31.234")
-        self.dut2 = RestDevice(api_ip="192.168.31.113")
-        self.dut3 = RestDevice(api_ip="192.168.31.186")
-        self.dut4 = RestDevice(api_ip="192.168.31.133")
-        # TODO: if1/if2也需要配置文件化，本拓朴中if1固定接入dut1，if2固定接入dut2。
-        self.tst = SSHDevice(server="192.168.31.218", user="root", password="OBCubuntuD102", if1="eth2", if2="eth3")
+        sitconf = {}
+        # 我们总在sit根目录下执行测试用例，这里是相对根目录的路径，而不是文件路径。
+        with open('conf/sitconf.json') as f:
+            sitconf = json.load(f)
+
+        dutconf = sitconf["Topos"]["Topo1T4D"]["Duts"]["DUT1"]
+        dut = Dut("DUT1")
+        dut.set_if_map(dutconf['IfMap'])
+        dut.set_rest_device(RestDevice(api_ip=dutconf['MgmtIp']))
+        self.dut1 = dut
+
+        dutconf = sitconf["Topos"]["Topo1T4D"]["Duts"]["DUT2"]
+        dut = Dut("DUT2")
+        dut.set_if_map(dutconf['IfMap'])
+        dut.set_rest_device(RestDevice(api_ip=dutconf['MgmtIp']))
+        self.dut2 = dut
+
+        dutconf = sitconf["Topos"]["Topo1T4D"]["Duts"]["DUT3"]
+        dut = Dut("DUT3")
+        dut.set_if_map(dutconf['IfMap'])
+        dut.set_rest_device(RestDevice(api_ip=dutconf['MgmtIp']))
+        self.dut3 = dut
+
+        dutconf = sitconf["Topos"]["Topo1T4D"]["Duts"]["DUT4"]
+        dut = Dut("DUT4")
+        dut.set_if_map(dutconf['IfMap'])
+        dut.set_rest_device(RestDevice(api_ip=dutconf['MgmtIp']))
+        self.dut4 = dut
+
+        tstconf = sitconf["Topos"]["Topo1T4D"]["Tst"]
+        self.tst = SSHDevice(server=tstconf['MgmtIp'],
+                             user=tstconf['SshUsername'],
+                             password=tstconf['SshPassword'],
+                             if1=tstconf['LinuxIf1'],
+                             if2=tstconf['LinuxIf2'])
