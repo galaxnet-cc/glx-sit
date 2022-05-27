@@ -56,5 +56,5 @@ python3 -m unittest testcases/test_something.py
 
 ## 待改进点
 
-1. (DONE)topo对象支持读取配置文件。
-2. (DONE)topo对象中的tst对象，连入topo的linux接口需支持读取配置文件。
+1. (DONE)~~topo对象支持读取配置文件。~~
+2. (DONE)~~topo对象中的tst对象，连入topo的linux接口需支持读取配置文件。~~
