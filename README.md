@@ -45,12 +45,9 @@ make test-basic
 方式1/2本质上对于python unittest包的包装，可以直接参考python unittest包的文档了解如何执行测试用例，包括
 执行特定用例（一个文件是一个测试集，代表一类测试例，一个test_*的类函数，则是一个具体的特试用例）。
 
-方式1（手工执行）：
-
+方式1（手工执行特定测试class/test）：
 ```
-python3 -m unittest test_module1 test_module2
-python3 -m unittest test_module.TestClass
-python3 -m unittest test_module.TestClass.test_method
+python3 -m unittest testcases.test_rest_vpp_consistency_1d_glx.TestRestVppConsistency1DGlx.test_glx_link_block_wan_mode
 ```
 
 方式2（文件执行）：

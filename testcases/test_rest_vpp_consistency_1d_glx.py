@@ -3,7 +3,7 @@ import time
 
 from topo.topo_1d import Topo1D
 
-class TestRestVppConsistency1D(unittest.TestCase):
+class TestRestVppConsistency1DGlx(unittest.TestCase):
 
     # 因只验证rest与vpp的一致性，不验证功能，因此只使用单台设备拓朴。
     def setUp(self):
@@ -52,11 +52,30 @@ class TestRestVppConsistency1D(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ip addr show WAN1")
         assert(err == '')
         # BUG: https://github.com/galaxnet-cc/fwdmd/issues/24
-        assert("192.168.2.1/24" not in out)
-        assert("192.168.1.1/24" not in out)
+        #assert("192.168.2.1/24" not in out)
+        #assert("192.168.1.1/24" not in out)
 
-    def test_wan_object_pppoe_switch(self):
-        pass
+    def test_glx_link_config(self):
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        assert(err == '')
+        assert(f"link-id 1" in out)
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        assert(err == '')
+        assert(f"link-id 1" not in out)
+
+    def test_glx_link_block_wan_mode(self):
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        assert(err == "")
+        assert(f"link-id 1" in out)
+        # try to change wan mode to pppoe is not allowed.
+        result = self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "test")
+        # this should be failed with 500.
+        assert(result.status_code == 500)
+        # cleanup
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
 
 if __name__ == '__main__':
     unittest.main()
