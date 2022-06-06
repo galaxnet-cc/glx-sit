@@ -1,7 +1,7 @@
 ## 系统依赖
 
  OS: ubuntu 20.04
- Python: python3
+ Python: python 3.6+
 
 ## 办公室环境包重部署
 

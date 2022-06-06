@@ -101,6 +101,21 @@ class RestDevice:
         label_data["RouteLabel"] = route_label
         return self.do_delete_request("RouteLabelPolicy", label_data)
 
+    def create_glx_route_label_policy_type_tunnel(self, route_label, tunnel_id=1):
+        label_data = {}
+        label_data["RouteLabel"] = route_label
+        label_data["Type"] = 1
+        tunnels = []
+        # 仅支持单个tunnel
+        tunnels.append({"TunnelId": tunnel_id, "TunnelWeight": 100, "TunnelPriority": 100})
+        label_data["NexthopTunnels"] = tunnels
+        return self.do_post_request("RouteLabelPolicy", label_data)
+
+    def delete_glx_route_label_policy_type_tunnel(self, route_label):
+        label_data = {}
+        label_data["RouteLabel"] = route_label
+        return self.do_delete_request("RouteLabelPolicy", label_data)
+
     def create_glx_route_label_fwd(self, route_label, tunnel_id1, tunnel_id2=None):
         label_data = {}
         label_data["RouteLabel"] = route_label
@@ -118,7 +133,7 @@ class RestDevice:
         label_data["RouteLabel"] = route_label
         return self.do_delete_request("RouteLabelFwdEntry", label_data)
 
-    def create_edge_route(self, route_prefix, route_label, tunnel_id1, tunnel_id2=None):
+    def create_edge_route(self, route_prefix, route_label, tunnel_id1, tunnel_id2=None, tunnel1_priority=100, tunnel2_priority=200):
         route_data = {}
         route_data["VrfName"] = "default"
         route_data["DestPrefix"] = route_prefix
@@ -126,9 +141,9 @@ class RestDevice:
         route_data["RouteLabel"] = route_label
         tunnels = []
         # support tunnel weight later.
-        tunnels.append({"TunnelId": tunnel_id1, "TunnelWeight": 100, "TunnelPriority": 100})
+        tunnels.append({"TunnelId": tunnel_id1, "TunnelWeight": 100, "TunnelPriority": tunnel1_priority})
         if tunnel_id2 != None:
-            tunnels.append({"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": 100})
+            tunnels.append({"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": tunnel2_priority})
         route_data["NexthopTunnels"] = tunnels
         return self.do_post_request("EdgeRoute", route_data)
 
@@ -138,3 +153,18 @@ class RestDevice:
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = "overlay"
         return self.do_delete_request("EdgeRoute", route_data)
+
+    def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, out_interface):
+        bizpol_data = {}
+        bizpol_data["Name"] = name
+        bizpol_data["SrcAddressWithPrefix"] = src_prefix
+        bizpol_data["DstAddressWithPrefix"] = dst_prefix
+        bizpol_data["Protocol"] = protocol
+        bizpol_data["EnableDirect"] = direct_enable
+        bizpol_data["OutInterface"] = out_interface
+        return self.do_post_request("BusinessPolicy", bizpol_data)
+
+    def delete_bizpol(self, name):
+        bizpol_data = {}
+        bizpol_data["Name"] = name
+        return self.do_delete_request("BusinessPolicy", bizpol_data)
