@@ -25,6 +25,54 @@ class RestDevice:
         response = requests.delete(url, data=json.dumps(obj_data), headers=REQUEST_HEADER_CTYPE)
         return response
 
+    def delete_host_stack_dnsmasq(self,name):
+        host_stack_dnsmasq_data={}
+        host_stack_dnsmasq_data['Name']=name
+        return self.do_delete_request("HostStackDhcp",host_stack_dnsmasq_data) 
+
+    def update_host_stack_dnsmasq(self,name,gateway,start_ip,end_ip,netmask,lease_time):
+        host_stack_dnsmasq_data={}
+        host_stack_dnsmasq_data['Name']=name
+        host_stack_dnsmasq_data['GatewayIP']=gateway
+        host_stack_dnsmasq_data['StartIP']=start_ip
+        host_stack_dnsmasq_data['EndIP']=end_ip
+        host_stack_dnsmasq_data['NetMask']=netmask
+        host_stack_dnsmasq_data['LeaseTIme']=lease_time
+        return self.do_patch_request("HostStackDhcp",host_stack_dnsmasq_data)
+
+    def set_host_stack_dnsmasq(self,name,gateway,start_ip,end_ip,netmask,lease_time):
+        host_stack_dnsmasq_data={}
+        host_stack_dnsmasq_data['Name']=name
+        host_stack_dnsmasq_data['GatewayIP']=gateway
+        host_stack_dnsmasq_data['StartIP']=start_ip
+        host_stack_dnsmasq_data['EndIP']=end_ip
+        host_stack_dnsmasq_data['NetMask']=netmask
+        host_stack_dnsmasq_data['LeaseTIme']=lease_time
+        return self.do_post_request("HostStackDhcp",host_stack_dnsmasq_data)
+
+    def delete_fire_wall_rule(self,rule_name):
+        rule_data={}
+        rule_data['Name']=rule_name
+        return self.do_delete_request("FirewallRule",rule_data)
+
+    def update_fire_wall_rule(self,rule_name,priority,dest_address,action):
+        rule_data={}
+        rule_data['Name']=rule_name
+        rule_data['Priority']=priority
+        rule_data['DestAddress']=dest_address
+        rule_data['Action']=action
+        rule_data['L3Protocol']=1
+        return self.do_patch_request("FirewallRule",rule_data)
+
+    def set_fire_wall_rule(self,rule_name,priority,dest_address,action):
+        rule_data={}
+        rule_data['Name']=rule_name
+        rule_data['Priority']=priority
+        rule_data['DestAddress']=dest_address
+        rule_data['Action']=action
+        rule_data['L3Protocol']=1
+        return self.do_post_request("FirewallRule",rule_data)
+
     def set_wan_static_ip(self, wan_name, wan_ip_w_prefix):
         wan_data = {}
         wan_data['Name'] = wan_name
