@@ -2,7 +2,7 @@
 
 Help()
 {
-    echo "./redeploy.sh [-h|-f]"
+    echo "./redeploy.sh [-h|-f|-r]"
     echo ""
     echo "options:"
     echo "h print the help"
