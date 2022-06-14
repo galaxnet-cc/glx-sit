@@ -1,6 +1,6 @@
 {
     "Model": "testDevice",
-    "Description": "dut3",
+    "Description": "dut4",
     "PhysicalInterfaces": [
         {
             "Name": "WAN1",

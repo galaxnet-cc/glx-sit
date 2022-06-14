@@ -19,7 +19,7 @@
             "Mode": "routed",
             "InfraType": "vpp",
             "InfraInterface": "GigabitEthernet3/0/0",
-          　"BridgeName": ""，
+            "BridgeName": "",
             "OverlayEnable": true
         },
         {

@@ -6,7 +6,7 @@ Help()
     echo ""
     echo "options:"
     echo "h print the help"
-    echo "y reinstall the deb package, and do fac init"
+    echo "f reinstall the deb package, and do fac init"
     echo "r reset and refactory init (without package reinstalled)"
 }
 

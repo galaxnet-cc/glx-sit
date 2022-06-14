@@ -23,13 +23,14 @@
             "OverlayEnable": true
         },
         {
-            "Name": "GE3",
-            "Description": "LAN1 physical interface",
+            "Name": "WAN3",
+            "Description": "WAN3 physical interface",
             "Mtu": 1500,
             "Mode": "routed",
             "InfraType": "vpp",
             "InfraInterface": "GigabitEthernet4/0/0",
-            "BridgeName": ""
+            "BridgeName": "",
+            "OverlayEnable": true
         }
     ]
 }
