@@ -3,22 +3,24 @@
     "Description": "dut2",
     "PhysicalInterfaces": [
         {
-            "Name": "GE1",
+            "Name": "WAN1",
             "Description": "WAN1 physical interface",
             "Mtu": 1500,
             "Mode": "routed",
             "InfraType": "vpp",
             "InfraInterface": "GigabitEthernet2/0/0",
-            "BridgeName": ""
+            "BridgeName": "",
+            "OverlayEnable": true
         },
         {
-            "Name": "GE2",
+            "Name": "WAN2",
             "Description": "WAN2 physical interface",
             "Mtu": 1500,
             "Mode": "routed",
             "InfraType": "vpp",
             "InfraInterface": "GigabitEthernet3/0/0",
-            "BridgeName": ""
+            "BridgeName": "",
+            "OverlayEnable": true
         },
         {
             "Name": "GE3",
@@ -28,26 +30,6 @@
             "InfraType": "vpp",
             "InfraInterface": "GigabitEthernet4/0/0",
             "BridgeName": ""
-        }
-    ],
-    "LogicalInterfaces": [
-        {
-            "Name": "WAN1",
-            "Description": "WAN1 interface",
-            "Type": "physical",
-            "PhysicalInterface": "GE1"
-        },
-        {
-            "Name": "WAN2",
-            "Description": "WAN2 interface",
-            "Type": "physical",
-            "PhysicalInterface": "GE2"
-        },
-        {
-            "Name": "WAN3",
-            "Description": "WAN3 interface",
-            "Type": "physical",
-            "PhysicalInterface": "GE3"
         }
     ]
 }

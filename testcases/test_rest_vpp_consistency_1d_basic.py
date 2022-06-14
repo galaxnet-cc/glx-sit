@@ -379,7 +379,11 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_fire_wall_rule("test_acl3",3,"192.168.11.3/32","Deny")
         self.topo.dut1.get_rest_device().set_fire_wall_rule("test_acl5",5,"192.168.11.5/32","Deny")
         self.topo.dut1.get_rest_device().set_fire_wall_rule("test_acl4",4,"192.168.11.4/32","Deny")
-        out,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show acl-plugin interface sw_if_index 3 acl")
+        # default bvi is loop0.
+        ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int loop0 | grep loop0 | awk '{{print $2}}'")
+        assert(err == '')
+        ifindex = ifindex.rstrip()
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show acl-plugin interface sw_if_index {ifindex} acl")
         assert(err == '')
         pos3 = out.index('192.168.11.3')
         pos4 = out.index('192.168.11.4')
