@@ -202,14 +202,16 @@ class RestDevice:
         route_data["RouteProtocol"] = "overlay"
         return self.do_delete_request("EdgeRoute", route_data)
 
-    def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, out_interface):
+    def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, steering_type=0, steering_mode=0, steering_interface=""):
         bizpol_data = {}
         bizpol_data["Name"] = name
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
         bizpol_data["DstAddressWithPrefix"] = dst_prefix
         bizpol_data["Protocol"] = protocol
-        bizpol_data["EnableDirect"] = direct_enable
-        bizpol_data["OutInterface"] = out_interface
+        bizpol_data["DirectEnable"] = direct_enable
+        bizpol_data["SteeringType"] = steering_type
+        bizpol_data["SteeringMode"] = steering_mode
+        bizpol_data["SteeringInterface"] = steering_interface
         return self.do_post_request("BusinessPolicy", bizpol_data)
 
     def delete_bizpol(self, name):
