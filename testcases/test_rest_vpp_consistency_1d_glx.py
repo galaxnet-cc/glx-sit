@@ -464,6 +464,31 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # remove the possible extra newline.
         ifindex = ifindex.rstrip()
         assert(f'[link-steering type 1 mode 1 steering-sw-if-index {ifindex}]' in out)
+
+        # update the bizpol to WAN2.
+        self.topo.dut1.get_rest_device().update_bizpol(name="bizpol_sit", priority=1,
+                                                       src_prefix="192.168.89.0/24",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       direct_enable=False,
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN2")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol")
+        assert(err == '')
+        assert('192.168.89.0/24' in out)
+        assert('nat' not in out)
+        assert('steering' in out)
+
+        wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
+        # use double curly to insert a curly symbol into the f-string, python3 is cool:)
+        wan2ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {wan2VppIf} | grep {wan2VppIf} | awk '{{print $2}}'")
+        # remove the possible extra newline.
+        wan2ifindex = wan2ifindex.rstrip()
+        assert(f'[link-steering type 1 mode 1 steering-sw-if-index {ifindex}]' not in out)
+        assert(f'[link-steering type 1 mode 1 steering-sw-if-index {wan2ifindex}]' in out)
+
+        # delete the bizpol.
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
 
 if __name__ == '__main__':
