@@ -309,7 +309,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         ).get_cmd_result(f"vppctl show int")
         assert(err == '')
         assert("pppox0" in out)
-        
+
         #test_change_address_type_to_static_from_pppoe
         self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.4/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
@@ -478,7 +478,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show defBr")
+            f"ip netns exec ctrl-ns ip addr show bridge1")
         assert(err == '')
         assert("192.168.1.1/24" in out)
         # update and verify
@@ -489,7 +489,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show defBr")
+            f"ip netns exec ctrl-ns ip addr show bridge1")
         assert(err == '')
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
