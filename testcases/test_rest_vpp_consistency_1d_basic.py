@@ -15,14 +15,12 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
     def test_multi_bridge(self):
         self.topo.dut1.get_rest_device().set_bridge_ip("test", "192.168.89.1/24")
+        bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#test BviSwIfIndex")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show bridge domain")
+            f"vppctl show int addr {bviSwIfIndex}")
         assert(err == '')
-        assert("loop1" in out)
-
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr loop1")
-        assert(err == '')
+        assert("up" in out)
         assert("192.168.89.1/24" in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -32,13 +30,9 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # update bridge
         self.topo.dut1.get_rest_device().update_bridge_ip("test", "192.168.90.1/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show bridge domain")
+            f"vppctl show int addr {bviSwIfIndex}")
         assert(err == '')
-        assert("loop1" in out)
-
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr loop1")
-        assert(err == '')
+        assert("up" in out)
         assert("192.168.89.1/24" not in out)
         assert("192.168.90.1/24" in out)
 
@@ -50,13 +44,9 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # delete bridge
         self.topo.dut1.get_rest_device().delete_bridge_ip("test", "192.168.90.1/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show bridge domain")
+            f"vppctl show int addr {bviSwIfIndex}")
         assert(err == '')
-        assert("loop1" not in out)
-
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr loop1")
-        assert(err == '')
+        assert("up" not in out)
         assert("192.168.90.1/24" not in out)
 
     def physical_interface(self):
@@ -580,8 +570,10 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
     def test_bridge(self):
         # Add new ip address
         self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.1.1/24")
+        bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#test BviSwIfIndex")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr loop0")
+            f"vppctl show int addr {bviSwIfIndex}")
         assert(err == '')
         assert("192.168.1.1/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -591,7 +583,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # update and verify
         self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.1.2/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr loop0")
+            f"vppctl show int addr {bviSwIfIndex}")
         assert(err == '')
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
