@@ -2,9 +2,11 @@
 import requests
 import json
 
-REQUEST_HEADER_CTYPE={"Content-Type": "application/json"}
+REQUEST_HEADER_CTYPE = {"Content-Type": "application/json"}
 
 # 此函数将request库的response返回，由测试例自行决定是否要匹配rest api的结果
+
+
 class RestDevice:
     def __init__(self, api_ip="127.0.0.1", api_port=8080):
         self.api_ip = api_ip
@@ -12,66 +14,74 @@ class RestDevice:
 
     def do_post_request(self, obj_name, obj_data):
         url = f'http://{self.api_ip}:{self.api_port}/public/v1/config/{obj_name}'
-        response = requests.post(url, data=json.dumps(obj_data), headers=REQUEST_HEADER_CTYPE)
+        response = requests.post(url, data=json.dumps(
+            obj_data), headers=REQUEST_HEADER_CTYPE)
         return response
 
     def do_patch_request(self, obj_name, obj_data):
         url = f'http://{self.api_ip}:{self.api_port}/public/v1/config/{obj_name}'
-        response = requests.patch(url, data=json.dumps(obj_data), headers=REQUEST_HEADER_CTYPE)
+        response = requests.patch(url, data=json.dumps(
+            obj_data), headers=REQUEST_HEADER_CTYPE)
         return response
 
     def do_delete_request(self, obj_name, obj_data):
         url = f'http://{self.api_ip}:{self.api_port}/public/v1/config/{obj_name}'
-        response = requests.delete(url, data=json.dumps(obj_data), headers=REQUEST_HEADER_CTYPE)
+        response = requests.delete(url, data=json.dumps(
+            obj_data), headers=REQUEST_HEADER_CTYPE)
         return response
 
-    def delete_host_stack_dnsmasq(self,name):
-        host_stack_dnsmasq_data={}
-        host_stack_dnsmasq_data['Name']=name
-        return self.do_delete_request("HostStackDhcp",host_stack_dnsmasq_data) 
+    def update_physical_interface(self, name, mtu, mode, bridgeName):
+        physical_interface_data = {}
+        physical_interface_data["Name"] = name
+        physical_interface_data["Mtu"] = mtu
+        physical_interface_data["Mode"] = mode
+        physical_interface_data["BridgeName"] = bridgeName
 
-    def update_host_stack_dnsmasq(self,name,gateway,start_ip,end_ip,netmask,lease_time):
-        host_stack_dnsmasq_data={}
-        host_stack_dnsmasq_data['Name']=name
-        host_stack_dnsmasq_data['GatewayIP']=gateway
-        host_stack_dnsmasq_data['StartIP']=start_ip
-        host_stack_dnsmasq_data['EndIP']=end_ip
-        host_stack_dnsmasq_data['NetMask']=netmask
-        host_stack_dnsmasq_data['LeaseTIme']=lease_time
-        return self.do_patch_request("HostStackDhcp",host_stack_dnsmasq_data)
+    def delete_host_stack_dnsmasq(self, name):
+        host_stack_dnsmasq_data = {}
+        host_stack_dnsmasq_data['Name'] = name
+        return self.do_delete_request("HostStackDhcp", host_stack_dnsmasq_data)
 
-    def set_host_stack_dnsmasq(self,name,gateway,start_ip,end_ip,netmask,lease_time):
-        host_stack_dnsmasq_data={}
-        host_stack_dnsmasq_data['Name']=name
-        host_stack_dnsmasq_data['GatewayIP']=gateway
-        host_stack_dnsmasq_data['StartIP']=start_ip
-        host_stack_dnsmasq_data['EndIP']=end_ip
-        host_stack_dnsmasq_data['NetMask']=netmask
-        host_stack_dnsmasq_data['LeaseTIme']=lease_time
-        return self.do_post_request("HostStackDhcp",host_stack_dnsmasq_data)
+    def update_host_stack_dnsmasq(self, name, gateway, start_ip, end_ip, lease_time):
+        host_stack_dnsmasq_data = {}
+        host_stack_dnsmasq_data['Name'] = name
+        host_stack_dnsmasq_data['GatewayIP'] = gateway
+        host_stack_dnsmasq_data['StartIP'] = start_ip
+        host_stack_dnsmasq_data['EndIP'] = end_ip
+        host_stack_dnsmasq_data['LeaseTIme'] = lease_time
+        return self.do_patch_request("HostStackDhcp", host_stack_dnsmasq_data)
 
-    def delete_fire_wall_rule(self,rule_name):
-        rule_data={}
-        rule_data['Name']=rule_name
-        return self.do_delete_request("FirewallRule",rule_data)
+    def set_host_stack_dnsmasq(self, name, gateway, start_ip, end_ip, lease_time):
+        host_stack_dnsmasq_data = {}
+        host_stack_dnsmasq_data['Name'] = name
+        host_stack_dnsmasq_data['GatewayIP'] = gateway
+        host_stack_dnsmasq_data['StartIP'] = start_ip
+        host_stack_dnsmasq_data['EndIP'] = end_ip
+        host_stack_dnsmasq_data['LeaseTIme'] = lease_time
+        return self.do_post_request("HostStackDhcp", host_stack_dnsmasq_data)
 
-    def update_fire_wall_rule(self,rule_name,priority,dest_address,action):
-        rule_data={}
-        rule_data['Name']=rule_name
-        rule_data['Priority']=priority
-        rule_data['DestAddress']=dest_address
-        rule_data['Action']=action
-        rule_data['L3Protocol']=1
-        return self.do_patch_request("FirewallRule",rule_data)
+    def delete_fire_wall_rule(self, rule_name):
+        rule_data = {}
+        rule_data['Name'] = rule_name
+        return self.do_delete_request("FirewallRule", rule_data)
 
-    def set_fire_wall_rule(self,rule_name,priority,dest_address,action):
-        rule_data={}
-        rule_data['Name']=rule_name
-        rule_data['Priority']=priority
-        rule_data['DestAddress']=dest_address
-        rule_data['Action']=action
-        rule_data['L3Protocol']=1
-        return self.do_post_request("FirewallRule",rule_data)
+    def update_fire_wall_rule(self, rule_name, priority, dest_address, action):
+        rule_data = {}
+        rule_data['Name'] = rule_name
+        rule_data['Priority'] = priority
+        rule_data['DestAddress'] = dest_address
+        rule_data['Action'] = action
+        rule_data['L3Protocol'] = 1
+        return self.do_patch_request("FirewallRule", rule_data)
+
+    def set_fire_wall_rule(self, rule_name, priority, dest_address, action):
+        rule_data = {}
+        rule_data['Name'] = rule_name
+        rule_data['Priority'] = priority
+        rule_data['DestAddress'] = dest_address
+        rule_data['Action'] = action
+        rule_data['L3Protocol'] = 1
+        return self.do_post_request("FirewallRule", rule_data)
 
     def set_wan_static_ip(self, wan_name, wan_ip_w_prefix):
         wan_data = {}
@@ -94,6 +104,27 @@ class RestDevice:
         wan_data['PppoeUsername'] = pppoe_user
         wan_data['PppoePassword'] = pppoe_password
         return self.do_patch_request("LogicalInterface", wan_data)
+
+    def delete_bridge_ip(self, name, bvi_ip_w_prefix):
+        bridge_data = {}
+        bridge_data['Name'] = name
+        bridge_data['BviEnable'] = True
+        bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
+        return self.do_delete_request("Bridge", bridge_data)
+
+    def update_bridge_ip(self, name, bvi_ip_w_prefix):
+        bridge_data = {}
+        bridge_data['Name'] = name
+        bridge_data['BviEnable'] = True
+        bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
+        return self.do_patch_request("Bridge", bridge_data)
+
+    def set_bridge_ip(self, name, bvi_ip_w_prefix):
+        bridge_data = {}
+        bridge_data['Name'] = name
+        bridge_data['BviEnable'] = True
+        bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
+        return self.do_post_request("Bridge", bridge_data)
 
     def set_default_bridge_ip(self, bvi_ip_w_prefix):
         bridge_data = {}
@@ -155,7 +186,8 @@ class RestDevice:
         label_data["Type"] = 1
         tunnels = []
         # 仅支持单个tunnel
-        tunnels.append({"TunnelId": tunnel_id, "TunnelWeight": 100, "TunnelPriority": 100})
+        tunnels.append(
+            {"TunnelId": tunnel_id, "TunnelWeight": 100, "TunnelPriority": 100})
         label_data["NexthopTunnels"] = tunnels
         return self.do_post_request("RouteLabelPolicy", label_data)
 
@@ -170,9 +202,11 @@ class RestDevice:
         label_data["NexthopMode"] = "active-backup"
         tunnels = []
         # support tunnel weight later.
-        tunnels.append({"TunnelId": tunnel_id1, "TunnelWeight": 100, "TunnelPriority": 100})
+        tunnels.append(
+            {"TunnelId": tunnel_id1, "TunnelWeight": 100, "TunnelPriority": 100})
         if tunnel_id2 != None:
-            tunnels.append({"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": 100})
+            tunnels.append(
+                {"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": 100})
         label_data["NexthopTunnels"] = tunnels
         return self.do_post_request("RouteLabelFwdEntry", label_data)
 
@@ -189,9 +223,11 @@ class RestDevice:
         route_data["RouteLabel"] = route_label
         tunnels = []
         # support tunnel weight later.
-        tunnels.append({"TunnelId": tunnel_id1, "TunnelWeight": 100, "TunnelPriority": tunnel1_priority})
+        tunnels.append({"TunnelId": tunnel_id1, "TunnelWeight": 100,
+                       "TunnelPriority": tunnel1_priority})
         if tunnel_id2 != None:
-            tunnels.append({"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": tunnel2_priority})
+            tunnels.append(
+                {"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": tunnel2_priority})
         route_data["NexthopTunnels"] = tunnels
         return self.do_post_request("EdgeRoute", route_data)
 

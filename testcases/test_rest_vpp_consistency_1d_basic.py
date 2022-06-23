@@ -1,3 +1,4 @@
+from cgi import test
 import unittest
 import time
 
@@ -11,6 +12,92 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_multi_bridge(self):
+        self.topo.dut1.get_rest_device().set_bridge_ip("test", "192.168.89.1/24")
+        bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#test BviSwIfIndex")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {bviSwIfIndex}")
+        assert(err == '')
+        assert("up" in out)
+        assert("192.168.89.1/24" in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr | grep bridge2")
+        assert(err == '')
+        assert("192.168.89.1/24" in out)
+        # update bridge
+        self.topo.dut1.get_rest_device().update_bridge_ip("test", "192.168.90.1/24")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {bviSwIfIndex}")
+        assert(err == '')
+        assert("up" in out)
+        assert("192.168.89.1/24" not in out)
+        assert("192.168.90.1/24" in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr | grep bridge2")
+        assert(err == '')
+        assert("192.168.89.1/24" not in out)
+        assert("192.168.90.1/24" in out)
+        # delete bridge
+        self.topo.dut1.get_rest_device().delete_bridge_ip("test", "192.168.90.1/24")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {bviSwIfIndex}")
+        assert(err == '')
+        assert("up" not in out)
+        assert("192.168.90.1/24" not in out)
+
+    def physical_interface(self):
+        wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
+        self.topo.dut1.get_rest_device().set_bridge_ip("test", "192.168.89.1/24")
+        self.topo.dut1.get_rest_device().set_bridge_ip("test23", "192.168.90.1/24")
+        self.topo.dut1.get_rest_device().update_physical_interface("WAN2", 1600, "routed")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int {wan2VppIf}")
+        assert(err == '')
+        assert("1600/0/0/0" in out)
+
+        # change mode to switched
+        self.topo.dut1.get_rest_device().update_physical_interface(
+            "WAN2", 1600, "switched", "test")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan2VppIf}")
+        assert(err == '')
+        assert("bridge bd-id 2" in out)
+        # check host side
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr")
+        assert(err == '')
+        assert("WAN2" not in out)
+        # change bridge
+        self.topo.dut1.get_rest_device().update_physical_interface(
+            "WAN2", 1500, "switched", "test23")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int {wan2VppIf}")
+        assert(err == '')
+        assert("1500/0/0/0" in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan2VppIf}")
+        assert(err == '')
+        assert("bridge bd-id 3" in out)
+
+        # change to routed
+        self.topo.dut1.get_rest_device().update_physical_interface(
+            "WAN2", 1500, "routed", "test23")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan2VppIf}")
+        assert(err == '')
+        assert("bridge" not in out)
+        # check host side
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr")
+        assert(err == '')
+        assert("WAN2" in out)
+        self.topo.dut1.get_rest_device().delete_bridge_ip("test", "192.168.89.1/24")
+        self.topo.dut1.get_rest_device().delete_bridge_ip("test23", "192.168.90.1/24")
 
     def test_multi_wan_address_type_translation(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
@@ -129,21 +216,27 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("pppox0" in out)
         assert("pppox1" in out)
-        out,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl set interface ip address pppox0 1.1.1.1/32")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl set interface ip address pppox0 1.1.1.1/32")
         assert(err == '')
-        out,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl set interface ip address pppox1 1.1.1.2/32")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl set interface ip address pppox1 1.1.1.2/32")
         assert(err == '')
-        out,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int addr pppox0 | grep ip4 | awk '{{print $5}}'")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr pppox0 | grep ip4 | awk '{{print $5}}'")
         assert(err == '')
         out = out.rstrip()
-        assert(out>="8192")
-        out,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int addr pppox1 | grep ip4 | awk '{{print $5}}'")
+        assert(out >= "8192")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr pppox1 | grep ip4 | awk '{{print $5}}'")
         assert(err == '')
         out = out.rstrip()
-        assert(out>="8192")
-        out,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl set interface ip address del pppox0 1.1.1.1/32")
+        assert(out >= "8192")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl set interface ip address del pppox0 1.1.1.1/32")
         assert(err == '')
-        out,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl set interface ip address del pppox1 1.1.1.2/32")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl set interface ip address del pppox1 1.1.1.2/32")
         assert(err == '')
 
         # change address type of two wans to static successively
@@ -191,7 +284,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("pppox0" not in out)
         assert("pppox1" not in out)
 
-        #change to dhcp
+        # change to dhcp
         self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
@@ -204,7 +297,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(f'{wan1VppIf}' in out)
         assert(f'{wan2VppIf}' in out)
 
-        #change address type of two wans to pppoe successively
+        # change address type of two wans to pppoe successively
         self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
@@ -221,7 +314,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(f'{wan1VppIf}' not in out)
         assert(f'{wan2VppIf}' not in out)
 
-        #change address type of two wans to dhcp successively
+        # change address type of two wans to dhcp successively
         self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
@@ -247,7 +340,6 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("No pppoe clients configured" in out)
 
-        
     def test_change_address_type_to_static_from_static(self):
         self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
@@ -274,7 +366,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
 
-        #test_change_address_type_to_dhcp_from_static
+        # test_change_address_type_to_dhcp_from_static
         self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check dhcp client
@@ -290,7 +382,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
 
-        #test_change_address_type_to_static_from_dhcp
+        # test_change_address_type_to_static_from_dhcp
         # change address to static
         self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.3/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
@@ -303,14 +395,14 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.3/24" in out)
 
-        #test_change_address_type_to_pppoe_from_static
+        # test_change_address_type_to_pppoe_from_static
         self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
         assert(err == '')
         assert("pppox0" in out)
 
-        #test_change_address_type_to_static_from_pppoe
+        # test_change_address_type_to_static_from_pppoe
         self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.4/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -334,7 +426,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             f"ip netns exec ctrl-ns ps -ef | grep ppp")
         assert(err == '')
 
-        #test change address type to dhcp from pppoe
+        # test change address type to dhcp from pppoe
         self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
         # change to dhcp
         self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
@@ -349,7 +441,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("pppox" not in out)
 
-        #test_change_address_type_to_pppoe_from_dhcp
+        # test_change_address_type_to_pppoe_from_dhcp
         self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
@@ -364,7 +456,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("No pppoe clients configured" not in out)
 
-        #recovery to dhcp
+        # recovery to dhcp
         self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
 
     def test_fire_wall(self):
@@ -392,19 +484,24 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.12.2/32" not in out)
 
     def test_multi_fire_wall(self):
-        self.topo.dut1.get_rest_device().set_fire_wall_rule("test_acl3",3,"192.168.11.3/32","Deny")
-        self.topo.dut1.get_rest_device().set_fire_wall_rule("test_acl5",5,"192.168.11.5/32","Deny")
-        self.topo.dut1.get_rest_device().set_fire_wall_rule("test_acl4",4,"192.168.11.4/32","Deny")
+        self.topo.dut1.get_rest_device().set_fire_wall_rule(
+            "test_acl3", 3, "192.168.11.3/32", "Deny")
+        self.topo.dut1.get_rest_device().set_fire_wall_rule(
+            "test_acl5", 5, "192.168.11.5/32", "Deny")
+        self.topo.dut1.get_rest_device().set_fire_wall_rule(
+            "test_acl4", 4, "192.168.11.4/32", "Deny")
         # default bvi is loop0.
-        ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int loop0 | grep loop0 | awk '{{print $2}}'")
+        ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int loop0 | grep loop0 | awk '{{print $2}}'")
         assert(err == '')
         ifindex = ifindex.rstrip()
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show acl-plugin interface sw_if_index {ifindex} acl")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show acl-plugin interface sw_if_index {ifindex} acl")
         assert(err == '')
         pos3 = out.index('192.168.11.3')
         pos4 = out.index('192.168.11.4')
         pos5 = out.index('192.168.11.5')
-        assert(pos5<pos4<pos3)
+        assert(pos5 < pos4 < pos3)
         self.topo.dut1.get_rest_device().delete_fire_wall_rule("test_acl3")
         self.topo.dut1.get_rest_device().delete_fire_wall_rule("test_acl4")
         self.topo.dut1.get_rest_device().delete_fire_wall_rule("test_acl5")
@@ -417,8 +514,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
     def test_host_stack_dnsmasq(self):
         # check if config file exists
-        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq("default", "255.255.255.0",
-                                                                "192.168.0.50", "192.168.0.150", "255.255.255.0", "12h")
+        a=self.topo.dut1.get_rest_device().set_host_stack_dnsmasq("default", "255.255.255.0",
+                                                                "192.168.88.50", "192.168.88.150", "12h")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"ip netns exec ctrl-ns ls /tmp")
         assert(err == '')
@@ -429,7 +526,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns cat /tmp/dnsmasq_dhcp_default.conf")
         assert(err == '')
-        assert("dhcp-range=192.168.0.50,192.168.0.150,255.255.255.0,12h" in out)
+        assert("dhcp-range=192.168.88.50,192.168.88.150,255.255.255.0,12h" in out)
         # check if process exists
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
@@ -438,7 +535,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
         # update
         self.topo.dut1.get_rest_device().update_host_stack_dnsmasq("default", "255.255.255.0",
-                                                                   "192.168.0.100", "192.168.0.150", "255.255.255.0", "12h")
+                                                                   "192.168.88.100", "192.168.88.150", "12h")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"ip netns exec ctrl-ns ls /tmp")
         assert(err == '')
@@ -449,8 +546,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns cat /tmp/dnsmasq_dhcp_default.conf")
         assert(err == '')
-        assert("dhcp-range=192.168.0.50,192.168.0.150,255.255.255.0,12h" not in out)
-        assert("dhcp-range=192.168.0.100,192.168.0.150,255.255.255.0,12h" in out)
+        assert("dhcp-range=192.168.88.50,192.168.88.150,255.255.255.0,12h" not in out)
+        assert("dhcp-range=192.168.88.100,192.168.88.150,255.255.255.0,12h" in out)
         # check if process exists
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
@@ -472,9 +569,11 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
     def test_bridge(self):
         # Add new ip address
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
+        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.1.1/24")
+        bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#test BviSwIfIndex")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr loop0")
+            f"vppctl show int addr {bviSwIfIndex}")
         assert(err == '')
         assert("192.168.1.1/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -482,9 +581,9 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" in out)
         # update and verify
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.2/24")
+        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.1.2/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr loop0")
+            f"vppctl show int addr {bviSwIfIndex}")
         assert(err == '')
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
@@ -494,5 +593,5 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
 
-        #recovery ip address to 88.1
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.1/24")
+        # recovery ip address to 88.1
+        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.88.1/24")
