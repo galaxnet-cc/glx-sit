@@ -36,6 +36,7 @@ class RestDevice:
         physical_interface_data["Mtu"] = mtu
         physical_interface_data["Mode"] = mode
         physical_interface_data["BridgeName"] = bridgeName
+        return self.do_patch_request("PhysicalInterface", physical_interface_data)
 
     def delete_host_stack_dnsmasq(self, name):
         host_stack_dnsmasq_data = {}

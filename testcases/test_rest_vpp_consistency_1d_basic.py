@@ -49,11 +49,18 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("up" not in out)
         assert("192.168.90.1/24" not in out)
 
-    def physical_interface(self):
+    def get_bd_id(self, ssh_device, bridge_name):
+        out, err = ssh_device.get_cmd_result(f"redis-cli hget BridgeIdContext#{bridge_name} BdId")
+        assert(err == '')
+        out = out.rstrip()
+        out.replace('"', '')
+        return out
+
+    def test_physical_interface(self):
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
         self.topo.dut1.get_rest_device().set_bridge_ip("test", "192.168.89.1/24")
         self.topo.dut1.get_rest_device().set_bridge_ip("test23", "192.168.90.1/24")
-        self.topo.dut1.get_rest_device().update_physical_interface("WAN2", 1600, "routed")
+        self.topo.dut1.get_rest_device().update_physical_interface("WAN2", 1600, "routed", "")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int {wan2VppIf}")
         assert(err == '')
@@ -65,7 +72,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
         assert(err == '')
-        assert("bridge bd-id 2" in out)
+        bd_id = self.get_bd_id(self.topo.dut1.get_vpp_ssh_device(), "test")
+        assert(f"bridge bd-id {bd_id}" in out)
         # check host side
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ip addr")
@@ -82,11 +90,18 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
         assert(err == '')
-        assert("bridge bd-id 3" in out)
+        bd_id = self.get_bd_id(self.topo.dut1.get_vpp_ssh_device(), "test23")
+        assert(f"bridge bd-id {bd_id}" in out)
+
+        # check ip address set on logical interface when it's underlying physical
+        # interface under switched mode is not allowed.
+        result = self.topo.dut1.get_rest_device().set_wan_static_ip("WAN2", "192.168.1.1/24")
+        # this should be failed with 500.
+        assert(result.status_code == 500)
 
         # change to routed
         self.topo.dut1.get_rest_device().update_physical_interface(
-            "WAN2", 1500, "routed", "test23")
+            "WAN2", 1500, "routed", "")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
         assert(err == '')
@@ -98,6 +113,33 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("WAN2" in out)
         self.topo.dut1.get_rest_device().delete_bridge_ip("test", "192.168.89.1/24")
         self.topo.dut1.get_rest_device().delete_bridge_ip("test23", "192.168.90.1/24")
+
+        # check ip address set on logical interface is ok
+        expectedIp = "192.168.1.1/24"
+        result = self.topo.dut1.get_rest_device().set_wan_static_ip("WAN2", expectedIp)
+        assert(result.status_code != 500)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan2VppIf}")
+        assert(err == '')
+        assert(expectedIp in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr show WAN2")
+        assert(err == '')
+        assert(expectedIp in out)
+        # change back to dhcp mode.
+        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN2")
+        out, err = self.topo.dut1.get_vpp_ssh_device(
+        ).get_cmd_result(f"vppctl show dhcp client")
+        assert(err == '')
+        assert(f'{wan2VppIf}' in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan2VppIf}")
+        assert(err == '')
+        assert(expectedIp not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr show WAN2")
+        assert(err == '')
+        assert(expectedIp not in out)
 
     def test_multi_wan_address_type_translation(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
