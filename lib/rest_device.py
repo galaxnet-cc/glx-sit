@@ -91,6 +91,13 @@ class RestDevice:
         wan_data['StaticIpAddrWithPrefix'] = wan_ip_w_prefix
         return self.do_patch_request("LogicalInterface", wan_data)
 
+    def set_wan_static_gw(self, wan_name, gw_ip):
+        wan_data = {}
+        wan_data['Name'] = wan_name
+        wan_data['AddressingType'] = "STATIC"
+        wan_data['StaticGWIpAddr'] = gw_ip
+        return self.do_patch_request("LogicalInterface", wan_data)
+
     # default mode.
     def set_wan_dhcp(self, wan_name):
         wan_data = {}

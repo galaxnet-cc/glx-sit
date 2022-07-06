@@ -85,7 +85,9 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int {wan2VppIf}")
         assert(err == '')
-        assert("1500/0/0/0" in out)
+        # when change to bridge, the mtu will be keeped, we do not
+        # apply mtu for bridged interface.
+        assert("1600/0/0/0" in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
@@ -141,7 +143,72 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert(expectedIp not in out)
 
-    def test_multi_wan_address_type_translation(self):
+    def test_static_property_update(self):
+        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
+
+        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan1VppIf}")
+        assert(err == '')
+        assert("192.168.1.1/24" in out)
+        # kernel side.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr show WAN1")
+        assert(err == '')
+        assert("192.168.1.1/24" in out)
+
+        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.2.1/24")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan1VppIf}")
+        assert(err == '')
+        assert("192.168.2.1/24" in out)
+        # kernel side.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr show WAN1")
+        assert(err == '')
+        assert("192.168.2.1/24" in out)
+
+        # set gw.
+        self.topo.dut1.get_rest_device().set_wan_static_gw("WAN1", "192.168.2.254")
+        tableId, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show  int addr {wan1VppIf} | grep ip4 | awk '{{print $5}}'")
+        assert(err == '')
+        tableId = tableId.rstrip()
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip fib table {tableId} 0.0.0.0/0")
+        assert(err == '')
+        assert("192.168.2.254" in out)
+        # kernel side.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip route show default")
+        assert(err == '')
+        assert("192.168.2.254" in out)
+        # update gw.
+        self.topo.dut1.get_rest_device().set_wan_static_gw("WAN1", "192.168.2.252")
+        tableId, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show  int addr {wan1VppIf} | grep ip4 | awk '{{print $5}}'")
+        assert(err == '')
+        tableId = tableId.rstrip()
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip fib table {tableId} 0.0.0.0/0")
+        assert(err == '')
+        assert("192.168.2.254" not in out)
+        assert("192.168.2.252" in out)
+        # kernel side.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip route show default")
+        assert(err == '')
+        assert("192.168.2.254" not in out)
+        assert("192.168.2.252" in out)
+
+        # change back to dhcp.
+        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        out, err = self.topo.dut1.get_vpp_ssh_device(
+        ).get_cmd_result(f"vppctl show dhcp client")
+        assert(err == '')
+        assert(f'{wan1VppIf}' in out)
+
+    def multi_wan_address_type_translation(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
         self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
@@ -382,7 +449,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("No pppoe clients configured" in out)
 
-    def test_change_address_type_to_static_from_static(self):
+    def change_address_type_to_static_from_static(self):
         self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check logical interface using static address type
