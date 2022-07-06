@@ -208,7 +208,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert(f'{wan1VppIf}' in out)
 
-    def multi_wan_address_type_translation(self):
+    def test_multi_wan_address_type_translation(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
         self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
@@ -449,7 +449,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("No pppoe clients configured" in out)
 
-    def change_address_type_to_static_from_static(self):
+    def test_change_address_type_to_static_from_static(self):
         self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check logical interface using static address type
