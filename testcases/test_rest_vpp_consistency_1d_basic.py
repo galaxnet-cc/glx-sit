@@ -208,6 +208,45 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert(f'{wan1VppIf}' in out)
 
+    def test_pppoe_property_update(self):
+        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
+
+        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
+        # check kernel using correct user and password.
+        out, err = self.topo.dut1.get_vpp_ssh_device(
+        ).get_cmd_result(f"cat /tmp/dsl-provider-WAN1")
+        assert(err == '')
+        assert(f"test" in out)
+        assert(f'123456' in out)
+        # get orig pid.
+        pid1, err = self.topo.dut1.get_vpp_ssh_device(
+        ).get_cmd_result(f"cat /var/run/glx-pppd-WAN1.pid")
+        assert(err == '')
+        assert(pid1 != "")
+
+        # update user and password.
+        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "hahaha", "654321")
+        # check kernel using correct user and password.
+        out, err = self.topo.dut1.get_vpp_ssh_device(
+        ).get_cmd_result(f"cat /tmp/dsl-provider-WAN1")
+        assert(err == '')
+        assert(f'hahaha' in out)
+        assert(f'654321' in out)
+        # get new pid.
+        pid2, err = self.topo.dut1.get_vpp_ssh_device(
+        ).get_cmd_result(f"cat /var/run/glx-pppd-WAN1.pid")
+        assert(err == '')
+        assert(pid2 != "")
+        # pid should changed to take effect of new auth info.
+        assert(pid1 != pid2)
+
+        # change back to dhcp.
+        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        out, err = self.topo.dut1.get_vpp_ssh_device(
+        ).get_cmd_result(f"vppctl show dhcp client")
+        assert(err == '')
+        assert(f'{wan1VppIf}' in out)
+
     def test_multi_wan_address_type_translation(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
@@ -325,22 +364,14 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("pppox0" in out)
         assert("pppox1" in out)
+        # try to add address to pppoe interface to simulate pppoe
+        # sync ip from kernel.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl set interface ip address pppox0 1.1.1.1/32")
         assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl set interface ip address pppox1 1.1.1.2/32")
         assert(err == '')
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr pppox0 | grep ip4 | awk '{{print $5}}'")
-        assert(err == '')
-        out = out.rstrip()
-        assert(out >= "8192")
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int addr pppox1 | grep ip4 | awk '{{print $5}}'")
-        assert(err == '')
-        out = out.rstrip()
-        assert(out >= "8192")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl set interface ip address del pppox0 1.1.1.1/32")
         assert(err == '')
