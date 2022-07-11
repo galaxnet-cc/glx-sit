@@ -84,34 +84,34 @@ class RestDevice:
         rule_data['L3Protocol'] = 1
         return self.do_post_request("FirewallRule", rule_data)
 
-    def set_wan_static_ip(self, wan_name, wan_ip_w_prefix):
-        wan_data = {}
-        wan_data['Name'] = wan_name
-        wan_data['AddressingType'] = "STATIC"
-        wan_data['StaticIpAddrWithPrefix'] = wan_ip_w_prefix
-        return self.do_patch_request("LogicalInterface", wan_data)
+    def set_logical_interface_static_ip(self, name, ip_w_prefix):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['AddressingType'] = "STATIC"
+        logif_data['StaticIpAddrWithPrefix'] = ip_w_prefix
+        return self.do_patch_request("LogicalInterface", logif_data)
 
-    def set_wan_static_gw(self, wan_name, gw_ip):
-        wan_data = {}
-        wan_data['Name'] = wan_name
-        wan_data['AddressingType'] = "STATIC"
-        wan_data['StaticGWIpAddr'] = gw_ip
-        return self.do_patch_request("LogicalInterface", wan_data)
+    def set_logical_interface_static_gw(self, name, gw_ip):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['AddressingType'] = "STATIC"
+        logif_data['StaticGWIpAddr'] = gw_ip
+        return self.do_patch_request("LogicalInterface", logif_data)
 
     # default mode.
-    def set_wan_dhcp(self, wan_name):
-        wan_data = {}
-        wan_data['Name'] = wan_name
-        wan_data['AddressingType'] = "DHCP"
-        return self.do_patch_request("LogicalInterface", wan_data)
+    def set_logical_interface_dhcp(self, name):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['AddressingType'] = "DHCP"
+        return self.do_patch_request("LogicalInterface", logif_data)
 
-    def set_wan_pppoe(self, wan_name, pppoe_user, pppoe_password):
-        wan_data = {}
-        wan_data['Name'] = wan_name
-        wan_data['AddressingType'] = "PPPOE"
-        wan_data['PppoeUsername'] = pppoe_user
-        wan_data['PppoePassword'] = pppoe_password
-        return self.do_patch_request("LogicalInterface", wan_data)
+    def set_logical_interface_pppoe(self, name, pppoe_user, pppoe_password):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['AddressingType'] = "PPPOE"
+        logif_data['PppoeUsername'] = pppoe_user
+        logif_data['PppoePassword'] = pppoe_password
+        return self.do_patch_request("LogicalInterface", logif_data)
 
     def delete_bridge_ip(self, name, bvi_ip_w_prefix):
         bridge_data = {}
@@ -225,7 +225,7 @@ class RestDevice:
 
     def create_edge_route(self, route_prefix, route_label, tunnel_id1, tunnel_id2=None, tunnel1_priority=100, tunnel2_priority=200):
         route_data = {}
-        route_data["VrfName"] = "default"
+        route_data["Segment"] = "default"
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = "overlay"
         route_data["RouteLabel"] = route_label
@@ -241,7 +241,7 @@ class RestDevice:
 
     def delete_edge_route(self, route_prefix):
         route_data = {}
-        route_data["VrfName"] = "default"
+        route_data["Segment"] = "default"
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = "overlay"
         return self.do_delete_request("EdgeRoute", route_data)
@@ -274,3 +274,29 @@ class RestDevice:
         bizpol_data = {}
         bizpol_data["Name"] = name
         return self.do_delete_request("BusinessPolicy", bizpol_data)
+
+
+    #  areas is an object list, only key in object supported now is AreaId(int)
+    def create_ospf_setting(self, segment="default", overlayAdvertiseEnable=False, areas=[]):
+        ospf_data = {}
+        ospf_data["Segment"] = segment
+        ospf_data["OverlayAdvertiseEnable"] = overlayAdvertiseEnable
+        ospf_data["Areas"] = areas
+        return self.do_post_request("OspfSetting", ospf_data)
+
+    def delete_ospf_setting(self, segment="default"):
+        ospf_data = {}
+        ospf_data["Segment"] = segment
+        return self.do_delete_request("OspfSetting", ospf_data)
+
+    def create_ospf_interface(self, interface, areaId):
+        ospf_interface_data = {}
+        ospf_interface_data["Interface"] = interface
+        ospf_interface_data["AreaId"] = areaId
+        return self.do_post_request("OspfInterface", ospf_interface_data)
+
+    def delete_ospf_interface(self, interface, areaId):
+        ospf_interface_data = {}
+        ospf_interface_data["Interface"] = interface
+        ospf_interface_data["AreaId"] = areaId
+        return self.do_delete_request("OspfInterface", ospf_interface_data)

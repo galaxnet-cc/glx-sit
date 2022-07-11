@@ -9,7 +9,8 @@
           "SshPassword": "OBCubuntuD102",
           "IfMap": {
             "WAN1": "GigabitEthernet8/0/0",
-            "WAN2": "GigabitEthernet6/0/0"
+            "WAN2": "GigabitEthernet6/0/0",
+            "LAN1": "GigabitEthernet7/0/0"
           }
         }
       }

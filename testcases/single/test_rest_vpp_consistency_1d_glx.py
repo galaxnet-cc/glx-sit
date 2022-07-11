@@ -13,7 +13,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         pass
 
     def test_wan_object_ip_change(self):
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.1/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check vpp
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int addr {wan1VppIf}")
@@ -25,7 +25,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert("192.168.1.1/24" in out)
 
         # 更改wan地址，验证变配成功
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.2.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.2.1/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check vpp
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int addr {wan1VppIf}")
@@ -39,7 +39,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert("192.168.1.1/24" not in out)
 
         # 更改成dhcp模式
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check vpp
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show dhcp client")
@@ -71,7 +71,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == "")
         assert(f"link-id 1" in out)
         # try to change wan mode to pppoe is not allowed.
-        result = self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "test")
+        result = self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "test")
         # this should be failed with 500.
         assert(result.status_code == 500)
         # cleanup
@@ -438,7 +438,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # now interface is needed now.
         assert(f'nat' in out)
         # try to change wan mode to pppoe is not allowed.
-        result = self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "test")
+        result = self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "test")
         # this should be failed with 500.
         assert(result.status_code == 500)
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")

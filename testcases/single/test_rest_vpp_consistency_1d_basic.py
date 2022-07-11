@@ -97,7 +97,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
         # check ip address set on logical interface when it's underlying physical
         # interface under switched mode is not allowed.
-        result = self.topo.dut1.get_rest_device().set_wan_static_ip("WAN2", "192.168.1.1/24")
+        result = self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.1.1/24")
         # this should be failed with 500.
         assert(result.status_code == 500)
 
@@ -118,7 +118,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
         # check ip address set on logical interface is ok
         expectedIp = "192.168.1.1/24"
-        result = self.topo.dut1.get_rest_device().set_wan_static_ip("WAN2", expectedIp)
+        result = self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", expectedIp)
         assert(result.status_code != 500)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
@@ -129,7 +129,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert(expectedIp in out)
         # change back to dhcp mode.
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN2")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN2")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
@@ -146,7 +146,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
     def test_static_property_update(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
 
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.1/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
         assert(err == '')
@@ -157,7 +157,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" in out)
 
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.2.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.2.1/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
         assert(err == '')
@@ -169,7 +169,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.1/24" in out)
 
         # set gw.
-        self.topo.dut1.get_rest_device().set_wan_static_gw("WAN1", "192.168.2.254")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_gw("WAN1", "192.168.2.254")
         tableId, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show  int addr {wan1VppIf} | grep ip4 | awk '{{print $5}}'")
         assert(err == '')
@@ -184,7 +184,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.2.254" in out)
         # update gw.
-        self.topo.dut1.get_rest_device().set_wan_static_gw("WAN1", "192.168.2.252")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_gw("WAN1", "192.168.2.252")
         tableId, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show  int addr {wan1VppIf} | grep ip4 | awk '{{print $5}}'")
         assert(err == '')
@@ -202,7 +202,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.252" in out)
 
         # change back to dhcp.
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
@@ -211,7 +211,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
     def test_pppoe_property_update(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
 
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
         # check kernel using correct user and password.
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"cat /tmp/dsl-provider-WAN1")
@@ -225,7 +225,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(pid1 != "")
 
         # update user and password.
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "hahaha", "654321")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "hahaha", "654321")
         # check kernel using correct user and password.
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"cat /tmp/dsl-provider-WAN1")
@@ -241,7 +241,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(pid1 != pid2)
 
         # change back to dhcp.
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
@@ -250,7 +250,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
     def test_multi_wan_address_type_translation(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.1/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
         assert(err == '')
@@ -259,7 +259,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             f"ip netns exec ctrl-ns ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.1/24" in out)
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN2", "192.168.2.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.2.1/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
         assert(err == '')
@@ -269,7 +269,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.2.1/24" in out)
         # change address type to static from static
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.2/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.2/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
         assert(err == '')
@@ -280,7 +280,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN2", "192.168.2.2/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.2.2/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
         assert(err == '')
@@ -293,7 +293,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.1/24" not in out)
 
         # change address type of two wans to dhcp successively
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
@@ -308,7 +308,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN2")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN2")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
@@ -326,7 +326,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.2/24" not in out)
 
         # change address type of two wans to static successively
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.3/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.3/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
         assert(err == '')
@@ -339,7 +339,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.3/24" in out)
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN2", "192.168.2.3/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.2.3/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
         assert(err == '')
@@ -354,11 +354,11 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.2/24" not in out)
 
         # change address type of two wans to pppoe successively
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
         assert(err == '')
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN2", "test", "123456")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN2", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
         assert(err == '')
@@ -380,7 +380,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
 
         # change address type of two wans to static successively
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.4/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.4/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
         assert(err == '')
@@ -395,7 +395,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
         assert("192.168.1.3/24" not in out)
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN2", "192.168.2.4/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.2.4/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
         assert(err == '')
@@ -425,12 +425,12 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("pppox1" not in out)
 
         # change to dhcp
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
         assert(f'{wan1VppIf}' in out)
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN2")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN2")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
@@ -438,11 +438,11 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(f'{wan2VppIf}' in out)
 
         # change address type of two wans to pppoe successively
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
         assert(err == '')
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN2", "test", "123456")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN2", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
         assert(err == '')
@@ -455,12 +455,12 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(f'{wan2VppIf}' not in out)
 
         # change address type of two wans to dhcp successively
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
         assert(f'{wan1VppIf}' in out)
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN2")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN2")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show dhcp client")
         assert(err == '')
@@ -481,7 +481,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("No pppoe clients configured" in out)
 
     def test_change_address_type_to_static_from_static(self):
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.1/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check logical interface using static address type
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -493,7 +493,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" in out)
         # change ip and verify again
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.2/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.2/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
@@ -507,7 +507,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.1/24" not in out)
 
         # test_change_address_type_to_dhcp_from_static
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check dhcp client
         out, err = self.topo.dut1.get_vpp_ssh_device(
@@ -524,7 +524,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
         # test_change_address_type_to_static_from_dhcp
         # change address to static
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.3/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.3/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
@@ -536,14 +536,14 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.3/24" in out)
 
         # test_change_address_type_to_pppoe_from_static
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
         assert(err == '')
         assert("pppox0" in out)
 
         # test_change_address_type_to_static_from_pppoe
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.1.4/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.4/24")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan1VppIf}")
@@ -567,9 +567,9 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
 
         # test change address type to dhcp from pppoe
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
         # change to dhcp
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         # check dhcp client
         out, err = self.topo.dut1.get_vpp_ssh_device(
@@ -582,7 +582,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("pppox" not in out)
 
         # test_change_address_type_to_pppoe_from_dhcp
-        self.topo.dut1.get_rest_device().set_wan_pppoe("WAN1", "test", "123456")
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"vppctl show int")
         assert(err == '')
@@ -597,7 +597,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("No pppoe clients configured" not in out)
 
         # recovery to dhcp
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
 
     def test_fire_wall(self):
         self.topo.dut1.get_rest_device().set_fire_wall_rule(

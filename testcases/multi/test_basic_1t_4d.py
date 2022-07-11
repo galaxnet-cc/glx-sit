@@ -12,14 +12,14 @@ class TestBasic1T4D(unittest.TestCase):
     def setUp(self):
         self.topo = Topo1T4D()
         # 1<>2 192.168.12.0/24
-        self.topo.dut1.get_rest_device().set_wan_static_ip("WAN1", "192.168.12.1/24")
-        self.topo.dut2.get_rest_device().set_wan_static_ip("WAN1", "192.168.12.2/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.1/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.2/24")
         # 2<>3 192.168.23.0/24
-        self.topo.dut2.get_rest_device().set_wan_static_ip("WAN3", "192.168.23.1/24")
-        self.topo.dut3.get_rest_device().set_wan_static_ip("WAN3", "192.168.23.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN3", "192.168.23.1/24")
+        self.topo.dut3.get_rest_device().set_logical_interface_static_ip("WAN3", "192.168.23.2/24")
         # 3<>4 192.168.34.0/24
-        self.topo.dut3.get_rest_device().set_wan_static_ip("WAN1", "192.168.34.1/24")
-        self.topo.dut4.get_rest_device().set_wan_static_ip("WAN1", "192.168.34.2/24")
+        self.topo.dut3.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.1/24")
+        self.topo.dut4.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.2/24")
 
         # dut1 Lan 1 ip:
         self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
@@ -121,14 +121,14 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
 
         # revert to default.
-        self.topo.dut1.get_rest_device().set_wan_dhcp("WAN1")
-        self.topo.dut2.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
 
-        self.topo.dut2.get_rest_device().set_wan_dhcp("WAN3")
-        self.topo.dut3.get_rest_device().set_wan_dhcp("WAN3")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN3")
+        self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN3")
 
-        self.topo.dut3.get_rest_device().set_wan_dhcp("WAN1")
-        self.topo.dut4.get_rest_device().set_wan_dhcp("WAN1")
+        self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut4.get_rest_device().set_logical_interface_dhcp("WAN1")
 
     #  测试icmp/udp/tcp流量
     def test_basic_traffic(self):
