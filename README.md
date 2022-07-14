@@ -47,7 +47,7 @@ make test-basic
 
 方式1（手工执行特定测试class/test）：
 ```
-python3 -m unittest testcases.test_rest_vpp_consistency_1d_glx.TestRestVppConsistency1DGlx.test_glx_link_block_wan_mode
+python3 -m unittest testcases.single.test_rest_vpp_consistency_1d_glx.TestRestVppConsistency1DGlx.test_glx_link_block_wan_mode
 ```
 
 方式2（文件执行）：
