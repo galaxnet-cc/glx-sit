@@ -18,6 +18,12 @@ class RestDevice:
             obj_data), headers=REQUEST_HEADER_CTYPE)
         return response
 
+    def do_action_request(self, action_name, action_data):
+        url = f'http://{self.api_ip}:{self.api_port}/public/v1/action/{action_name}'
+        response = requests.post(url, data=json.dumps(
+            action_data), headers=REQUEST_HEADER_CTYPE)
+        return response
+
     def do_patch_request(self, obj_name, obj_data):
         url = f'http://{self.api_ip}:{self.api_port}/public/v1/config/{obj_name}'
         response = requests.patch(url, data=json.dumps(
@@ -300,3 +306,27 @@ class RestDevice:
         ospf_interface_data["Interface"] = interface
         ospf_interface_data["AreaId"] = areaId
         return self.do_delete_request("OspfInterface", ospf_interface_data)
+
+    def create_overlay_traffic_limit(self, tx_limit, rx_limit, is_combined):
+        data = {}
+        data["Segment"] = "default"
+        data["TxLimit"] = tx_limit
+        data["RxLimit"] = rx_limit
+        data["TxRxCombined"] = is_combined
+        return self.do_post_request("OverlayTrafficLimit", data)
+
+    def update_overlay_traffic_limit(self, tx_limit, rx_limit, is_combined):
+        data = {}
+        data["Segment"] = "default"
+        data["TxLimit"] = tx_limit
+        data["RxLimit"] = rx_limit
+        data["TxRxCombined"] = is_combined
+        return self.do_patch_request("OverlayTrafficLimit", data)
+
+    def delete_overlay_traffic_limit(self):
+        data = {}
+        data["Segment"] = "default"
+        return self.do_delete_request("OverlayTrafficLimit", data)
+
+    def update_config_action(self, data):
+        return self.do_action_request("UpdateConfig", data)

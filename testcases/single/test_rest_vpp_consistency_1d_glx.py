@@ -491,5 +491,207 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # delete the bizpol.
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
 
+    def test_glx_overlay_traffic_limit(self):
+        # only tx is limited.
+        self.topo.dut1.get_rest_device().create_overlay_traffic_limit(10000, 4294967295, False)
+        txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+        txName = txName.rstrip()
+        assert(err == '')
+        txIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerIndex")
+        txIndex = txIndex.rstrip()
+        assert(err == '')
+        # verify vpp and glx.
+        vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+        assert(err == '')
+        vppTxIndex = vppTxIndex.rstrip()
+        assert(vppTxIndex == txIndex)
+        glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+        assert(err == '')
+        glxTxIndex = glxTxIndex.rstrip()
+        assert(glxTxIndex == vppTxIndex)
+
+        # update tx.
+        self.topo.dut1.get_rest_device().update_overlay_traffic_limit(20000, 4294967295, False)
+        txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+        assert(err == '')
+        txName = txName.rstrip()
+        txIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerIndex")
+        assert(err == '')
+        txIndex = txIndex.rstrip()
+        # verify vpp and glx.
+        vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+        assert(err == '')
+        vppTxIndex = vppTxIndex.rstrip()
+        assert(vppTxIndex == txIndex)
+        glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+        assert(err == '')
+        glxTxIndex = glxTxIndex.rstrip()
+        assert(glxTxIndex == vppTxIndex)
+
+        # enable rx.
+        self.topo.dut1.get_rest_device().update_overlay_traffic_limit(20000, 30000, False)
+        txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+        assert(err == '')
+        txName = txName.rstrip()
+        txIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerIndex")
+        assert(err == '')
+        txIndex = txIndex.rstrip()
+        # verify vpp and glx.
+        vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+        assert(err == '')
+        vppTxIndex = vppTxIndex.rstrip()
+        assert(vppTxIndex == txIndex)
+        glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+        assert(err == '')
+        glxTxIndex = glxTxIndex.rstrip()
+        assert(glxTxIndex == vppTxIndex)
+        rxName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default RxVppPolicerName")
+        assert(err == '')
+        rxName = rxName.rstrip()
+        rxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default RxVppPolicerIndex")
+        assert(err == '')
+        rxIndex = rxIndex.rstrip()
+        # verify vpp and glx.
+        vppRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer name {rxName} | grep Template | awk '{{print $3}}'")
+        assert(err == '')
+        vppRxIndex = vppRxIndex.rstrip()
+        assert(vppRxIndex == rxIndex)
+        glxRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep rx | awk '{{print $5}}'")
+        assert(err == '')
+        glxRxIndex = glxRxIndex.rstrip()
+        assert(glxRxIndex == vppRxIndex)
+        # should not same.
+        assert(glxRxIndex != glxTxIndex)
+
+        # enable combined.
+        self.topo.dut1.get_rest_device().update_overlay_traffic_limit(20000, 30000, True)
+        txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+        txName = txName.rstrip()
+        # verify vpp and glx.
+        vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+        assert(err == '')
+        vppTxIndex = vppTxIndex.rstrip()
+        assert(vppTxIndex == txIndex)
+        glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+        assert(err == '')
+        glxTxIndex = glxTxIndex.rstrip()
+        assert(glxTxIndex == vppTxIndex)
+        rxName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default RxVppPolicerName")
+        assert(err == '')
+        rxName = rxName.rstrip()
+        rxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default RxVppPolicerIndex")
+        assert(err == '')
+        rxIndex = rxIndex.rstrip()
+        # verify vpp and glx.
+        vppRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer name {rxName} | grep Template | awk '{{print $3}}'")
+        assert(err == '')
+        vppRxIndex = vppRxIndex.rstrip()
+        assert(vppRxIndex == rxIndex)
+        glxRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep rx | awk '{{print $5}}'")
+        assert(err == '')
+        glxRxIndex = glxRxIndex.rstrip()
+        assert(glxRxIndex == vppRxIndex)
+        # both vpp glx rx and tx should be same.
+        assert(vppRxIndex == vppTxIndex)
+        assert(glxRxIndex == glxTxIndex)
+
+        # disable combined.
+        self.topo.dut1.get_rest_device().update_overlay_traffic_limit(20000, 30000, False)
+        txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+        txName = txName.rstrip()
+        # verify vpp and glx.
+        vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+        assert(err == '')
+        vppTxIndex = vppTxIndex.rstrip()
+        assert(vppTxIndex == txIndex)
+        glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+        assert(err == '')
+        glxTxIndex = glxTxIndex.rstrip()
+        assert(glxTxIndex == vppTxIndex)
+        rxName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default RxVppPolicerName")
+        assert(err == '')
+        rxName = rxName.rstrip()
+        rxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default RxVppPolicerIndex")
+        assert(err == '')
+        rxIndex = rxIndex.rstrip()
+        # verify vpp and glx.
+        vppRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer name {rxName} | grep Template | awk '{{print $3}}'")
+        assert(err == '')
+        vppRxIndex = vppRxIndex.rstrip()
+        assert(vppRxIndex == rxIndex)
+        glxRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep rx | awk '{{print $5}}'")
+        assert(err == '')
+        glxRxIndex = glxRxIndex.rstrip()
+        assert(glxRxIndex == vppRxIndex)
+        # both vpp glx rx and tx should not be same.
+        assert(vppRxIndex != vppTxIndex)
+        assert(glxRxIndex != glxTxIndex)
+
+        # delete the limit.
+        self.topo.dut1.get_rest_device().delete_overlay_traffic_limit()
+        glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+        glxTxIndex = glxTxIndex.rstrip()
+        assert(glxTxIndex == "4294967295")
+        glxRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx global | grep rx | awk '{{print $5}}'")
+        glxRxIndex = glxRxIndex.rstrip()
+        assert(glxRxIndex == "4294967295")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show policer pools")
+        # policer should be be remained.
+        assert("policers=0" in out)
+        # redis should also be empty.
+        txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+        assert(err == '')
+        txName = txName.rstrip()
+        assert(txName == "")
+        txIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default TxVppPolicerIndex")
+        assert(err == '')
+        txIndex = txIndex.rstrip()
+        assert(txIndex == "4294967295")
+        rxName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default RxVppPolicerName")
+        assert(err == '')
+        rxName = rxName.rstrip()
+        assert(rxName == "")
+        rxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget PolicerContext#default RxVppPolicerIndex")
+        assert(err == '')
+        rxIndex = rxIndex.rstrip()
+        assert(rxIndex == "4294967295")
+
 if __name__ == '__main__':
     unittest.main()

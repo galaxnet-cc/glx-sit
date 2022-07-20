@@ -735,3 +735,52 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
         # recovery ip address to 88.1
         self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.88.1/24")
+
+    # the interface is very generic so we only
+    # test it works by some table.
+    # Use BridgeTable because it do not depend on interface much.
+    def test_update_config(self):
+        data={}
+        data["IgnoreNotSpecifiedTable"] = True
+        bridgeTable = {}
+        bridgeTable["Table"] = "Bridge"
+        defBridge = {}
+        defBridge["Name"] = "default"
+        defBridge["BviEnable"] = True
+        defBridge["BviIpAddrWithPrefix"] = "192.168.89.1/24"
+        bridgeTable["Items"] = []
+        bridgeTable["Items"].append(defBridge)
+        data["Tables"] = []
+        data["Tables"].append(bridgeTable)
+
+        self.topo.dut1.get_rest_device().update_config_action(data)
+        bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#test BviSwIfIndex")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {bviSwIfIndex}")
+        assert(err == '')
+        assert("192.168.89.1/24" in out)
+        assert("192.168.88.1/24" not in out)
+
+        # change back.
+        data2 = {}
+        data2["IgnoreNotSpecifiedTable"] = True
+        bridgeTable2 = {}
+        bridgeTable2["Table"] = "Bridge"
+        defBridge2 = {}
+        defBridge2["Name"] = "default"
+        defBridge2["BviEnable"] = True
+        defBridge2["BviIpAddrWithPrefix"] = "192.168.88.1/24"
+        bridgeTable2["Items"] = []
+        bridgeTable2["Items"].append(defBridge2)
+        data2["Tables"] = []
+        data2["Tables"].append(bridgeTable2)
+
+        self.topo.dut1.get_rest_device().update_config_action(data2)
+        bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#test BviSwIfIndex")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {bviSwIfIndex}")
+        assert(err == '')
+        assert("192.168.89.1/24" not in out)
+        assert("192.168.88.1/24" in out)
