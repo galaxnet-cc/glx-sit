@@ -186,7 +186,8 @@ class RestDevice:
         label_data = {}
         label_data["RouteLabel"] = route_label
         label_data["Type"] = 0
-        label_data["TableID"] = table_id
+        # TableID field is now deprecated.
+        #label_data["TableID"] = table_id
         return self.do_post_request("RouteLabelPolicy", label_data)
 
     def delete_glx_route_label_policy_type_table(self, route_label):
@@ -231,7 +232,7 @@ class RestDevice:
 
     def create_edge_route(self, route_prefix, route_label, tunnel_id1, tunnel_id2=None, tunnel1_priority=100, tunnel2_priority=200):
         route_data = {}
-        route_data["Segment"] = "default"
+        route_data["Segment"] = 0
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = "overlay"
         route_data["RouteLabel"] = route_label
@@ -247,7 +248,7 @@ class RestDevice:
 
     def delete_edge_route(self, route_prefix):
         route_data = {}
-        route_data["Segment"] = "default"
+        route_data["Segment"] = 0
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = "overlay"
         return self.do_delete_request("EdgeRoute", route_data)
@@ -283,14 +284,14 @@ class RestDevice:
 
 
     #  areas is an object list, only key in object supported now is AreaId(int)
-    def create_ospf_setting(self, segment="default", overlayAdvertiseEnable=False, areas=[]):
+    def create_ospf_setting(self, segment=0, overlayAdvertiseEnable=False, areas=[]):
         ospf_data = {}
         ospf_data["Segment"] = segment
         ospf_data["OverlayAdvertiseEnable"] = overlayAdvertiseEnable
         ospf_data["Areas"] = areas
         return self.do_post_request("OspfSetting", ospf_data)
 
-    def delete_ospf_setting(self, segment="default"):
+    def delete_ospf_setting(self, segment=0):
         ospf_data = {}
         ospf_data["Segment"] = segment
         return self.do_delete_request("OspfSetting", ospf_data)
@@ -309,7 +310,7 @@ class RestDevice:
 
     def create_overlay_traffic_limit(self, tx_limit, rx_limit, is_combined):
         data = {}
-        data["Segment"] = "default"
+        data["Segment"] = 0
         data["TxLimit"] = tx_limit
         data["RxLimit"] = rx_limit
         data["TxRxCombined"] = is_combined
@@ -317,7 +318,7 @@ class RestDevice:
 
     def update_overlay_traffic_limit(self, tx_limit, rx_limit, is_combined):
         data = {}
-        data["Segment"] = "default"
+        data["Segment"] = 0
         data["TxLimit"] = tx_limit
         data["RxLimit"] = rx_limit
         data["TxRxCombined"] = is_combined
@@ -325,8 +326,18 @@ class RestDevice:
 
     def delete_overlay_traffic_limit(self):
         data = {}
-        data["Segment"] = "default"
+        data["Segment"] = 0
         return self.do_delete_request("OverlayTrafficLimit", data)
 
     def update_config_action(self, data):
         return self.do_action_request("UpdateConfig", data)
+
+    def create_segment(self, segment_id):
+        data = {}
+        data["Id"] = segment_id
+        return self.do_post_request("Segment", data)
+
+    def delete_segment(self, segment_id):
+        data = {}
+        data["Id"] = segment_id
+        return self.do_post_request("Segment", data)

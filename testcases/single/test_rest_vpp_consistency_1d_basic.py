@@ -784,3 +784,11 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.89.1/24" not in out)
         assert("192.168.88.1/24" in out)
+
+    def test_multi_segment(self):
+        # create segment
+        # change LAN1 to routed
+        # set LAN1 to segment because it's address will be in UNSPEC mode.
+        # check LAN1 in seperate linux-ns
+        # try delete segment, it will be blocked due to have reference.
+        pass
