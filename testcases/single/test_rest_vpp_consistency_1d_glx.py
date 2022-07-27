@@ -495,11 +495,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # only tx is limited.
         self.topo.dut1.get_rest_device().create_overlay_traffic_limit(10000, 4294967295, False)
         txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerName")
         txName = txName.rstrip()
         assert(err == '')
         txIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerIndex")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerIndex")
         txIndex = txIndex.rstrip()
         assert(err == '')
         # verify vpp and glx.
@@ -517,11 +517,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # update tx.
         self.topo.dut1.get_rest_device().update_overlay_traffic_limit(20000, 4294967295, False)
         txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerName")
         assert(err == '')
         txName = txName.rstrip()
         txIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerIndex")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerIndex")
         assert(err == '')
         txIndex = txIndex.rstrip()
         # verify vpp and glx.
@@ -539,11 +539,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # enable rx.
         self.topo.dut1.get_rest_device().update_overlay_traffic_limit(20000, 30000, False)
         txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerName")
         assert(err == '')
         txName = txName.rstrip()
         txIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerIndex")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerIndex")
         assert(err == '')
         txIndex = txIndex.rstrip()
         # verify vpp and glx.
@@ -558,11 +558,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glxTxIndex = glxTxIndex.rstrip()
         assert(glxTxIndex == vppTxIndex)
         rxName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default RxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 RxVppPolicerName")
         assert(err == '')
         rxName = rxName.rstrip()
         rxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default RxVppPolicerIndex")
+            f"redis-cli hget PolicerContext#0 RxVppPolicerIndex")
         assert(err == '')
         rxIndex = rxIndex.rstrip()
         # verify vpp and glx.
@@ -582,7 +582,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # enable combined.
         self.topo.dut1.get_rest_device().update_overlay_traffic_limit(20000, 30000, True)
         txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerName")
         txName = txName.rstrip()
         # verify vpp and glx.
         vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -596,11 +596,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glxTxIndex = glxTxIndex.rstrip()
         assert(glxTxIndex == vppTxIndex)
         rxName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default RxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 RxVppPolicerName")
         assert(err == '')
         rxName = rxName.rstrip()
         rxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default RxVppPolicerIndex")
+            f"redis-cli hget PolicerContext#0 RxVppPolicerIndex")
         assert(err == '')
         rxIndex = rxIndex.rstrip()
         # verify vpp and glx.
@@ -621,7 +621,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # disable combined.
         self.topo.dut1.get_rest_device().update_overlay_traffic_limit(20000, 30000, False)
         txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerName")
         txName = txName.rstrip()
         # verify vpp and glx.
         vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -635,11 +635,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glxTxIndex = glxTxIndex.rstrip()
         assert(glxTxIndex == vppTxIndex)
         rxName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default RxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 RxVppPolicerName")
         assert(err == '')
         rxName = rxName.rstrip()
         rxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default RxVppPolicerIndex")
+            f"redis-cli hget PolicerContext#0 RxVppPolicerIndex")
         assert(err == '')
         rxIndex = rxIndex.rstrip()
         # verify vpp and glx.
@@ -673,22 +673,22 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert("policers=0" in out)
         # redis should also be empty.
         txName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerName")
         assert(err == '')
         txName = txName.rstrip()
         assert(txName == "")
         txIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default TxVppPolicerIndex")
+            f"redis-cli hget PolicerContext#0 TxVppPolicerIndex")
         assert(err == '')
         txIndex = txIndex.rstrip()
         assert(txIndex == "4294967295")
         rxName, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default RxVppPolicerName")
+            f"redis-cli hget PolicerContext#0 RxVppPolicerName")
         assert(err == '')
         rxName = rxName.rstrip()
         assert(rxName == "")
         rxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget PolicerContext#default RxVppPolicerIndex")
+            f"redis-cli hget PolicerContext#0 RxVppPolicerIndex")
         assert(err == '')
         rxIndex = rxIndex.rstrip()
         assert(rxIndex == "4294967295")

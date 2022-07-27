@@ -623,16 +623,17 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("test_acl3" not in out)
         assert("192.168.12.2/32" not in out)
 
-    def test_multi_fire_wall(self):
+    def test_multi_firewall(self):
         self.topo.dut1.get_rest_device().set_fire_wall_rule(
             "test_acl3", 3, "192.168.11.3/32", "Deny")
         self.topo.dut1.get_rest_device().set_fire_wall_rule(
             "test_acl5", 5, "192.168.11.5/32", "Deny")
         self.topo.dut1.get_rest_device().set_fire_wall_rule(
             "test_acl4", 4, "192.168.11.4/32", "Deny")
-        # default bvi is loop0.
+        # We now apply firewall and bizpol to segment loop.
+        # Use redis to get default segment's loop.
         ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show int loop0 | grep loop0 | awk '{{print $2}}'")
+                    f"redis-cli hget SegmentContext#0 LoopSwIfIndex")
         assert(err == '')
         ifindex = ifindex.rstrip()
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -789,6 +790,19 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # create segment
         # change LAN1 to routed
         # set LAN1 to segment because it's address will be in UNSPEC mode.
-        # check LAN1 in seperate linux-ns
+        # (TODO): currently not supported. check LAN1 in seperate linux-ns
         # try delete segment, it will be blocked due to have reference.
-        pass
+        self.topo.dut1.get_rest_device().create_segment(1)
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "routed", "")
+        self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN1", 1)
+        result = self.topo.dut1.get_rest_device().delete_segment(1)
+        # this should be failed with 500 because there are reference to the segment.
+        assert(result.status_code == 500)
+
+        # check back to the segment 0
+        self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN1", 0)
+        result = self.topo.dut1.get_rest_device().delete_segment(1)
+        # this should be ok with 410 (http StatusGone)
+        assert(result.status_code == 410)
+        # check back to switched interface.
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "switched", "default")

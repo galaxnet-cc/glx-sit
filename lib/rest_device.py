@@ -90,6 +90,12 @@ class RestDevice:
         rule_data['L3Protocol'] = 1
         return self.do_post_request("FirewallRule", rule_data)
 
+    def set_logical_interface_segment(self, name, segment_id):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['Segment'] = segment_id
+        return self.do_patch_request("LogicalInterface", logif_data)
+
     def set_logical_interface_static_ip(self, name, ip_w_prefix):
         logif_data = {}
         logif_data['Name'] = name
@@ -340,4 +346,4 @@ class RestDevice:
     def delete_segment(self, segment_id):
         data = {}
         data["Id"] = segment_id
-        return self.do_post_request("Segment", data)
+        return self.do_delete_request("Segment", data)
