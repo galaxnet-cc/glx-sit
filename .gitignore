@@ -1,5 +1,5 @@
 *~
 *pyc
-misc/redeploy_1t_4d/debs
 # 此文件不应当被纳入git库，是本地文件，每个人的环境可能不尽相同。
 conf/sitconf.json
+*.deb

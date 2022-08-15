@@ -11,12 +11,12 @@
 ### 配置
 将conf目录的sitconf-example.json复制并改为sitconf.json，修改sitconf.json为自己的测试环境。
 
-### 部署
+### 物理机sit环境部署
 
-将待安装的包拷贝到miscs/redeploy_1t_4d目录中的debs目录
+将待安装的包拷贝到miscs/redeploy_hw_1t_4d目录中的debs目录
 
 ```
-cd misc/redeploy_1t_4d/
+cd misc/redeploy_hw_1t_4d/
 sh redeploy.sh
 ```
 
@@ -29,9 +29,15 @@ sh redeploy.sh -f
 ### 复位实验环境（恢复出厂激活状态）
 
 ```
-cd misc/redeploy_1t_4d/
+cd misc/redeploy_hw_1t_4d/
 sh redeploy.sh -r
+
+
 ```
+
+### 虚拟机sit环境部署
+
+将上述物理机redeploy_hw_1t_4d换成代码中相应的redeploy_wsvm_1t_4d即可
 
 ## 使用
 

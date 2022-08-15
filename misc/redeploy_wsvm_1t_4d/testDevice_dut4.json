@@ -1,0 +1,35 @@
+{
+    "Model": "testDevice",
+    "Description": "dut4",
+    "PhysicalInterfaces": [
+        {
+            "Name": "WAN1",
+            "Description": "WAN1 physical interface",
+            "Mtu": 1500,
+            "Mode": "routed",
+            "InfraType": "vpp",
+            "InfraInterface": "GigabitEthernet6/0/0",
+            "BridgeName": "",
+            "OverlayEnable": true
+        },
+        {
+            "Name": "WAN2",
+            "Description": "WAN2 physical interface",
+            "Mtu": 1500,
+            "Mode": "routed",
+            "InfraType": "vpp",
+            "InfraInterface": "GigabitEthernet7/0/0",
+            "BridgeName": "",
+            "OverlayEnable": true
+        },
+        {
+            "Name": "GE3",
+            "Description": "LAN1 physical interface",
+            "Mtu": 1500,
+            "Mode": "switched",
+            "InfraType": "vpp",
+            "InfraInterface": "GigabitEthernet8/0/0",
+            "BridgeName": "default"
+        }
+    ]
+}

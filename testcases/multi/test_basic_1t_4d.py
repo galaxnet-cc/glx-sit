@@ -3,6 +3,11 @@ import time
 
 from topo.topo_1t_4d import Topo1T4D
 
+# 有时候需要反复测试一个用例，可先打开SKIP_TEARDOWN执行一轮用例初始化
+# 拓朴配置，然后打开SKIP_SETUP即可反复执行单个测试例。
+SKIP_SETUP = True
+SKIP_TEARDOWN = True
+
 class TestBasic1T4D(unittest.TestCase):
 
     # 创建一个最基本的配置场景：
@@ -11,6 +16,10 @@ class TestBasic1T4D(unittest.TestCase):
     #
     def setUp(self):
         self.topo = Topo1T4D()
+
+        if SKIP_SETUP:
+            return
+
         # 1<>2 192.168.12.0/24
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.1/24")
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.2/24")
@@ -81,7 +90,9 @@ class TestBasic1T4D(unittest.TestCase):
         time.sleep(10)
 
     def tearDown(self):
-        return
+        if SKIP_TEARDOWN:
+            return
+
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
@@ -139,6 +150,20 @@ class TestBasic1T4D(unittest.TestCase):
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
         assert(err == '')
         # 此时不应当再丢包
+        assert("0% packet loss" in out)
+
+        # 添加firewall rule阻断
+        self.topo.dut1.get_rest_device().set_fire_wall_rule(
+            "block_tst_traffic", 1, "192.168.4.2/32", "Deny")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 此时应当不通
+        assert("100% packet loss" in out)
+        # 删除firewall rule
+        self.topo.dut1.get_rest_device().delete_fire_wall_rule("block_tst_traffic")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 此时应当恢复
         assert("0% packet loss" in out)
 
 if __name__ == '__main__':
