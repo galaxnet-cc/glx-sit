@@ -179,10 +179,11 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.2.254" in out)
         # kernel side.
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip route show default")
-        assert(err == '')
-        assert("192.168.2.254" in out)
+        # 0815: WAN gw route not programmed to kernel now.
+        # out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+        #     f"ip netns exec ctrl-ns ip route show default")
+        # assert(err == '')
+        # assert("192.168.2.254" in out)
         # update gw.
         self.topo.dut1.get_rest_device().set_logical_interface_static_gw("WAN1", "192.168.2.252")
         tableId, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -194,12 +195,13 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.2.254" not in out)
         assert("192.168.2.252" in out)
-        # kernel side.
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip route show default")
-        assert(err == '')
-        assert("192.168.2.254" not in out)
-        assert("192.168.2.252" in out)
+        # 0815: WAN gw route not programmed to kernel now.
+        # # kernel side.
+        # out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+        #     f"ip netns exec ctrl-ns ip route show default")
+        # assert(err == '')
+        # assert("192.168.2.254" not in out)
+        # assert("192.168.2.252" in out)
 
         # change back to dhcp.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
@@ -799,7 +801,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # this should be failed with 500 because there are reference to the segment.
         assert(result.status_code == 500)
 
-        # check back to the segment 0
+        # change back to the segment 0
         self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN1", 0)
         result = self.topo.dut1.get_rest_device().delete_segment(1)
         # this should be ok with 410 (http StatusGone)

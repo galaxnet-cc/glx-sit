@@ -236,7 +236,8 @@ class RestDevice:
         label_data["RouteLabel"] = route_label
         return self.do_delete_request("RouteLabelFwdEntry", label_data)
 
-    def create_edge_route(self, route_prefix, route_label, tunnel_id1, tunnel_id2=None, tunnel1_priority=100, tunnel2_priority=200):
+    def create_edge_route(self, route_prefix, route_label, tunnel_id1, tunnel_id2=None, tunnel1_priority=100, tunnel2_priority=200,
+                          is_acc=False, is_acc_reverse=False):
         route_data = {}
         route_data["Segment"] = 0
         route_data["DestPrefix"] = route_prefix
@@ -250,6 +251,8 @@ class RestDevice:
             tunnels.append(
                 {"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": tunnel2_priority})
         route_data["NexthopTunnels"] = tunnels
+        route_data["IsAcc"] = is_acc
+        route_data["IsAccReverse"] = is_acc_reverse
         return self.do_post_request("EdgeRoute", route_data)
 
     def delete_edge_route(self, route_prefix):
@@ -343,7 +346,33 @@ class RestDevice:
         data["Id"] = segment_id
         return self.do_post_request("Segment", data)
 
+    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False):
+        data = {}
+        data["Id"] = segment_id
+        data["AccEnable"] = acc_enable
+        data["IntEdgeEnable"] = int_edge_enable
+        return self.do_patch_request("Segment", data)
+
     def delete_segment(self, segment_id):
         data = {}
         data["Id"] = segment_id
         return self.do_delete_request("Segment", data)
+
+    def create_segment_acc_prop(self, segment_id, acc_ip1="1.1.1.1"):
+        data = {}
+        data["Segment"] = segment_id
+        data["AccIps"] = []
+        data["AccIps"].append({"Ip4Address": acc_ip1})
+        return self.do_post_request("SegmentAccProperties", data)
+
+    def delete_segment_acc_prop(self, segment_id):
+        data = {}
+        data["Segment"] = segment_id
+        return self.do_delete_request("SegmentAccProperties", data)
+
+    def update_segment_acc_prop(self, segment_id, acc_ip1="1.1.1.1"):
+        data = {}
+        data["Segment"] = segment_id
+        data["AccIps"] = []
+        data["AccIps"].append({"Ip4Address": acc_ip1})
+        return self.do_patch_request("SegmentAccProperties", data)

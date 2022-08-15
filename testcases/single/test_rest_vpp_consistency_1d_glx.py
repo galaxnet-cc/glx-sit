@@ -396,11 +396,12 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        dst_prefix="0.0.0.0/0",
                                                        protocol=0,
                                                        direct_enable=True)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol")
+        # XXX: should exclude ns default exit if nat rule.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
         assert(err == '')
         assert('192.168.88.0/24' in out)
         # now no interface needed due to auto steering feature support.
-        assert(f'nat' in out)
+        assert(f'[nat]' in out)
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
 
     def test_glx_bizpol_nat_config_w_steering(self):
@@ -412,10 +413,10 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        steering_type=1,
                                                        steering_mode=1,
                                                        steering_interface="WAN1")
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
         assert(err == '')
         assert('192.168.89.0/24' in out)
-        assert('nat' in out)
+        assert('[nat]' in out)
         assert('steering' in out)
         # get the wan1 if index.
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
@@ -432,11 +433,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        dst_prefix="0.0.0.0/0",
                                                        protocol=0,
                                                        direct_enable=True)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
         assert(err == '')
         assert('192.168.90.0/24' in out)
         # now interface is needed now.
-        assert(f'nat' in out)
+        assert(f'[nat]' in out)
         # try to change wan mode to pppoe is not allowed.
         result = self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "test")
         # this should be failed with 500.
@@ -452,10 +453,10 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        steering_type=1,
                                                        steering_mode=1,
                                                        steering_interface="WAN1")
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
         assert(err == '')
         assert('192.168.89.0/24' in out)
-        assert('nat' not in out)
+        assert('[nat]' not in out)
         assert('steering' in out)
         # get the wan1 if index.
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
@@ -474,10 +475,10 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        steering_type=1,
                                                        steering_mode=1,
                                                        steering_interface="WAN2")
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
         assert(err == '')
         assert('192.168.89.0/24' in out)
-        assert('nat' not in out)
+        assert('[nat]' not in out)
         assert('steering' in out)
 
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
@@ -692,6 +693,107 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         rxIndex = rxIndex.rstrip()
         assert(rxIndex == "4294967295")
+
+    def test_glx_acc_cpe_side(self):
+        # 1. enable acc feature on the segment.
+        # 2. add acc route
+        # 3. check route have is_acc field (this also means we have checked the acc fib table).
+        # 4. try to disable acc with failed.
+        # 5. remove route
+        # 6. disable the acc feature on the segment.
+
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        # verify default fib changed to fib acc.
+        fibResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip fib table 0 0.0.0.0/0")
+        assert(err == '')
+        assert("fib_lookupmiss_acc" in fibResult)
+        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234", tunnel_id1=1,
+                                                           is_acc=True)
+        # acc fib for segment 0 is 128.
+        fibResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip fib table 128 1.1.1.1")
+        assert(err == '')
+        assert("is_acc: 1" in fibResult)
+        assert("1.1.1.1" in fibResult)
+        assert("0x1234" in fibResult)
+        # try to disable acc when there is route.
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
+        # this should be failed with 500.
+        assert(result.status_code == 500)
+        # remove the acc route.
+        # 目前acc对控制平面不是key，所以无需传参。fwdmd可以从db中知道是否是加速路由。
+        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="1.1.1.1/32")
+        # 不能基于dip查询，否则将命中默认路由
+        fibResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 128")
+        assert(err == '')
+        assert(f"1.1.1.1/32" not in fibResult)
+        assert("0x1234" not in fibResult)
+        # acc disable should ok.
+        # try to disable acc when there is route.
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
+        # this should be ok with 200.
+        assert(result.status_code == 200)
+        fibResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 128")
+        # the fib is pruned.
+        assert(fibResult == '')
+        assert(err == '')
+        # verify default fib changed to fib miss normal.
+        fibResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip fib table 0 0.0.0.0/0")
+        assert(err == '')
+        assert("fib_lookupmiss" in fibResult)
+        assert("fib_lookupmiss_acc" not in fibResult)
+
+        # cleanup.
+        self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+
+    def test_glx_acc_int_edge_side(self):
+        # 1. enable int edge
+        # 2. set acc ip.
+        # 3. check ip address configured on loop.
+        # 4. unset acc ip.
+        # 5. unset int edge.
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
+        assert(result.status_code == 200)
+        # check vpp applied.
+        result, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx segment segment-id 0")
+        assert(err == '')
+        assert("int_edge_enable 1" in result)
+        # Use redis to get default segment's loop.
+        ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+                    f"redis-cli hget SegmentContext#0 LoopSwIfIndex")
+        assert(err == '')
+        ifindex = ifindex.rstrip()
+        self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.1")
+        ipResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {ifindex}")
+        assert(err == '')
+        assert("222.222.222.1" in ipResult)
+        # udpate the acc ip.
+        self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.2")
+        ipResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {ifindex}")
+        assert(err == '')
+        assert("222.222.222.1" not in ipResult)
+        assert("222.222.222.2" in ipResult)
+        # delete the acc ip.
+        self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
+        ipResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {ifindex}")
+        assert(err == '')
+        assert("222.222.222.1" not in ipResult)
+        assert("222.222.222.2" not in ipResult)
+        # disable the int edge
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, int_edge_enable=False)
+        assert(result.status_code == 200)
+        # check vpp applied.
+        result, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show glx segment segment-id 0")
+        assert(err == '')
+        assert("int_edge_enable 0" in result)
 
 if __name__ == '__main__':
     unittest.main()
