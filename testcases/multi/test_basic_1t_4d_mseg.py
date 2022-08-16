@@ -6,13 +6,12 @@ from topo.topo_1t_4d import Topo1T4D
 # 有时候需要反复测试一个用例，可先打开SKIP_TEARDOWN执行一轮用例初始化
 # 拓朴配置，然后打开SKIP_SETUP即可反复执行单个测试例。
 #
-# TODO: 后面开发active link通知删除能力后，就可以支持用例反复setup down
-# 就需要打开setup/teardown，并支持在一个复杂拓朴下，测试多个测试例了。　
+# 复位环境可以使用misc目录中的redeploy脚本执行，我们可以考虑在teardown中复位以增加脚本的可执行性？
 #
 SKIP_SETUP = False
 SKIP_TEARDOWN = False
 
-class TestBasic1T4D(unittest.TestCase):
+class TestBasic1T4DMseg(unittest.TestCase):
 
     # 创建一个最基本的配置场景：
     # dut1--wan1---dut2---wan3---dut3---wan1--dut4
@@ -33,11 +32,6 @@ class TestBasic1T4D(unittest.TestCase):
         # 3<>4 192.168.34.0/24
         self.topo.dut3.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.1/24")
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.2/24")
-
-        # dut1 Lan 1 ip:
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
-        # dut4 Lan 1 ip:
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.4.1/24")
 
         # create dut1<>dut2 link.
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=12)
@@ -73,21 +67,28 @@ class TestBasic1T4D(unittest.TestCase):
         # to dut1
         self.topo.dut3.get_rest_device().create_glx_route_label_fwd(route_label="0x1200000", tunnel_id1=23)
 
-        # 创建overlay route
-        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010", tunnel_id1=12)
-        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010", tunnel_id1=34)
 
         # 初始化tst接口
         self.topo.tst.add_ns("dut1")
         self.topo.tst.add_ns("dut4")
         self.topo.tst.add_if_to_ns(self.topo.tst.if1, "dut1")
         self.topo.tst.add_if_to_ns(self.topo.tst.if2, "dut4")
+        # 初始化另外两个接口用做s2
+        self.topo.tst.add_ns("dut1s2")
+        self.topo.tst.add_ns("dut4s2")
+        self.topo.tst.add_if_to_ns(self.topo.tst.if3, "dut1s2")
+        self.topo.tst.add_if_to_ns(self.topo.tst.if4, "dut4s2")
 
         # 添加tst节点ip及路由
         self.topo.tst.add_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
         self.topo.tst.add_ns_route("dut1", "192.168.4.0/24", "192.168.1.1")
         self.topo.tst.add_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
         self.topo.tst.add_ns_route("dut4", "192.168.1.0/24", "192.168.4.1")
+        # 另外一个segment s2的linux client配置，配置完全是一样的
+        self.topo.tst.add_ns_if_ip("dut1s2", self.topo.tst.if3, "192.168.1.2/24")
+        self.topo.tst.add_ns_route("dut1s2", "192.168.4.0/24", "192.168.1.1")
+        self.topo.tst.add_ns_if_ip("dut4s2", self.topo.tst.if4, "192.168.4.2/24")
+        self.topo.tst.add_ns_route("dut4s2", "192.168.1.0/24", "192.168.4.1")
 
         # 等待link up
         # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
@@ -101,10 +102,9 @@ class TestBasic1T4D(unittest.TestCase):
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
         self.topo.tst.del_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
-
-        # 删除edge route.
-        self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24")
-        self.topo.dut4.get_rest_device().delete_edge_route("192.168.1.0/24")
+        # 另外一个seg s2
+        self.topo.tst.del_ns_if_ip("dut1s2", self.topo.tst.if3, "192.168.1.2/24")
+        self.topo.tst.del_ns_if_ip("dut4s2", self.topo.tst.if4, "192.168.4.2/24")
 
         # 删除label-fwd表项
         # to dut4
@@ -130,11 +130,6 @@ class TestBasic1T4D(unittest.TestCase):
         # create dut4 route label pocliy.
         self.topo.dut4.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x3400010")
 
-
-        # revert to default.
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
-
         # revert to default.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
@@ -145,8 +140,41 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut4.get_rest_device().set_logical_interface_dhcp("WAN1")
 
-    #  测试icmp/udp/tcp流量
-    def test_basic_traffic(self):
+    # 此用例执行需要wsvm拓朴，因为需要LAN2支持。
+    def test_multi_seg_traffic(self):
+        # dut1 init.
+        # dut1 create seg 1/2.
+        self.topo.dut1.get_rest_device().create_segment(1)
+        self.topo.dut1.get_rest_device().create_segment(2)
+        # change dut1 LAN1 and LAN2 to routed mode and bind to seg1/2.
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "routed", "")
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN2", 1500, "routed", "")
+        self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN1", 1)
+        self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN2", 2)
+        # share same address.
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("LAN1", "192.168.1.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("LAN2", "192.168.1.1/24")
+        # add to dut4 route, they share the same tunnel.
+        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010", tunnel_id1=12, segment=1)
+        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010", tunnel_id1=12, segment=2)
+
+        # dut4 init.
+        # dut4 create seg 1/2.
+        self.topo.dut4.get_rest_device().create_segment(1)
+        self.topo.dut4.get_rest_device().create_segment(2)
+        # change dut4 LAN1 and LAN2 to routed mode and bind to seg1/2.
+        self.topo.dut4.get_rest_device().update_physical_interface("LAN1", 1500, "routed", "")
+        self.topo.dut4.get_rest_device().update_physical_interface("LAN2", 1500, "routed", "")
+        self.topo.dut4.get_rest_device().set_logical_interface_segment("LAN1", 1)
+        self.topo.dut4.get_rest_device().set_logical_interface_segment("LAN2", 2)
+        # share same address.
+        self.topo.dut4.get_rest_device().set_logical_interface_static_ip("LAN1", "192.168.4.1/24")
+        self.topo.dut4.get_rest_device().set_logical_interface_static_ip("LAN2", "192.168.4.1/24")
+        # add to dut4 route, they share the same tunnel.
+        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010", tunnel_id1=34, segment=1)
+        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010", tunnel_id1=34, segment=2)
+
+        # 验证segment 1 流量可通
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
         assert(err == '')
         # 首包会因为arp而丢失，不为０即可
@@ -156,19 +184,42 @@ class TestBasic1T4D(unittest.TestCase):
         # 此时不应当再丢包
         assert("0% packet loss" in out)
 
-        # 添加firewall rule阻断
-        self.topo.dut1.get_rest_device().set_fire_wall_rule(
-            "block_tst_traffic", 1, "192.168.4.2/32", "Deny")
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        # 验证segment 2 流量可通
+        out, err = self.topo.tst.get_ns_cmd_result("dut1s2", "ping 192.168.4.2 -c 5 -i 0.05")
         assert(err == '')
-        # 此时应当不通
-        assert("100% packet loss" in out)
-        # 删除firewall rule
-        self.topo.dut1.get_rest_device().delete_fire_wall_rule("block_tst_traffic")
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        # 首包会因为arp而丢失，不为０即可
+        assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1s2", "ping 192.168.4.2 -c 5 -i 0.05")
         assert(err == '')
-        # 此时应当恢复
+        # 此时不应当再丢包
         assert("0% packet loss" in out)
+
+        # 清理资源
+        # remove route.
+        self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24", segment=1)
+        self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24", segment=2)
+        self.topo.dut4.get_rest_device().delete_edge_route("192.168.1.0/24", segment=1)
+        self.topo.dut4.get_rest_device().delete_edge_route("192.168.1.0/24", segment=2)
+        # change segment back.
+        # 由于涉及到接口vrf切换，需要先变换成UNSPEC地址模式
+        self.topo.dut1.get_rest_device().set_logical_interface_unspec("LAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_unspec("LAN2")
+        self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN1", 0)
+        self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN2", 0)
+        self.topo.dut4.get_rest_device().set_logical_interface_unspec("LAN1")
+        self.topo.dut4.get_rest_device().set_logical_interface_unspec("LAN2")
+        self.topo.dut4.get_rest_device().set_logical_interface_segment("LAN1", 0)
+        self.topo.dut4.get_rest_device().set_logical_interface_segment("LAN2", 0)
+        # change LAN mode to switched.
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "switched", "default")
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN2", 1500, "switched", "default")
+        self.topo.dut4.get_rest_device().update_physical_interface("LAN1", 1500, "switched", "default")
+        self.topo.dut4.get_rest_device().update_physical_interface("LAN2", 1500, "switched", "default")
+        # remove segment.
+        self.topo.dut1.get_rest_device().delete_segment(1)
+        self.topo.dut1.get_rest_device().delete_segment(2)
+        self.topo.dut4.get_rest_device().delete_segment(1)
+        self.topo.dut4.get_rest_device().delete_segment(2)
 
 if __name__ == '__main__':
     unittest.main()

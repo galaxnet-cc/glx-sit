@@ -45,4 +45,6 @@ class Topo1T4D:
                              user=tstconf['SshUsername'],
                              password=tstconf['SshPassword'],
                              if1=tstconf['LinuxIf1'],
-                             if2=tstconf['LinuxIf2'])
+                             if2=tstconf['LinuxIf2'],
+                             if3=tstconf['LinuxIf3'],
+                             if4=tstconf['LinuxIf4'])

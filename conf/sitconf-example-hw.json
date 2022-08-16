@@ -61,7 +61,9 @@
         "SshUsername": "root",
         "SshPassword": "OBCubuntuD102",
         "LinuxIf1": "eth2",
-        "LinuxIf2": "eth3"
+        "LinuxIf2": "eth3",
+        "LinuxIf3": "",
+        "LinuxIf4": ""
       }
     }
   }

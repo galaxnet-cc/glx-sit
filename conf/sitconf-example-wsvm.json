@@ -62,7 +62,9 @@
         "SshUsername": "root",
         "SshPassword": "07550512",
         "LinuxIf1": "enp6s0",
-        "LinuxIf2": "enp7s0"
+        "LinuxIf2": "enp7s0",
+        "LinuxIf3": "enp8s0",
+        "LinuxIf4": "enp9s0"
       }
     }
   }

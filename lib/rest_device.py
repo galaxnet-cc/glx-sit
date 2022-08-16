@@ -125,6 +125,12 @@ class RestDevice:
         logif_data['PppoePassword'] = pppoe_password
         return self.do_patch_request("LogicalInterface", logif_data)
 
+    def set_logical_interface_unspec(self, name):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['AddressingType'] = "UNSPEC"
+        return self.do_patch_request("LogicalInterface", logif_data)
+
     def delete_bridge_ip(self, name, bvi_ip_w_prefix):
         bridge_data = {}
         bridge_data['Name'] = name
@@ -237,9 +243,9 @@ class RestDevice:
         return self.do_delete_request("RouteLabelFwdEntry", label_data)
 
     def create_edge_route(self, route_prefix, route_label, tunnel_id1, tunnel_id2=None, tunnel1_priority=100, tunnel2_priority=200,
-                          is_acc=False, is_acc_reverse=False):
+                          is_acc=False, is_acc_reverse=False, segment=0):
         route_data = {}
-        route_data["Segment"] = 0
+        route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = "overlay"
         route_data["RouteLabel"] = route_label
@@ -255,9 +261,9 @@ class RestDevice:
         route_data["IsAccReverse"] = is_acc_reverse
         return self.do_post_request("EdgeRoute", route_data)
 
-    def delete_edge_route(self, route_prefix):
+    def delete_edge_route(self, route_prefix, segment=0):
         route_data = {}
-        route_data["Segment"] = 0
+        route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = "overlay"
         return self.do_delete_request("EdgeRoute", route_data)

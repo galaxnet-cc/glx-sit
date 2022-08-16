@@ -4,12 +4,14 @@ import paramiko
 import os
 
 class SSHDevice:
-    def __init__(self, server, user, password, if1, if2):
+    def __init__(self, server, user, password, if1, if2, if3=None, if4=None):
         self.ssh = paramiko.SSHClient()
         self.ssh.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
         self.ssh.connect(server, username=user, password=password)
         self.if1 = if1
         self.if2 = if2
+        self.if3 = if3
+        self.if4 = if4
 
     def add_ns(self, ns_name):
         self.ssh.exec_command(f'ip netns add {ns_name}')

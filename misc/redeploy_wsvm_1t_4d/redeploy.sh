@@ -35,6 +35,11 @@ Reset()
         # prepare directory
         echo -e "$RED[ resetting $dip]$NC"
 
+        # enable fwdmd is running.
+        ssh root@$dip systemctl restart fwdmd
+        # wait for fwdmd started.
+        sleep 5
+
         ssh root@$dip redis-cli flushall
         scp ./facinit.sh root@$dip:/tmp/
         ssh root@$dip nohup sh /tmp/facinit.sh

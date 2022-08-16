@@ -23,12 +23,21 @@
             "OverlayEnable": true
         },
         {
-            "Name": "GE3",
+            "Name": "LAN1",
             "Description": "LAN1 physical interface",
             "Mtu": 1500,
             "Mode": "switched",
             "InfraType": "vpp",
             "InfraInterface": "GigabitEthernet6/0/0",
+            "BridgeName": "default"
+        },
+        {
+            "Name": "LAN2",
+            "Description": "LAN2 physical interface",
+            "Mtu": 1500,
+            "Mode": "switched",
+            "InfraType": "vpp",
+            "InfraInterface": "GigabitEthernet9/0/0",
             "BridgeName": "default"
         }
     ]
