@@ -4,6 +4,9 @@
 test-multi-basic:
 	python3 -m unittest testcases/multi/test_basic_1t_4d.py
 
+test-multi-acc:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_acc.py
+
 test-multi-mseg:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_mseg.py
 

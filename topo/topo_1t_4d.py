@@ -7,6 +7,7 @@ import json
 from lib.dut import Dut
 from lib.local_device import LocalDevice
 from lib.ssh_device import SSHDevice
+from lib.vpp_ssh_device import VppSSHDevice
 from lib.rest_device import RestDevice
 
 class Topo1T4D:
@@ -20,24 +21,36 @@ class Topo1T4D:
         dut = Dut("DUT1")
         dut.set_if_map(dutconf['IfMap'])
         dut.set_rest_device(RestDevice(api_ip=dutconf['MgmtIp']))
+        dut.set_vpp_ssh_device(VppSSHDevice(server=dutconf['MgmtIp'],
+                                            user=dutconf['SshUsername'],
+                                            password=dutconf['SshPassword']))
         self.dut1 = dut
 
         dutconf = sitconf["Topos"]["Topo1T4D"]["Duts"]["DUT2"]
         dut = Dut("DUT2")
         dut.set_if_map(dutconf['IfMap'])
         dut.set_rest_device(RestDevice(api_ip=dutconf['MgmtIp']))
+        dut.set_vpp_ssh_device(VppSSHDevice(server=dutconf['MgmtIp'],
+                                            user=dutconf['SshUsername'],
+                                            password=dutconf['SshPassword']))
         self.dut2 = dut
 
         dutconf = sitconf["Topos"]["Topo1T4D"]["Duts"]["DUT3"]
         dut = Dut("DUT3")
         dut.set_if_map(dutconf['IfMap'])
         dut.set_rest_device(RestDevice(api_ip=dutconf['MgmtIp']))
+        dut.set_vpp_ssh_device(VppSSHDevice(server=dutconf['MgmtIp'],
+                                            user=dutconf['SshUsername'],
+                                            password=dutconf['SshPassword']))
         self.dut3 = dut
 
         dutconf = sitconf["Topos"]["Topo1T4D"]["Duts"]["DUT4"]
         dut = Dut("DUT4")
         dut.set_if_map(dutconf['IfMap'])
         dut.set_rest_device(RestDevice(api_ip=dutconf['MgmtIp']))
+        dut.set_vpp_ssh_device(VppSSHDevice(server=dutconf['MgmtIp'],
+                                            user=dutconf['SshUsername'],
+                                            password=dutconf['SshPassword']))
         self.dut4 = dut
 
         tstconf = sitconf["Topos"]["Topo1T4D"]["Tst"]

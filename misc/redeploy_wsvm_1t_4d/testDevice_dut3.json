@@ -8,7 +8,7 @@
             "Mtu": 1500,
             "Mode": "routed",
             "InfraType": "vpp",
-            "InfraInterface": "GigabitEthernet6/0/0",
+            "InfraInterface": "GigabitEthernet7/0/0",
             "BridgeName": "",
             "OverlayEnable": true
         },
@@ -28,7 +28,7 @@
             "Mtu": 1500,
             "Mode": "routed",
             "InfraType": "vpp",
-            "InfraInterface": "GigabitEthernet7/0/0",
+            "InfraInterface": "GigabitEthernet6/0/0",
             "BridgeName": "",
             "OverlayEnable": true
         }

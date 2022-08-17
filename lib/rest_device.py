@@ -125,6 +125,12 @@ class RestDevice:
         logif_data['PppoePassword'] = pppoe_password
         return self.do_patch_request("LogicalInterface", logif_data)
 
+    def set_logical_interface_nat_direct(self, name, nat_direct_enable):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['NatDirectEnable'] = nat_direct_enable
+        return self.do_patch_request("LogicalInterface", logif_data)
+
     def set_logical_interface_unspec(self, name):
         logif_data = {}
         logif_data['Name'] = name
