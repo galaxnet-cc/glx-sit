@@ -232,7 +232,6 @@ class RestDevice:
     def create_glx_route_label_fwd(self, route_label, tunnel_id1, tunnel_id2=None):
         label_data = {}
         label_data["RouteLabel"] = route_label
-        label_data["NexthopMode"] = "active-backup"
         tunnels = []
         # support tunnel weight later.
         tunnels.append(
@@ -248,21 +247,62 @@ class RestDevice:
         label_data["RouteLabel"] = route_label
         return self.do_delete_request("RouteLabelFwdEntry", label_data)
 
-    def create_edge_route(self, route_prefix, route_label, tunnel_id1, tunnel_id2=None, tunnel1_priority=100, tunnel2_priority=200,
-                          is_acc=False, is_acc_reverse=False, segment=0):
+    def create_glx_edge_route_label_fwd(self, route_label, tunnel_id1, tunnel_id2=None):
+        label_data = {}
+        label_data["RouteLabel"] = route_label
+        label_data["IsDefault"] = False
+        tunnels = []
+        # support tunnel weight later.
+        tunnels.append(
+            {"TunnelId": tunnel_id1, "TunnelWeight": 100, "TunnelPriority": 100})
+        if tunnel_id2 != None:
+            tunnels.append(
+                {"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": 100})
+        label_data["NexthopTunnels"] = tunnels
+        return self.do_post_request("EdgeRouteLabelFwdEntry", label_data)
+
+    def update_glx_edge_route_label_fwd(self, route_label, tunnel_id1, tunnel_id2=None):
+        label_data = {}
+        label_data["RouteLabel"] = route_label
+        label_data["IsDefault"] = False
+        tunnels = []
+        # support tunnel weight later.
+        if tunnel_id1 != None:
+            tunnels.append(
+                {"TunnelId": tunnel_id1, "TunnelWeight": 100, "TunnelPriority": 100})
+        if tunnel_id2 != None:
+            tunnels.append(
+                {"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": 100})
+        label_data["NexthopTunnels"] = tunnels
+        return self.do_patch_request("EdgeRouteLabelFwdEntry", label_data)
+
+    def update_glx_default_edge_route_label_fwd(self, tunnel_id1, tunnel_id2=None):
+        label_data = {}
+        label_data["RouteLabel"] = "0"
+        label_data["IsDefault"] = True
+        tunnels = []
+        # support tunnel weight later.
+        # We may update tunnel id1 too.
+        if tunnel_id1 != None:
+            tunnels.append(
+                {"TunnelId": tunnel_id1, "TunnelWeight": 100, "TunnelPriority": 100})
+        if tunnel_id2 != None:
+            tunnels.append(
+                {"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": 100})
+        label_data["NexthopTunnels"] = tunnels
+        return self.do_patch_request("EdgeRouteLabelFwdEntry", label_data)
+
+    def delete_glx_edge_route_label_fwd(self, route_label):
+        label_data = {}
+        label_data["RouteLabel"] = route_label
+        return self.do_delete_request("EdgeRouteLabelFwdEntry", label_data)
+
+    def create_edge_route(self, route_prefix, route_label, is_acc=False, is_acc_reverse=False, segment=0):
         route_data = {}
         route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = "overlay"
         route_data["RouteLabel"] = route_label
-        tunnels = []
-        # support tunnel weight later.
-        tunnels.append({"TunnelId": tunnel_id1, "TunnelWeight": 100,
-                       "TunnelPriority": tunnel1_priority})
-        if tunnel_id2 != None:
-            tunnels.append(
-                {"TunnelId": tunnel_id2, "TunnelWeight": 100, "TunnelPriority": tunnel2_priority})
-        route_data["NexthopTunnels"] = tunnels
         route_data["IsAcc"] = is_acc
         route_data["IsAccReverse"] = is_acc_reverse
         return self.do_post_request("EdgeRoute", route_data)

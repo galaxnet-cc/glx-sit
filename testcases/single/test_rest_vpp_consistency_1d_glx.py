@@ -150,18 +150,18 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         assert(f"tunnel-id 1 members 0" in out)
         # add the route.
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234", tunnel_id1=1)
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         assert(err == '')
-        assert(f"tunnel-id 1" in out)
+        assert(f"0x1234" in out)
+        # 0824: the route is not associated with tunnel, so tunnel can be deleted.
         # try to delete the tunnel and failed.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
+        #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        #assert(result.status_code == 500)
         # delete the route.
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="1.1.1.1/32")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         assert(err == '')
-        assert(f"tunnel-id 1 tunnel-priority 100" not in out)
         assert(f"1.1.1.1/32" not in out)
         # delete the tunnel and now it should ok.
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
@@ -176,66 +176,28 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         assert(f"tunnel-id 1 members 0" in out)
         # add the route 1.
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234", tunnel_id1=1)
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         assert(err == '')
-        assert(f"tunnel-id 1" in out)
+        assert(f"0x1234" in out)
         # add the route 2.
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="2.2.2.2/32", route_label="0x1234", tunnel_id1=1)
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="2.2.2.2/32", route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 2.2.2.2")
         assert(err == '')
-        assert(f"tunnel-id 1" in out)
+        assert(f"0x1234" in out)
+        # 0824: the route is not associated with tunnel, so tunnel can be deleted.
         # try to delete the tunnel and failed.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
+        #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        #assert(result.status_code == 500)
         # delete the route 1.
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="1.1.1.1/32")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         assert(err == '')
-        assert(f"tunnel-id 1 tunnel-priority 100" not in out)
         assert(f"1.1.1.1/32" not in out)
         # delete the route 2.
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="2.2.2.2/32")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 2.2.2.2")
         assert(err == '')
-        assert(f"tunnel-id 1 tunnel-priority 100" not in out)
-        assert(f"2.2.2.2/32" not in out)
-        # delete the tunnel and now it should ok.
-        self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
-        assert(err == '')
-        assert(f"tunnel-id 1 members 0" not in out)
-
-    def test_glx_multi_route_config(self):
-        # prepare the tunnel
-        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
-        assert(err == '')
-        assert(f"tunnel-id 1 members 0" in out)
-        # add the route 1.
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234", tunnel_id1=1)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
-        assert(err == '')
-        assert(f"tunnel-id 1" in out)
-        # add the route 2.
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="2.2.2.2/32", route_label="0x1234", tunnel_id1=1)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 2.2.2.2")
-        assert(err == '')
-        assert(f"tunnel-id 1" in out)
-        # try to delete the tunnel and failed.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
-        # delete the route 1.
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="1.1.1.1/32")
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
-        assert(err == '')
-        assert(f"tunnel-id 1 tunnel-priority 100" not in out)
-        assert(f"1.1.1.1/32" not in out)
-        # delete the route 2.
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="2.2.2.2/32")
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 2.2.2.2")
-        assert(err == '')
-        assert(f"tunnel-id 1 tunnel-priority 100" not in out)
         assert(f"2.2.2.2/32" not in out)
         # delete the tunnel and now it should ok.
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
@@ -254,67 +216,20 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         assert(f"tunnel-id 2 members 0" in out)
         # add the route.
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234",
-                                                           tunnel_id1=1, tunnel_id2=2)
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         assert(err == '')
-        assert(f"tunnel-id 1" in out)
-        assert(f"tunnel-id 2" in out)
-        # default in load balance mode.
-        # BUG: typo (blance->balance), change to is_failover 0.
-        # assert(f"is_loadblance: 1" in out)
-        assert(f"is_failover: 0" in out)
+        assert(f"0x1234" in out)
+        # 0824: the route is not associated with tunnel, so tunnel can be deleted.
         # try to delete the tunnel and failed.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
-        assert(result.status_code == 500)
+        #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        #assert(result.status_code == 500)
+        #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
+        #assert(result.status_code == 500)
         # delete the route 1.
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="1.1.1.1/32")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         assert(err == '')
-        assert(f"tunnel-id 1 tunnel-priority 100" not in out)
-        assert(f"tunnel-id 2 tunnel-priority 100" not in out)
-        assert(f"1.1.1.1/32" not in out)
-        # delete the tunnels and now it should ok.
-        self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
-        assert(err == '')
-        assert(f"tunnel-id 1 members 0" not in out)
-        self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
-        assert(err == '')
-        assert(f"tunnel-id 2 members 0" not in out)
-
-    def test_glx_route_multi_tunnel_failover_config(self):
-        # prepare the tunnel 1 & 2
-        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
-        assert(err == '')
-        assert(f"tunnel-id 1 members 0" in out)
-        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=2)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
-        assert(err == '')
-        assert(f"tunnel-id 2 members 0" in out)
-        # add the route.
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234",
-                                                           tunnel_id1=1, tunnel_id2=2, tunnel1_priority=100, tunnel2_priority=50)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
-        assert(err == '')
-        assert(f"tunnel-id 1" in out)
-        assert(f"tunnel-id 2" in out)
-        assert(f"is_failover: 1" in out)
-        # try to delete the tunnel and failed.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
-        assert(result.status_code == 500)
-        # delete the route 1.
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="1.1.1.1/32")
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
-        assert(err == '')
-        assert(f"tunnel-id 1 tunnel-priority 100" not in out)
-        assert(f"tunnel-id 2 tunnel-priority 100" not in out)
         assert(f"1.1.1.1/32" not in out)
         # delete the tunnels and now it should ok.
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
@@ -709,8 +624,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         assert("fib_lookupmiss_acc" in fibResult)
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234", tunnel_id1=1,
-                                                           is_acc=True)
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234", is_acc=True)
         # acc fib for segment 0 is 128.
         fibResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show ip fib table 128 1.1.1.1")
@@ -794,6 +708,155 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
             f"vppctl show glx segment segment-id 0")
         assert(err == '')
         assert("int_edge_enable 0" in result)
+
+    def test_glx_edge_route_label_fwd_entry_default(self):
+        # add t1/t2.
+        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        assert(err == '')
+        assert(f"tunnel-id 1 members 0" in out)
+        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=2)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        assert(err == '')
+        assert(f"tunnel-id 2 members 0" in out)
+
+        # update to t1 ok.
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"tunnel-id 1" in out)
+        assert(f"tunnel-count 1" in out)
+        assert(f"is_failover: 0" in out)
+        assert(f"is_loadbalance: 0" in out)
+
+        # update to t2 ok.
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=2)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"tunnel-id 1" not in out)
+        assert(f"tunnel-id 2" in out)
+        assert(f"tunnel-count 1" in out)
+        assert(f"is_failover: 0" in out)
+        assert(f"is_loadbalance: 0" in out)
+
+        # update to load balance ok.
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=1, tunnel_id2=2)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"tunnel-id 1" in out)
+        assert(f"tunnel-id 2" in out)
+        assert(f"tunnel-count 2" in out)
+        assert(f"is_failover: 0" in out)
+        assert(f"is_loadbalance: 1" in out)
+
+        # TODO: update to failover ok.
+
+        # remove t1/t2 should fail because there is ref.
+        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        assert(result.status_code == 500)
+        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
+        assert(result.status_code == 500)
+
+        # update to zero.
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=None)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"tunnel-id 1" not in out)
+        assert(f"tunnel-id 2" not in out)
+        assert(f"tunnel-count 0" in out)
+        assert(f"is_failover: 0" in out)
+        assert(f"is_loadbalance: 0" in out)
+
+        # remove t1/t2 should ok now.
+        self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        assert(err == '')
+        assert(f"tunnel-id 1 members 0" not in out)
+        self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        assert(err == '')
+        assert(f"tunnel-id 2 members 0" not in out)
+
+    # 创建特定route_label的fwd表项
+    def test_glx_edge_route_label_fwd_entry_non_default(self):
+        # add t1/t2.
+        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        assert(err == '')
+        assert(f"tunnel-id 1 members 0" in out)
+        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=2)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        assert(err == '')
+        assert(f"tunnel-id 2 members 0" in out)
+
+        # create a edge route label fwd entry.
+        self.topo.dut1.get_rest_device().create_glx_edge_route_label_fwd(route_label="0x1234", tunnel_id1=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"0x1234" in out)
+
+        # update to t1 ok.
+        self.topo.dut1.get_rest_device().update_glx_edge_route_label_fwd(route_label="0x1234", tunnel_id1=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"tunnel-id 1" in out)
+        assert(f"tunnel-count 1" in out)
+        assert(f"is_failover: 0" in out)
+        assert(f"is_loadbalance: 0" in out)
+
+        # update to t2 ok.
+        self.topo.dut1.get_rest_device().update_glx_edge_route_label_fwd(route_label="0x1234", tunnel_id1=2)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"tunnel-id 1" not in out)
+        assert(f"tunnel-id 2" in out)
+        assert(f"tunnel-count 1" in out)
+        assert(f"is_failover: 0" in out)
+        assert(f"is_loadbalance: 0" in out)
+
+        # update to load balance ok.
+        self.topo.dut1.get_rest_device().update_glx_edge_route_label_fwd(route_label="0x1234", tunnel_id1=1, tunnel_id2=2)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"tunnel-id 1" in out)
+        assert(f"tunnel-id 2" in out)
+        assert(f"tunnel-count 2" in out)
+        assert(f"is_failover: 0" in out)
+        assert(f"is_loadbalance: 1" in out)
+
+        # TODO: update to failover ok.
+
+        # remove t1/t2 should fail because there is ref.
+        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        assert(result.status_code == 500)
+        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
+        assert(result.status_code == 500)
+
+        # update to zero.
+        self.topo.dut1.get_rest_device().update_glx_edge_route_label_fwd(route_label="0x1234", tunnel_id1=None)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"tunnel-id 1" not in out)
+        assert(f"tunnel-id 2" not in out)
+        assert(f"tunnel-count 0" in out)
+        assert(f"is_failover: 0" in out)
+        assert(f"is_loadbalance: 0" in out)
+
+        # remove t1/t2 should ok now.
+        self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        assert(err == '')
+        assert(f"tunnel-id 1 members 0" not in out)
+        self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        assert(err == '')
+        assert(f"tunnel-id 2 members 0" not in out)
+
+        # remove the label should ok.
+        self.topo.dut1.get_rest_device().delete_glx_edge_route_label_fwd(route_label="0x1234")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
+        assert(err == '')
+        assert(f"0x1234" not in out)
 
 if __name__ == '__main__':
     unittest.main()
