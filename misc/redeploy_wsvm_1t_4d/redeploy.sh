@@ -82,6 +82,10 @@ do
 
     # install prerequisite pkgs.
     ssh root@$dip apt-get -y install redis-server bridge-utils
+    # install frr
+    ssh root@$dip 'curl -s https://deb.frrouting.org/frr/keys.asc | apt-key add -'
+    ssh root@$dip 'echo "deb https://deb.frrouting.org/frr $(lsb_release -s -c) frr-stable" | tee -a /etc/apt/sources.list.d/frr.list'
+    ssh root@$dip 'apt update && apt install -y frr frr-pythontools'
 
     # reinstall vpp
     echo -e "$RED[reinstall vpp for ip $dip]$NC"
