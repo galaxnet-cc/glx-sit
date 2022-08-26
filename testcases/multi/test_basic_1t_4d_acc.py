@@ -75,6 +75,10 @@ class TestBasic1T4DAcc(unittest.TestCase):
         # to dut1
         self.topo.dut3.get_rest_device().create_glx_route_label_fwd(route_label="0x1200000", tunnel_id1=23)
 
+        # 创建dut1/dut2的默认edge route label fwd表项
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=12)
+        self.topo.dut4.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=34)
+
         # 初始化tst接口
         self.topo.tst.add_ns("dut1")
         self.topo.tst.add_if_to_ns(self.topo.tst.if1, "dut1")
@@ -107,6 +111,10 @@ class TestBasic1T4DAcc(unittest.TestCase):
         self.topo.dut3.get_rest_device().delete_glx_tunnel(tunnel_id=23)
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().delete_glx_link(link_id=23)
+
+        # 更新default entry route label entry解除tunnel引用
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=None)
+        self.topo.dut4.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=None)
 
         # 删除dut3/4资源　
         self.topo.dut4.get_rest_device().delete_glx_tunnel(tunnel_id=34)
@@ -143,8 +151,7 @@ class TestBasic1T4DAcc(unittest.TestCase):
         result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
         assert(result.status_code == 200)
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.34.1/32", route_label="0x3400010", tunnel_id1=12,
-                                                           is_acc=True)
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.34.1/32", route_label="0x3400010", is_acc=True)
 
         # dut4 (int edge)准备
         # 开启WAN1 NAT能力(WAN1默认开启，因此不需要再配置了)
@@ -153,8 +160,7 @@ class TestBasic1T4DAcc(unittest.TestCase):
         # 3. DUT3的WAN关闭NAT能力，以便于WAN IP(34.1)被访问
         result = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
         assert(result.status_code == 200)
-        self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", tunnel_id1=34,
-                                                           is_acc_reverse=True)
+        self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
         # dut3 turn off WAN1 NAT.
         self.topo.dut3.get_rest_device().set_logical_interface_nat_direct("WAN1", False)
         # (优化点!)

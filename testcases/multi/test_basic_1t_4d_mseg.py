@@ -66,7 +66,9 @@ class TestBasic1T4DMseg(unittest.TestCase):
         self.topo.dut2.get_rest_device().create_glx_route_label_fwd(route_label="0x3400000", tunnel_id1=23)
         # to dut1
         self.topo.dut3.get_rest_device().create_glx_route_label_fwd(route_label="0x1200000", tunnel_id1=23)
-
+        # 创建dut1/dut2的默认edge route label fwd表项
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=12)
+        self.topo.dut4.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=34)
 
         # 初始化tst接口
         self.topo.tst.add_ns("dut1")
@@ -118,6 +120,10 @@ class TestBasic1T4DMseg(unittest.TestCase):
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().delete_glx_link(link_id=23)
 
+        # 更新default entry route label entry解除tunnel引用
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=None)
+        self.topo.dut4.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=None)
+
         # 删除dut3/4资源　
         self.topo.dut4.get_rest_device().delete_glx_tunnel(tunnel_id=34)
         self.topo.dut4.get_rest_device().delete_glx_link(link_id=34)
@@ -155,8 +161,8 @@ class TestBasic1T4DMseg(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("LAN1", "192.168.1.1/24")
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("LAN2", "192.168.1.1/24")
         # add to dut4 route, they share the same tunnel.
-        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010", tunnel_id1=12, segment=1)
-        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010", tunnel_id1=12, segment=2)
+        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010", segment=1)
+        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010", segment=2)
 
         # dut4 init.
         # dut4 create seg 1/2.
@@ -171,8 +177,8 @@ class TestBasic1T4DMseg(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("LAN1", "192.168.4.1/24")
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("LAN2", "192.168.4.1/24")
         # add to dut4 route, they share the same tunnel.
-        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010", tunnel_id1=34, segment=1)
-        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010", tunnel_id1=34, segment=2)
+        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010", segment=1)
+        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010", segment=2)
 
         # 验证segment 1 流量可通
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")

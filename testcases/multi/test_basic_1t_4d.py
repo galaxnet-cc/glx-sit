@@ -73,9 +73,11 @@ class TestBasic1T4D(unittest.TestCase):
         # to dut1
         self.topo.dut3.get_rest_device().create_glx_route_label_fwd(route_label="0x1200000", tunnel_id1=23)
 
-        # 创建overlay route
-        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010", tunnel_id1=12)
-        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010", tunnel_id1=34)
+        # 创建overlay route以及default edge route label fwd entry
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=12)
+        self.topo.dut1.get_rest_device().create_edge_route("192.168.4.0/24", route_label="0x3400010")
+        self.topo.dut4.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=34)
+        self.topo.dut4.get_rest_device().create_edge_route("192.168.1.0/24", route_label="0x1200010")
 
         # 初始化tst接口
         self.topo.tst.add_ns("dut1")
@@ -112,6 +114,10 @@ class TestBasic1T4D(unittest.TestCase):
         # to dut1
         self.topo.dut3.get_rest_device().delete_glx_route_label_fwd(route_label="0x1200000")
 
+        # 更新default entry route label entry解除tunnel引用
+        self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=None)
+        self.topo.dut4.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=None)
+
         # 删除dut2/3资源
         self.topo.dut2.get_rest_device().delete_glx_tunnel(tunnel_id=23)
         self.topo.dut3.get_rest_device().delete_glx_tunnel(tunnel_id=23)
@@ -129,7 +135,6 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x1200010")
         # create dut4 route label pocliy.
         self.topo.dut4.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x3400010")
-
 
         # revert to default.
         self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
