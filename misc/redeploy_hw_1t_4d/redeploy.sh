@@ -73,6 +73,11 @@ do
     ssh root@$dip dpkg -r libvppinfra vpp vpp-plugin-core vpp-plugin-dpdk
     ssh root@$dip dpkg -i /tmp/sdwandebs/libvppinfra*.deb /tmp/sdwandebs/vpp*.deb /tmp/sdwandebs/vpp-plugin-core*.deb /tmp/sdwandebs/vpp-plugin-dpdk*.deb
 
+    # install frr
+    ssh root@$dip 'curl -s https://deb.frrouting.org/frr/keys.asc | apt-key add -'
+    ssh root@$dip 'echo "deb https://deb.frrouting.org/frr $(lsb_release -s -c) frr-stable" | tee -a /etc/apt/sources.list.d/frr.list'
+    ssh root@$dip 'apt update && apt install -y frr frr-pythontools'
+
     # copy vpp config
     echo -e "$RED[copy vpp config for ip $dip]$NC"
     scp ./vpp.conf root@$dip:/etc/vpp/startup.conf

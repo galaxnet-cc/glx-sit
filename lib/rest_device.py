@@ -137,6 +137,12 @@ class RestDevice:
         logif_data['AddressingType'] = "UNSPEC"
         return self.do_patch_request("LogicalInterface", logif_data)
 
+    def set_logical_interface_overlay_enable(self,name,overlay_enable):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['OverlayEnable'] = overlay_enable
+        return self.do_patch_request("LogicalInterface",logif_data)
+
     def delete_bridge_ip(self, name, bvi_ip_w_prefix):
         bridge_data = {}
         bridge_data['Name'] = name

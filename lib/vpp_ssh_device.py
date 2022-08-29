@@ -12,4 +12,4 @@ class VppSSHDevice:
     def get_cmd_result(self, cmd):
         shell_cmd = f'{cmd}'
         ssh_stdin, ssh_stdout, ssh_stderr = self.ssh.exec_command(shell_cmd)
-        return ssh_stdout.read().decode(), ssh_stderr.read().decode()
+        return ssh_stdout.read().decode().rstrip(), ssh_stderr.read().decode().rstrip()
