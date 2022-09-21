@@ -858,5 +858,44 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         assert(f"0x1234" not in out)
 
+    def test_glx_dpi_sameprocess_mode(self):
+        # enable dpi.
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True)
+        # verify glx plugin using dpi loop to cross connect.
+        dpiLoopIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget DpiContext#default DpiLoopSwIfIndex")
+        dpiLoopIfIndex = dpiLoopIfIndex.rstrip()
+        assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx global")
+        assert(err == "")
+        assert(f"dpi_peer_if {dpiLoopIfIndex}" in out)
+        # verify dpi plugin using glx loop to cross connect.
+        glxLoopIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget DpiContext#default GlxLoopSwIfIndex")
+        glxLoopIfIndex = glxLoopIfIndex.rstrip()
+        assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx dpi global")
+        assert(err == "")
+        assert(f"peer interface {glxLoopIfIndex}" in out)
+
+        # disable dpi.
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=False)
+        # verify glx plugin peer if to ~0.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx global")
+        assert(err == "")
+        assert(f"dpi_peer_if 4294967295" in out)
+        # the glx loop should be deleted.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {glxLoopIfIndex}")
+        assert(err == "")
+        assert("unknown interface" in out)
+        # verify dpi plugin peer if to ~0.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx dpi global")
+        assert(err == "")
+        assert(f"peer interface 4294967295" in out)
+        # the dpi loop should be deleted.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {dpiLoopIfIndex}")
+        assert(err == "")
+        assert("unknown interface" in out)
+
 if __name__ == '__main__':
     unittest.main()

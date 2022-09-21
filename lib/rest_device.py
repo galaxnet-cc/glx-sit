@@ -434,3 +434,9 @@ class RestDevice:
         data["AccIps"] = []
         data["AccIps"].append({"Ip4Address": acc_ip1})
         return self.do_patch_request("SegmentAccProperties", data)
+
+    def update_dpi_setting(self, dpi_enable=False):
+        data = {}
+        data["Name"] = "default"
+        data["DpiEnable"] = dpi_enable
+        return self.do_patch_request("DpiSetting", data)
