@@ -254,8 +254,12 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert('0x1234' in out)
         #assert(f"is_failover: 1" in out)
         # try to delete the tunnel and failed.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
+        # 220926: tunnel因允许passive/active创建，不再报错，改为判断不为500，这里有点违背了http RESTful逻辑。
+        # 这里会导致对应的fwdmd对象已经删除，但底层如果有多个，其实会对应于fwdmd的另外一个对象，该对象也需要
+        # 删除，比如active tunnel & passive tunnel共存的情况，从语义上来说也是合理的。
+        # 本质上，这是控制面不共享对象，数据面对象对象的一个典型示例。
+        #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        #assert(result.status_code == 500)
         # delete the route label fwd entry.
         self.topo.dut1.get_rest_device().delete_glx_route_label_fwd(route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx route-label-fwd")
@@ -280,8 +284,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert('0x1234' in out)
         #assert(f"is_failover: 1" in out)
         # try to delete the tunnel and failed.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
+        # 220926: tunnel因允许passive/active创建，不再报错，改为判断不为500，这里有点违背了http RESTful逻辑。
+        # 这里会导致对应的fwdmd对象已经删除，但底层如果有多个，其实会对应于fwdmd的另外一个对象，该对象也需要
+        # 删除，比如active tunnel & passive tunnel共存的情况，从语义上来说也是合理的。
+        #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        #assert(result.status_code == 500)
         # delete the route label policy entry.
         self.topo.dut1.get_rest_device().delete_glx_route_label_policy_type_tunnel(route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx route-label")
@@ -752,10 +759,14 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # TODO: update to failover ok.
 
         # remove t1/t2 should fail because there is ref.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
-        assert(result.status_code == 500)
+        # 220926: tunnel因允许passive/active创建，不再报错，改为判断不为500，这里有点违背了http RESTful逻辑。
+        # 这里会导致对应的fwdmd对象已经删除，但底层如果有多个，其实会对应于fwdmd的另外一个对象，该对象也需要
+        # 删除，比如active tunnel & passive tunnel共存的情况，从语义上来说也是合理的。
+        # 所以这里就得改为不去删除一次，避免影响引用计数。
+        #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        #assert(result.status_code == 410)
+        #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
+        #assert(result.status_code == 410)
 
         # update to zero.
         self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=None)
@@ -827,10 +838,13 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # TODO: update to failover ok.
 
         # remove t1/t2 should fail because there is ref.
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
-        assert(result.status_code == 500)
-        result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
-        assert(result.status_code == 500)
+        # 220926: tunnel因允许passive/active创建，不再报错，改为判断不为500，这里有点违背了http RESTful逻辑。
+        # 这里会导致对应的fwdmd对象已经删除，但底层如果有多个，其实会对应于fwdmd的另外一个对象，该对象也需要
+        # 删除，比如active tunnel & passive tunnel共存的情况，从语义上来说也是合理的。
+        # result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        # assert(result.status_code == 500)
+        # result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
+        # assert(result.status_code == 500)
 
         # update to zero.
         self.topo.dut1.get_rest_device().update_glx_edge_route_label_fwd(route_label="0x1234", tunnel_id1=None)
@@ -896,6 +910,40 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {dpiLoopIfIndex}")
         assert(err == "")
         assert("unknown interface" in out)
+
+    def test_glx_dpi_with_firewall(self):
+        self.topo.dut1.get_rest_device().set_fire_wall_rule(
+                    "test_acl3", 3, "192.168.11.2/32", "Deny", app_id=65535)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show acl acl | grep 11.2")
+        assert(err == "")
+        assert("appid 65535" in out)
+        self.topo.dut1.get_rest_device().update_fire_wall_rule(
+                    "test_acl3", 3, "192.168.11.2/32", "Deny", app_id=100)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show acl acl | grep 11.2")
+        assert(err == "")
+        assert("appid 100" in out)
+        self.topo.dut1.get_rest_device().delete_fire_wall_rule(
+            "test_acl3")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show acl acl | grep 11.2")
+        assert(err == "")
+        assert("appid 100" not in out)
+
+    def test_glx_dpi_with_bizpol(self):
+        self.topo.dut1.get_rest_device().create_bizpol(
+                    "test_bizpol_withapp", 3, "0.0.0.0/0", "192.168.11.2/32", 0, direct_enable=False, app_id=65535)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep 11.2")
+        assert(err == "")
+        assert("appid 65535" in out)
+        self.topo.dut1.get_rest_device().update_bizpol(
+                    "test_bizpol_withapp", 3, "0.0.0.0/0", "192.168.11.2/32", 0, direct_enable=False, app_id=100)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep 11.2")
+        assert(err == "")
+        assert("appid 100" in out)
+        self.topo.dut1.get_rest_device().delete_bizpol(
+            "test_bizpol_withapp")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep 11.2")
+        assert(err == "")
+        assert("appid 100" not in out)
 
 if __name__ == '__main__':
     unittest.main()

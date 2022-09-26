@@ -26,6 +26,10 @@ class TestRestVppConsistency1DDynRouting(unittest.TestCase):
         self.topo.dut1.get_rest_device().create_ospf_setting(areas=areas)
         self.topo.dut1.get_rest_device().create_ospf_interface("LAN1", 1)
 
+        # Wait for ospf config applied because the ospf interface is applied
+        # async and it may still checking readiness of ospfd status.
+        time.sleep(2)
+
         # verify ospf is enabled on the interface.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "show ip ospf interface"')

@@ -72,22 +72,28 @@ class RestDevice:
         rule_data['Name'] = rule_name
         return self.do_delete_request("FirewallRule", rule_data)
 
-    def update_fire_wall_rule(self, rule_name, priority, dest_address, action):
+    def update_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535):
         rule_data = {}
+        rule_data['Segment'] = 0
         rule_data['Name'] = rule_name
         rule_data['Priority'] = priority
-        rule_data['DestAddress'] = dest_address
+        rule_data['SrcAddressWithPrefix'] = "0.0.0.0/0"
+        rule_data['DstAddressWithPrefix'] = dest_address
         rule_data['Action'] = action
-        rule_data['L3Protocol'] = 1
+        rule_data['L4Protocol'] = 0
+        rule_data['AppId'] = app_id
         return self.do_patch_request("FirewallRule", rule_data)
 
-    def set_fire_wall_rule(self, rule_name, priority, dest_address, action):
+    def set_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535):
         rule_data = {}
+        rule_data['Segment'] = 0
         rule_data['Name'] = rule_name
         rule_data['Priority'] = priority
-        rule_data['DestAddress'] = dest_address
+        rule_data['SrcAddressWithPrefix'] = "0.0.0.0/0"
+        rule_data['DstAddressWithPrefix'] = dest_address
         rule_data['Action'] = action
-        rule_data['L3Protocol'] = 1
+        rule_data['L4Protocol'] = 0
+        rule_data['AppId'] = app_id
         return self.do_post_request("FirewallRule", rule_data)
 
     def set_logical_interface_segment(self, name, segment_id):
@@ -320,7 +326,7 @@ class RestDevice:
         route_data["RouteProtocol"] = "overlay"
         return self.do_delete_request("EdgeRoute", route_data)
 
-    def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, steering_type=0, steering_mode=0, steering_interface=""):
+    def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, steering_type=0, steering_mode=0, steering_interface="", app_id=65535):
         bizpol_data = {}
         bizpol_data["Name"] = name
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
@@ -330,9 +336,10 @@ class RestDevice:
         bizpol_data["SteeringType"] = steering_type
         bizpol_data["SteeringMode"] = steering_mode
         bizpol_data["SteeringInterface"] = steering_interface
+        bizpol_data["AppId"] = app_id
         return self.do_post_request("BusinessPolicy", bizpol_data)
 
-    def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, steering_type=0, steering_mode=0, steering_interface=""):
+    def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, steering_type=0, steering_mode=0, steering_interface="", app_id=65535):
         bizpol_data = {}
         bizpol_data["Name"] = name
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
@@ -342,6 +349,7 @@ class RestDevice:
         bizpol_data["SteeringType"] = steering_type
         bizpol_data["SteeringMode"] = steering_mode
         bizpol_data["SteeringInterface"] = steering_interface
+        bizpol_data["AppId"] = app_id
         return self.do_patch_request("BusinessPolicy", bizpol_data)
 
     def delete_bizpol(self, name):

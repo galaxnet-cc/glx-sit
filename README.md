@@ -8,6 +8,13 @@
 ### 前提
 将本机public key加入所有目标dut的受信列表中。
 
+另外，如果遇到ssh key不生效，可能是因为ubuntu 20.04上ssh-keygen生成的私钥是openssh的密钥格式，可用如下命令转换成
+rsa格式：
+
+```
+ssh-keygen -p -m PEM -f ~/.ssh/id_rsa
+```
+
 ### 配置
 将conf目录的sitconf-example.json复制并改为sitconf.json，修改sitconf.json为自己的测试环境。
 
