@@ -149,6 +149,12 @@ class RestDevice:
         logif_data['OverlayEnable'] = overlay_enable
         return self.do_patch_request("LogicalInterface",logif_data)
 
+    def set_logical_interface_tcp_listen_enable(self,name, tcp_listen_enable):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['TcpListenEnable'] = tcp_listen_enable
+        return self.do_patch_request("LogicalInterface",logif_data)
+
     def delete_bridge_ip(self, name, bvi_ip_w_prefix):
         bridge_data = {}
         bridge_data['Name'] = name
@@ -177,7 +183,7 @@ class RestDevice:
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
         return self.do_patch_request("Bridge", bridge_data)
 
-    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff"):
+    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff", is_tcp=False):
         link_data = {}
         link_data['LinkId'] = link_id
         link_data['LocalWanName'] = wan_name
@@ -185,16 +191,7 @@ class RestDevice:
         link_data['RemotePort'] = remote_port
         link_data['TunnelId'] = tunnel_id
         link_data['RouteLabel'] = route_label
-        return self.do_post_request("Link", link_data)
-
-    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff"):
-        link_data = {}
-        link_data['LinkId'] = link_id
-        link_data['LocalWanName'] = wan_name
-        link_data['RemoteIp'] = remote_ip
-        link_data['RemotePort'] = remote_port
-        link_data['TunnelId'] = tunnel_id
-        link_data['RouteLabel'] = route_label
+        link_data['IsTcp'] = is_tcp
         return self.do_post_request("Link", link_data)
 
     def delete_glx_link(self, link_id):
