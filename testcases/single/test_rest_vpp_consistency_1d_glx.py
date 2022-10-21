@@ -945,5 +945,31 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == "")
         assert("appid 100" not in out)
 
+    def test_glx_segment_routelabel_update(self):
+        # 检查segment routelabel 初始值为全f
+        #self.topo.dut1.get_rest_device().create_segment(segment_id = 0)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        assert(err == "")
+        assert("route-label 18446744073709551615" in out)
+
+        # 更新segment
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, route_label="123")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        assert(err == "")
+        assert("route-label 123" in out)
+
+        # 再次更新segment
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, route_label="456")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        assert(err == "")
+        assert("route-label 456" in out)
+
+        # 将segment置为全f
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, route_label="0xffffffffffffffff")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        assert(err == "")
+        assert("route-label 18446744073709551615" in out)
+
+
 if __name__ == '__main__':
     unittest.main()
