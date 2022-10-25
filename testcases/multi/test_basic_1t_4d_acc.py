@@ -92,9 +92,28 @@ class TestBasic1T4DAcc(unittest.TestCase):
         # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
         time.sleep(10)
 
+        # dut2 dut4 link aging time update.
+        # lower the timeout to make testcase not running that long happy
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
+        assert (err == '')
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
+        assert (err == '')
+
+
     def tearDown(self):
         if SKIP_TEARDOWN:
             return
+
+        # 无条件恢复加速带来的配置改动
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
+        self.topo.dut3.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
+
+        self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="222.222.222.222/32")
+        self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=False)
+
+        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.34.1/32")
+        self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
 
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.
@@ -143,8 +162,19 @@ class TestBasic1T4DAcc(unittest.TestCase):
         self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut4.get_rest_device().set_logical_interface_dhcp("WAN1")
 
+        # wait for all passive link to be aged.
+        time.sleep(20)
+        # dut2 dut4 link aging time update.
+        # lower the timeout to make testcase not running that long happy
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
+        assert (err == '')
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
+        assert (err == '')
+
     #  测试加速流量
     def test_basic_traffic(self):
+        # 这里的测试配置，需要在teardown中无条件进行各种清理，恢复系统到初始状态。
+
         # dut1 (acc cpe) 准备
         # 1. 开启acc
         # 2. 设置加速ip
@@ -184,17 +214,6 @@ class TestBasic1T4DAcc(unittest.TestCase):
         out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"vppctl show nat44 sessions")
         assert(err == '')
         assert("222.222.222.222" in out)
-
-        # 恢复配置改动
-        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
-        self.topo.dut3.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
-
-        self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="222.222.222.222/32")
-        self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=False)
-
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.34.1/32")
-        self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
-        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
 
 if __name__ == '__main__':
     unittest.main()

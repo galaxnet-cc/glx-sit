@@ -51,6 +51,7 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         self.topo.dut2.get_rest_device().set_logical_interface_unspec("WAN1")
         self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
         self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN1", True)
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut2.get_rest_device().update_bridge_ip("default", "192.168.88.1/24")
 
         self.topo.dut1.get_rest_device().delete_ospf_interface("WAN1", 1)
@@ -58,6 +59,7 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_unspec("WAN1")
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
         self.topo.dut1.get_rest_device().set_logical_interface_overlay_enable("WAN1", True)
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.88.1/24")
 
     # testcases
@@ -77,7 +79,8 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.8/32 Null0"'
         )
         assert (err == '')
-        time.sleep(100)
+        # sleep enough to wait ospf resync.
+        time.sleep(120)
         segment, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.8/32" "Segment"'
         )

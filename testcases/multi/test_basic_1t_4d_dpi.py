@@ -98,6 +98,13 @@ class TestBasic1T4D(unittest.TestCase):
         # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
         time.sleep(10)
 
+        # dut2 dut4 link aging time update.
+        # lower the timeout to make testcase not running that long happy
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
+        assert (err == '')
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
+        assert (err == '')
+
     def tearDown(self):
         if SKIP_TEARDOWN:
             return
@@ -155,6 +162,22 @@ class TestBasic1T4D(unittest.TestCase):
 
         # dut1上关闭dpi
         self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True)
+
+        # 无论失败成功，都删除dns block rule
+        self.topo.dut1.get_rest_device().delete_fire_wall_rule("block_app_dns")
+        # 重启一下vpp以便删除fast tuple.
+        _, _ = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f'systemctl restart vpp')
+        # 等待以便vpp能够重新配置好
+        time.sleep(10)
+
+        # wait for all passive link to be aged.
+        time.sleep(20)
+        # dut2 dut4 link aging time update.
+        # lower the timeout to make testcase not running that long happy
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
+        assert (err == '')
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
+        assert (err == '')
 
     # 测试dig工具被firewall拦截
     def test_dpi_block_app_dns(self):

@@ -95,6 +95,13 @@ class TestBasic1T4D(unittest.TestCase):
         # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
         time.sleep(10)
 
+        # dut2 dut4 link aging time update.
+        # lower the timeout to make testcase not running that long happy
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
+        assert (err == '')
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
+        assert (err == '')
+
     def tearDown(self):
         if SKIP_TEARDOWN:
             return
@@ -149,6 +156,15 @@ class TestBasic1T4D(unittest.TestCase):
 
         self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut4.get_rest_device().set_logical_interface_dhcp("WAN1")
+
+        # wait for all passive link to be aged.
+        time.sleep(20)
+        # dut2 dut4 link aging time update.
+        # lower the timeout to make testcase not running that long happy
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
+        assert (err == '')
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
+        assert (err == '')
 
     #  测试icmp/udp/tcp流量
     def test_basic_traffic(self):
