@@ -409,7 +409,7 @@ class RestDevice:
         data["Id"] = segment_id
         return self.do_post_request("Segment", data)
 
-    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, route_label=""):
+    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, route_label="0xffffffffffffffff"):
         data = {}
         data["Id"] = segment_id
         data["AccEnable"] = acc_enable
