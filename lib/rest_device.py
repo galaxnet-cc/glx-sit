@@ -155,11 +155,9 @@ class RestDevice:
         logif_data['TcpListenEnable'] = tcp_listen_enable
         return self.do_patch_request("LogicalInterface",logif_data)
 
-    def delete_bridge_ip(self, name, bvi_ip_w_prefix):
+    def delete_bridge(self, name):
         bridge_data = {}
         bridge_data['Name'] = name
-        bridge_data['BviEnable'] = True
-        bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
         return self.do_delete_request("Bridge", bridge_data)
 
     def update_bridge_ip(self, name, bvi_ip_w_prefix):
@@ -169,7 +167,7 @@ class RestDevice:
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
         return self.do_patch_request("Bridge", bridge_data)
 
-    def set_bridge_ip(self, name, bvi_ip_w_prefix):
+    def create_bridge(self, name, bvi_ip_w_prefix):
         bridge_data = {}
         bridge_data['Name'] = name
         bridge_data['BviEnable'] = True

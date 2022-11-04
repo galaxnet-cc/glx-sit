@@ -28,7 +28,7 @@ class TestRestVppConsistency1DDynRouting(unittest.TestCase):
 
         # Wait for ospf config applied because the ospf interface is applied
         # async and it may still checking readiness of ospfd status.
-        time.sleep(2)
+        time.sleep(10)
 
         # verify ospf is enabled on the interface.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(

@@ -14,7 +14,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         pass
 
     def test_multi_bridge(self):
-        self.topo.dut1.get_rest_device().set_bridge_ip("test", "192.168.89.1/24")
+        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24")
         bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget BridgeContext#test BviSwIfIndex")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -24,7 +24,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.89.1/24" in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr | grep bridge2")
+            f"ip netns exec ctrl-ns ip addr show br-test")
         assert(err == '')
         assert("192.168.89.1/24" in out)
         # update bridge
@@ -37,17 +37,22 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.90.1/24" in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr | grep bridge2")
+            f"ip netns exec ctrl-ns ip addr show br-test")
         assert(err == '')
         assert("192.168.89.1/24" not in out)
         assert("192.168.90.1/24" in out)
-        # delete bridge
-        self.topo.dut1.get_rest_device().delete_bridge_ip("test", "192.168.90.1/24")
+
+        self.topo.dut1.get_rest_device().delete_bridge("test")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {bviSwIfIndex}")
         assert(err == '')
         assert("up" not in out)
         assert("192.168.90.1/24" not in out)
+        # linux side if have been removed.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip link")
+        assert(err == '')
+        assert("br-test" not in out)
 
     def get_bd_id(self, ssh_device, bridge_name):
         out, err = ssh_device.get_cmd_result(f"redis-cli hget BridgeIdContext#{bridge_name} BdId")
@@ -58,8 +63,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
     def test_physical_interface(self):
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
-        self.topo.dut1.get_rest_device().set_bridge_ip("test", "192.168.89.1/24")
-        self.topo.dut1.get_rest_device().set_bridge_ip("test23", "192.168.90.1/24")
+        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24")
+        self.topo.dut1.get_rest_device().create_bridge("test23", "192.168.90.1/24")
         self.topo.dut1.get_rest_device().update_physical_interface("WAN2", 1600, "routed", "")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int {wan2VppIf}")
@@ -113,8 +118,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             f"ip netns exec ctrl-ns ip addr")
         assert(err == '')
         assert("WAN2" in out)
-        self.topo.dut1.get_rest_device().delete_bridge_ip("test", "192.168.89.1/24")
-        self.topo.dut1.get_rest_device().delete_bridge_ip("test23", "192.168.90.1/24")
+        self.topo.dut1.get_rest_device().delete_bridge("test")
+        self.topo.dut1.get_rest_device().delete_bridge("test23")
 
         # check ip address set on logical interface is ok
         expectedIp = "192.168.1.1/24"
@@ -720,7 +725,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show bridge1")
+            f"ip netns exec ctrl-ns ip addr show br-default")
         assert(err == '')
         assert("192.168.1.1/24" in out)
         # update and verify
@@ -731,7 +736,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show bridge1")
+            f"ip netns exec ctrl-ns ip addr show br-default")
         assert(err == '')
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
