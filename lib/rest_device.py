@@ -409,11 +409,12 @@ class RestDevice:
         data["Id"] = segment_id
         return self.do_post_request("Segment", data)
 
-    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, route_label="0xffffffffffffffff"):
+    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False,dns_intercept_enable=False, route_label="0xffffffffffffffff"):
         data = {}
         data["Id"] = segment_id
         data["AccEnable"] = acc_enable
         data["IntEdgeEnable"] = int_edge_enable
+        data["DnsInterceptEnable"] = dns_intercept_enable
         data["RouteLabel"] = route_label
         return self.do_patch_request("Segment", data)
 

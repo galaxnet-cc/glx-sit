@@ -40,6 +40,10 @@ Reset()
         # wait for fwdmd started.
         sleep 5
 
+        # copy vpp config
+        echo -e "$RED[copy vpp config for ip $dip]$NC"
+        scp ./vpp.conf root@$dip:/var/lib/fwdmd/params/devices/testDeviceVppStartup.conf
+
         ssh root@$dip redis-cli flushall
         scp ./facinit.sh root@$dip:/tmp/
         ssh root@$dip nohup sh /tmp/facinit.sh
@@ -81,7 +85,7 @@ do
     scp debs/*.deb root@$dip:/tmp/sdwandebs/
 
     # install prerequisite pkgs.
-    ssh root@$dip apt-get -y install redis-server bridge-utils
+    ssh root@$dip apt-get -y install redis-server bridge-utils dnsmasq
     # install frr
     ssh root@$dip 'curl -s https://deb.frrouting.org/frr/keys.asc | apt-key add -'
     ssh root@$dip 'echo "deb https://deb.frrouting.org/frr $(lsb_release -s -c) frr-stable" | tee -a /etc/apt/sources.list.d/frr.list'
@@ -105,6 +109,13 @@ do
     # fix possible dependencies.
     echo -e "$RED[fix dependencies ip $dip]$NC"
     ssh root@$dip apt -f -y install
+
+    # enable coredumps
+    ssh root@$dip mkdir -p /tmp/dumps
+    ssh root@$dip sysctl -w debug.exception-trace=1 
+    ssh root@$dip sysctl -w kernel.core_pattern="/tmp/dumps/%e-%t"
+    ssh root@$dip ulimit -c unlimited
+    ssh root@$dip echo 2 > /proc/sys/fs/suid_dumpable
 done
 
 # copy per device fwdmd config
