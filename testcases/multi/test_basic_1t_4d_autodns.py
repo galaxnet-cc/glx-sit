@@ -291,8 +291,6 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns dnsmasq -C /tmp/autodns.conf")
         assert(err == '')
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sysctl -w net.ipv4.conf.lo.rp_filter=0")
-        assert(err == '')
 
         # dig并检测结果
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.3 www.baidu.com +tries=5 +timeout=1")
@@ -325,7 +323,36 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         assert("2.2.2.2" not in out)
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -t nat -F")
         assert(err == '')
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sysctl -w net.ipv4.conf.lo.rp_filter=2")
+
+    #  测试tun0 snat是否正确
+    def test_basic_snat_exitif(self):
+        # 在default ns中ping通 dut2
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip link add v1 type veth peer name v1p")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip link set v1 netns ctrl-ns")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip link set v1 up")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip addr add 192.168.2.1/24 dev v1")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip route add 192.168.12.2 dev tun0")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip link set v1p netns default")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec default ip link set v1p up")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec default ip addr add 192.168.2.2/24 dev v1p")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec default ip route add 192.168.12.0/24 dev v1p")
+        assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec default ping 192.168.12.2 -c 5 -i 0.05")
+        assert(err == '')
+        assert("0% packet loss" in out)
+
+        # flush 
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip link del v1")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip route del 192.168.12.2 dev tun0")
         assert(err == '')
 
 if __name__ == '__main__':
