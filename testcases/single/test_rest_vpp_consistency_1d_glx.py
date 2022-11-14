@@ -970,6 +970,91 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == "")
         assert("route-label 18446744073709551615" in out)
 
+    def test_glx_segment_dns_intercept_enable(self):
+        # 检查segment 0 exit-if已配置
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment segment-id 0")
+        assert(err == "")
+        assert("exit-if-index 4294967295" not in out)
+
+        # 检查 default bvi 上未使能 dns-intercept
+        bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#default BviSwIfIndex")
+        bviSwIfIndex = bviSwIfIndex.rstrip()
+        assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {bviSwIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" not in out)
+
+        # 开启 segment DnsInterceptEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_intercept_enable=True)
+
+        # 检查 default bvi 已经使能 dns-intercept
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {bviSwIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" in out)
+
+        # 检查nat是否有且只有一条规则
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep DNAT | wc -l")
+        assert(err == '')
+        assert("1" in out)
+
+        # 创建获取一个新 bvi 和一个新 logical interface
+        self.topo.dut1.get_rest_device().set_bridge_ip("test", "192.168.89.1/24")
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "routed", "default")
+
+        # 检查发现已经使能
+        testBviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#test BviSwIfIndex")
+        testBviSwIfIndex = testBviSwIfIndex.rstrip()
+        assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {testBviSwIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" in out)
+        logicalIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget VppIfIndexContext#LAN1 IfIndex")
+        logicalIfIndex = logicalIfIndex.rstrip()
+        assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {logicalIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" in out)
+
+        # 创建一个新segment
+        self.topo.dut1.get_rest_device().create_segment(segment_id=1)
+        # 切换到新segment上
+        self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN1", 1)
+        # 未使能
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {logicalIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" not in out)
+        # 切回segment0
+        self.topo.dut1.get_rest_device().set_logical_interface_segment("LAN1", 0)
+        # 使能
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {logicalIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" in out)
+
+        # 关闭 segment DnsInterceptEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_intercept_enable=False)
+
+        # 检查发现都已去使能
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {bviSwIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {testBviSwIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int feat {logicalIfIndex} | grep ip4-unicast -A 20")
+        assert(err == "")
+        assert("dns-intercept" not in out)
+
+        # 检查nat规则
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep SNAT | wc -l")
+        assert(err == '')
+        assert("1" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep DNAT | wc -l")
+        assert(err == '')
+        assert("0" in out)
+
 
 if __name__ == '__main__':
     unittest.main()

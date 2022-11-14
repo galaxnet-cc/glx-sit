@@ -106,9 +106,17 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         self.topo.tst.get_ns_cmd_result("dut4", "touch /tmp/autodns.conf")
         self.topo.tst.get_ns_cmd_result("dut4", "echo 'listen-address=192.168.4.2' > /tmp/autodns.conf")
         self.topo.tst.get_ns_cmd_result("dut4", "echo 'no-resolv' >> /tmp/autodns.conf")
-        self.topo.tst.get_ns_cmd_result("dut4", "echo 'strict-order'' >> /tmp/autodns.conf")
+        self.topo.tst.get_ns_cmd_result("dut4", "echo 'strict-order' >> /tmp/autodns.conf")
         self.topo.tst.get_ns_cmd_result("dut4", "echo 'address=/www.baidu.com/1.1.1.1' >> /tmp/autodns.conf")
         self.topo.tst.get_ns_cmd_result("dut4", "echo 'address=/www.google.com/2.2.2.2' >> /tmp/autodns.conf")
+
+        # 为dut1设备的dnsmasq添加autodns.conf文件
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"touch /tmp/autodns.conf")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'listen-address=169.254.100.2' > /tmp/autodns.conf")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'no-resolv' >> /tmp/autodns.conf")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'strict-order' >> /tmp/autodns.conf")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'server=/www.baidu.com/192.168.4.2#53' >> /tmp/autodns.conf")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'server=/www.google.com/192.168.4.2#53' >> /tmp/autodns.conf")
 
     def tearDown(self):
         if SKIP_TEARDOWN:
@@ -117,9 +125,11 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         # kill dnsmasq
         self.topo.tst.get_ns_cmd_result("dut4", "kill -9 $(pidof dnsmasq)")
         self.topo.tst.get_ns_cmd_result("dut4", "rm /tmp/autodns.conf")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 $(pidof dnsmasq)")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"rm /tmp/autodns.conf")
 
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.4.0/24")
-        self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0)
+        self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
 
         # 无条件恢复加速带来的配置改动
@@ -246,6 +256,77 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl flush glx auto-dns ips")
         assert(err == '')
         assert("2.2.2.2" not in out)
+
+    def test_basic_dns_intercept(self):
+        # 这里的测试配置，需要在teardown中无条件进行各种清理，恢复系统到初始状态。
+
+        # dut1 (acc cpe) 准备
+        # 1. 开启acc
+        # 2. 设置加速ip
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        assert(result.status_code == 200)
+        self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
+
+        # 开启dns-intercept
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_intercept_enable=True, acc_enable=True, route_label="0x3400010")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        assert(err == "")
+
+        # dut4 (int edge)准备
+        # 1. 配置回程路由　
+        self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 此时不应当再丢包
+        assert("0% packet loss" in out)
+
+        # 开启dut1，dut4的dnsmasq的能力
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "dnsmasq -C /tmp/autodns.conf")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns dnsmasq -C /tmp/autodns.conf")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sysctl -w net.ipv4.conf.lo.rp_filter=0")
+        assert(err == '')
+
+        # dig并检测结果
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.3 www.baidu.com +tries=5 +timeout=1")
+        assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx auto-dns ips")
+        assert(err == '')
+        assert("1.1.1.1" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 1.1.1.1/32")
+        assert(err == '')
+        assert("is_acc: 1" in out)
+
+        # flush掉数据
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl flush glx auto-dns ips")
+        assert(err == '')
+        assert("1.1.1.1" not in out)
+
+        # dig并检测结果
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.3 www.google.com +tries=5 +timeout=1")
+        assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx auto-dns ips")
+        assert(err == '')
+        assert("2.2.2.2" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 2.2.2.2/32")
+        assert(err == '')
+        assert("is_acc: 1" in out)
+
+        # flush掉数据
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl flush glx auto-dns ips")
+        assert(err == '')
+        assert("2.2.2.2" not in out)
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -t nat -F")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sysctl -w net.ipv4.conf.lo.rp_filter=2")
+        assert(err == '')
 
 if __name__ == '__main__':
     unittest.main()
