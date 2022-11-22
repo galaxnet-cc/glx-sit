@@ -20,7 +20,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" in out)
         # check ctrl ns
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ip addr show WAN1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.1/24" in out)
 
@@ -33,7 +33,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert("192.168.2.1/24" in out)
         assert("192.168.1.1/24" not in out)
         # check ctrl ns
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ip addr show WAN1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.2.1/24" in out)
         assert("192.168.1.1/24" not in out)
@@ -49,7 +49,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert("192.168.2.1/24" not in out)
         assert("192.168.1.1/24" not in out)
         # check ctrl ns
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ip addr show WAN1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         # BUG: https://github.com/galaxnet-cc/fwdmd/issues/24
         #assert("192.168.2.1/24" not in out)
@@ -999,7 +999,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert("1" in out)
 
         # 创建获取一个新 bvi 和一个新 logical interface
-        self.topo.dut1.get_rest_device().set_bridge_ip("test", "192.168.89.1/24")
+        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24")
         self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "routed", "default")
 
         # 检查发现已经使能
@@ -1055,6 +1055,12 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         assert("0" in out)
 
+        # 将LAN1改动改回
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "switched", "default")
+        # 删除test bridge
+        self.topo.dut1.get_rest_device().delete_bridge("test")
+        # 删除segment 1
+        self.topo.dut1.get_rest_device().delete_segment(segment_id=1)
 
 if __name__ == '__main__':
     unittest.main()
