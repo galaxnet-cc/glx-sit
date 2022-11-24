@@ -40,6 +40,9 @@ test-single-glx:
 test-single-dynrouting:
 	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_dynrouting.py
 
+test-single-l3subif:
+	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_l3subif.py
+
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。
