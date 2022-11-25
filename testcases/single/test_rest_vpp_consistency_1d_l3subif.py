@@ -280,3 +280,46 @@ class TestRestVppConsistency1DL3SubIf(unittest.TestCase):
         # 暂时先不支持MTU更新，继承父接口即可，后续有需要再增加此功能。
         # 当前vpp
         pass
+
+    def test_l3subif_mtu_inherit_parent(self):
+        # create a sub if.
+        result = self.topo.dut1.get_rest_device().create_l3subif("WAN1", 100, 100)
+        # should be ok to create a l3sub if.
+        assert(result.status_code == 201)
+        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
+
+        # verify vpp side have a subif there.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int {wan1VppIf}.100")
+        assert(err == '')
+        assert(f"{wan1VppIf}.100" in out)
+        # default share parent mtu 1500.
+        assert(f"1500/0/0/0" in out)
+
+        # update parent mtu.
+        result = self.topo.dut1.get_rest_device().update_physical_interface("WAN1", 1400, "routed", "")
+        assert(result.status_code == 200)
+
+        # verify vpp side subif mtu changes.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int {wan1VppIf}.100")
+        assert(err == '')
+        assert(f"{wan1VppIf}.100" in out)
+        # default share parent mtu 1500.
+        assert(f"1400/0/0/0" in out)
+
+        # update parent mtu back.
+        result = self.topo.dut1.get_rest_device().update_physical_interface("WAN1", 1500, "routed", "default")
+        assert(result.status_code == 200)
+
+        # verify vpp side subif mtu changes.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int {wan1VppIf}.100")
+        assert(err == '')
+        assert(f"{wan1VppIf}.100" in out)
+        assert(f"1500/0/0/0" in out)
+
+        # delete the l3subif.
+        result = self.topo.dut1.get_rest_device().delete_l3subif("WAN1", 100)
+        # should be failed because link refer to it.
+        assert(result.status_code == 410)

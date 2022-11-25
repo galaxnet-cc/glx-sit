@@ -16,7 +16,8 @@
       }
     },
     "Topo1T4D": {
-      "Desc": "办公室工作站虚拟机测试床拓朴",
+      "Desc": "办公室工作站虚拟机测试床拓朴（支持pfsense）",
+      "HavePfsense": true,
       "Duts": {
         "DUT1": {
           "MgmtIp": "192.168.31.201",
@@ -24,7 +25,8 @@
           "SshPassword": "07550512",
           "IfMap": {
             "WAN1": "GigabitEthernet7/0/0",
-            "WAN2": "GigabitEthernet8/0/0"
+            "WAN2": "GigabitEthernet8/0/0",
+            "WAN3": "GigabitEtherneta/0/0"
           }
         },
         "DUT2": {
@@ -34,7 +36,8 @@
           "IfMap": {
             "WAN1": "GigabitEthernet6/0/0",
             "WAN2": "GigabitEthernet7/0/0",
-            "WAN3": "GigabitEthernet8/0/0"
+            "WAN3": "GigabitEthernet8/0/0",
+            "WAN4": "GigabitEthernet9/0/0"
           }
         },
         "DUT3": {

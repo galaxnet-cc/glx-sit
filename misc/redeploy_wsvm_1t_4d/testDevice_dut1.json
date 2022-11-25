@@ -1,44 +1,54 @@
 {
-    "Model": "testDevice",
-    "Description": "dut1",
-    "PhysicalInterfaces": [
-        {
-            "Name": "WAN1",
-            "Description": "WAN1 physical interface",
-            "Mtu": 1500,
-            "Mode": "routed",
-            "InfraType": "vpp",
-            "InfraInterface": "GigabitEthernet7/0/0",
-            "BridgeName": "",
-            "OverlayEnable": true
-        },
-        {
-            "Name": "WAN2",
-            "Description": "WAN2 physical interface",
-            "Mtu": 1500,
-            "Mode": "routed",
-            "InfraType": "vpp",
-            "InfraInterface": "GigabitEthernet8/0/0",
-            "BridgeName": "",
-            "OverlayEnable": true
-        },
-        {
-            "Name": "LAN1",
-            "Description": "LAN1 physical interface",
-            "Mtu": 1500,
-            "Mode": "switched",
-            "InfraType": "vpp",
-            "InfraInterface": "GigabitEthernet6/0/0",
-            "BridgeName": "default"
-        },
-        {
-            "Name": "LAN2",
-            "Description": "LAN2 physical interface",
-            "Mtu": 1500,
-            "Mode": "switched",
-            "InfraType": "vpp",
-            "InfraInterface": "GigabitEthernet9/0/0",
-            "BridgeName": "default"
-        }
-    ]
+  "Model": "testDevice",
+  "Description": "dut1",
+  "PhysicalInterfaces": [
+    {
+      "Name": "WAN1",
+      "Description": "WAN1 physical interface",
+      "Mtu": 1500,
+      "Mode": "routed",
+      "InfraType": "vpp",
+      "InfraInterface": "GigabitEthernet7/0/0",
+      "BridgeName": "",
+      "OverlayEnable": true
+    },
+    {
+      "Name": "WAN2",
+      "Description": "WAN2 physical interface",
+      "Mtu": 1500,
+      "Mode": "routed",
+      "InfraType": "vpp",
+      "InfraInterface": "GigabitEthernet8/0/0",
+      "BridgeName": "",
+      "OverlayEnable": true
+    },
+    {
+      "Name": "WAN3",
+      "Description": "WAN3 physical interface(to pfsense)",
+      "Mtu": 1500,
+      "Mode": "routed",
+      "InfraType": "vpp",
+      "InfraInterface": "GigabitEtherneta/0/0",
+      "BridgeName": "",
+      "OverlayEnable": true
+    },
+    {
+      "Name": "LAN1",
+      "Description": "LAN1 physical interface",
+      "Mtu": 1500,
+      "Mode": "switched",
+      "InfraType": "vpp",
+      "InfraInterface": "GigabitEthernet6/0/0",
+      "BridgeName": "default"
+    },
+    {
+      "Name": "LAN2",
+      "Description": "LAN2 physical interface",
+      "Mtu": 1500,
+      "Mode": "switched",
+      "InfraType": "vpp",
+      "InfraInterface": "GigabitEthernet9/0/0",
+      "BridgeName": "default"
+    }
+  ]
 }

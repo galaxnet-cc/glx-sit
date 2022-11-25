@@ -26,6 +26,9 @@ test-multi-glx-nego:
 test-multi-auto-dns:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_autodns.py
 
+test-multi-l3subif:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_l3subif.py
+
 # 单机测试例
 
 test-single-all:
