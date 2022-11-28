@@ -10,12 +10,12 @@ from topo.topo_1t_4d import Topo1T4D
 # 就需要打开setup/teardown，并支持在一个复杂拓朴下，测试多个测试例了。　
 #
 SKIP_SETUP = False
-SKIP_TEARDOWN = True
+SKIP_TEARDOWN = False
 
 class TestBasic1T4DL3Subif(unittest.TestCase):
 
     # 创建一个最基本的配置场景：
-    # dut1--wan1(.100 subif)---dut2---wan3---dut3---wan1--dut4
+    # dut1--wan1(.100 subif + .200 subif，双link)---dut2---wan3---dut3---wan1--dut4
     # |________88.0/24 tst ___ 89.0/24_________|
     #
     def setUp(self):
@@ -32,9 +32,21 @@ class TestBasic1T4DL3Subif(unittest.TestCase):
         # subif overlay default disabled.
         self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN1.100", True)
 
+        # 创建另外一对，一次性验证多subif多link场景
+        # overlay接口天然隔离
+        self.topo.dut1.get_rest_device().create_l3subif("WAN1", 200, 200)
+        # subif overlay default disabled.
+        self.topo.dut1.get_rest_device().set_logical_interface_overlay_enable("WAN1.200", True)
+        self.topo.dut2.get_rest_device().create_l3subif("WAN1", 200, 200)
+        # subif overlay default disabled.
+        self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN1.200", True)
+
         # 1<>2 192.168.12.0/24
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1.100", "192.168.12.1/24")
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1.100", "192.168.12.2/24")
+        # 天然隔离，因此可以地址重复
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1.200", "192.168.12.1/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1.200", "192.168.12.2/24")
         # 2<>3 192.168.23.0/24
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN3", "192.168.23.1/24")
         self.topo.dut3.get_rest_device().set_logical_interface_static_ip("WAN3", "192.168.23.2/24")
@@ -53,6 +65,13 @@ class TestBasic1T4DL3Subif(unittest.TestCase):
                                                          remote_ip="192.168.12.2", remote_port=2288,
                                                          tunnel_id=12,
                                                          route_label="0x1200010")
+        # create dut1<>dut2 link2.（共享tunnel id & route label）
+        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=12)
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=122, wan_name="WAN1.200",
+                                                         remote_ip="192.168.12.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+
         # create dut3<>dut4 link.
         self.topo.dut4.get_rest_device().create_glx_tunnel(tunnel_id=34)
         self.topo.dut4.get_rest_device().create_glx_link(link_id=34, wan_name="WAN1",
@@ -145,6 +164,8 @@ class TestBasic1T4DL3Subif(unittest.TestCase):
         # 删除dut1/2资源
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=12)
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+        # 子接口link亦需删除
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=122)
 
         # 删除label policy.
         self.topo.dut1.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x1200010")
@@ -159,6 +180,9 @@ class TestBasic1T4DL3Subif(unittest.TestCase):
         # remove l3subif on dut1/dut2.
         self.topo.dut1.get_rest_device().delete_l3subif("WAN1", 100)
         self.topo.dut2.get_rest_device().delete_l3subif("WAN1", 100)
+        # 删除另外一对
+        self.topo.dut1.get_rest_device().delete_l3subif("WAN1", 200)
+        self.topo.dut2.get_rest_device().delete_l3subif("WAN1", 200)
 
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN3")
         self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN3")
