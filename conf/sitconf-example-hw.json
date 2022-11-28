@@ -16,7 +16,8 @@
       }
     },
     "Topo1T4D": {
-      "Desc": "办公室物理测试床拓朴",
+      "Desc": "办公室物理测试床拓朴（不支持pfsense）",
+      "HavePfsense": false,
       "Duts": {
         "DUT1": {
           "MgmtIp": "192.168.31.234",

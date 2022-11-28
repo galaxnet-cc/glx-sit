@@ -112,10 +112,10 @@ do
 
     # enable coredumps
     ssh root@$dip mkdir -p /tmp/dumps
-    ssh root@$dip sysctl -w debug.exception-trace=1 
+    ssh root@$dip sysctl -w debug.exception-trace=1
     ssh root@$dip sysctl -w kernel.core_pattern="/tmp/dumps/%e-%t"
     ssh root@$dip ulimit -c unlimited
-    ssh root@$dip echo 2 > /proc/sys/fs/suid_dumpable
+    ssh root@$dip "echo 2 > /proc/sys/fs/suid_dumpable"
 done
 
 # copy per device fwdmd config

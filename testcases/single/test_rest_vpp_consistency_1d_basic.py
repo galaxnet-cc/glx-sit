@@ -62,6 +62,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         return out
 
     def test_physical_interface(self):
+        # 验证mtu属性更新(routed only)
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
         self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24")
         self.topo.dut1.get_rest_device().create_bridge("test23", "192.168.90.1/24")
@@ -106,7 +107,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # this should be failed with 500.
         assert(result.status_code == 500)
 
-        # change to routed
+        # change to routed（此时OverlayEnable将关闭）
         self.topo.dut1.get_rest_device().update_physical_interface(
             "WAN2", 1500, "routed", "")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -114,6 +115,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("bridge" not in out)
         # check host side
+        # 因为OverlayEnable关闭，所以在ctrl-ns(segment 0)中。
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ip addr")
         assert(err == '')
@@ -148,6 +150,18 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert(expectedIp not in out)
 
+        # 验证重新打开OverlayEnable（需要先置unspec），成为出厂默认配置
+        result = self.topo.dut1.get_rest_device().set_logical_interface_unspec("WAN2")
+        assert(result.status_code != 500)
+        result = self.topo.dut1.get_rest_device().set_logical_interface_overlay_enable("WAN2", True)
+        assert(result.status_code != 500)
+        # 切换至独立ctrl-ns
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns-wan-WAN2 ip link")
+        assert(err == '')
+        assert('WAN2' in out)
+
+
     def test_static_property_update(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
 
@@ -158,7 +172,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.1/24" in out)
         # kernel side.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.1/24" in out)
 
@@ -169,7 +183,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.1/24" in out)
         # kernel side.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.2.1/24" in out)
 
@@ -221,7 +235,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
         # check kernel using correct user and password.
         out, err = self.topo.dut1.get_vpp_ssh_device(
-        ).get_cmd_result(f"cat /tmp/dsl-provider-WAN1")
+        ).get_cmd_result(f"cat /tmp/glx-pppd-cfg-WAN1")
         assert(err == '')
         assert(f"test" in out)
         assert(f'123456' in out)
@@ -235,7 +249,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "hahaha", "654321")
         # check kernel using correct user and password.
         out, err = self.topo.dut1.get_vpp_ssh_device(
-        ).get_cmd_result(f"cat /tmp/dsl-provider-WAN1")
+        ).get_cmd_result(f"cat /tmp/glx-pppd-cfg-WAN1")
         assert(err == '')
         assert(f'hahaha' in out)
         assert(f'654321' in out)
@@ -254,7 +268,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert(f'{wan1VppIf}' in out)
 
-    def test_multi_wan_address_type_translation(self):
+    def test_multi_wan_address_type_switch(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.1/24")
@@ -263,7 +277,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.1/24" in out)
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.2.1/24")
@@ -272,7 +286,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.2.1/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN2")
+            f"ip netns exec ctrl-ns-wan-WAN2 ip addr show WAN2")
         assert(err == '')
         assert("192.168.2.1/24" in out)
         # change address type to static from static
@@ -283,7 +297,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
@@ -294,7 +308,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.2/24" in out)
         assert("192.168.2.1/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN2")
+            f"ip netns exec ctrl-ns-wan-WAN2 ip addr show WAN2")
         assert(err == '')
         assert("192.168.2.2/24" in out)
         assert("192.168.2.1/24" not in out)
@@ -311,7 +325,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
@@ -327,7 +341,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.1/24" not in out)
         assert("192.168.2.2/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN2")
+            f"ip netns exec ctrl-ns-wan-WAN2 ip addr show WAN2")
         assert(err == '')
         assert("192.168.2.1/24" not in out)
         assert("192.168.2.2/24" not in out)
@@ -341,7 +355,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.3/24" in out)
         assert("192.168.1.1/24" not in out)
@@ -354,7 +368,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.1/24" not in out)
         assert("192.168.2.2/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN2")
+            f"ip netns exec ctrl-ns-wan-WAN2 ip addr show WAN2")
         assert(err == '')
         assert("192.168.2.3/24" in out)
         assert("192.168.2.1/24" not in out)
@@ -396,7 +410,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.2/24" not in out)
         assert("192.168.1.3/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.4/24" in out)
         assert("192.168.1.1/24" not in out)
@@ -411,7 +425,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.2.2/24" not in out)
         assert("192.168.2.3/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN2")
+            f"ip netns exec ctrl-ns-wan-WAN2 ip addr show WAN2")
         assert(err == '')
         assert("192.168.2.4/24" in out)
         assert("192.168.2.1/24" not in out)
@@ -496,7 +510,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.1/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.1/24" in out)
         # change ip and verify again
@@ -508,7 +522,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.2/24" in out)
         assert("192.168.1.1/24" not in out)
@@ -524,7 +538,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.1/24" not in out)
         assert("192.168.1.2/24" not in out)
@@ -538,7 +552,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.3/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.3/24" in out)
 
@@ -557,7 +571,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("192.168.1.4/24" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN1")
+            f"ip netns exec ctrl-ns-wan-WAN1 ip addr show WAN1")
         assert(err == '')
         assert("192.168.1.4/24" in out)
         # check if pppoe related configuration exists
@@ -570,7 +584,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         assert(err == '')
         assert("No pppoe clients configured" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ps -ef | grep ppp")
+            f"ps -ef | grep ppp")
         assert(err == '')
 
         # test change address type to dhcp from pppoe
@@ -606,7 +620,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # recovery to dhcp
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
 
-    def test_fire_wall(self):
+    def test_firewall(self):
         self.topo.dut1.get_rest_device().set_fire_wall_rule(
             "test_acl3", 3, "192.168.11.2/32", "Deny")
         out, err = self.topo.dut1.get_vpp_ssh_device(

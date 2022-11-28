@@ -445,3 +445,17 @@ class RestDevice:
         data["Name"] = "default"
         data["DpiEnable"] = dpi_enable
         return self.do_patch_request("DpiSetting", data)
+
+    def create_l3subif(self, physical_interface, sub_id, vlan_id):
+        l3subif_data = {}
+        l3subif_data['PhysicalInterface'] = physical_interface
+        l3subif_data['SubId'] = sub_id
+        l3subif_data['VlanId'] = vlan_id
+        l3subif_data['Type'] = "dot1q"
+        return self.do_post_request("L3SubInterface", l3subif_data)
+
+    def delete_l3subif(self, physical_interface, sub_id):
+        l3subif_data = {}
+        l3subif_data['PhysicalInterface'] = physical_interface
+        l3subif_data['SubId'] = sub_id
+        return self.do_delete_request("L3SubInterface", l3subif_data)

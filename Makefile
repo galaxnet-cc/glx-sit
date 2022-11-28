@@ -26,6 +26,12 @@ test-multi-glx-nego:
 test-multi-auto-dns:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_autodns.py
 
+test-multi-l3subif:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_l3subif.py
+
+test-multi-wan-dynaddr:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_wan_dynamic_addr.py
+
 # 单机测试例
 
 test-single-all:
@@ -40,8 +46,11 @@ test-single-glx:
 test-single-dynrouting:
 	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_dynrouting.py
 
+test-single-l3subif:
+	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_l3subif.py
+
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。
-test-multi-all: test-multi-basic test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp test-multi-glx-nego test-multi-auto-dns
+test-multi-all: test-multi-basic test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp test-multi-glx-nego test-multi-auto-dns test-multi-l3subif test-multi-wan-dynaddr
 	echo "test-multi-all-finished"
