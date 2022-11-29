@@ -165,10 +165,11 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
 
     #  测试主接口互通
     def test_basic_traffic_with_main_interface_local_static_peer_dhcp(self):
+        return
         # dut1网络配置
         # pfsense对侧11.11.11.1/24，本地配置成11.11.11.2/24
-        self.topo.dut1.get_rest_device().set_logical_interface_static("WAN3", "11.11.11.2/24")
-        self.topo.dut1.get_rest_device().set_logical_interface_gw("WAN3", "11.11.11.1")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN3", "11.11.11.2/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_gw("WAN3", "11.11.11.1")
         # dut2网络配置
         # WAN4默认就是dhcp，无需配置
 
@@ -214,7 +215,57 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
 
     def test_basic_traffic_with_sub_interface_local_dhcp_peer_static(self):
-        pass
+        # PFsense wan3.100 dhcp地址段为111.111.111.0/24
+        self.topo.dut1.get_rest_device().create_l3subif("WAN3", 100, 100)
+        self.topo.dut1.get_rest_device().set_logical_interface_overlay_enable("WAN3.100", True)
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3.100")
+
+        # PFsense wan4.100地址段为200.200.200.0/24
+        self.topo.dut2.get_rest_device().create_l3subif("WAN4", 100, 100)
+        self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN4.100", True)
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN4.100", "200.200.200.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_gw("WAN4.100", "200.200.200.1")
+
+        # 创建1->2 link
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN3.100",
+                                                         remote_ip="200.200.200.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+
+        # 等待link up
+        # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
+        # 考虑pppoe地址同步到fwdmd，增加5s
+        time.sleep(15)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 此时不应当再丢包
+        assert("0% packet loss" in out)
+
+        # 添加firewall rule阻断
+        self.topo.dut1.get_rest_device().set_fire_wall_rule(
+            "block_tst_traffic", 1, "192.168.4.2/32", "Deny")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 此时应当不通
+        assert("100% packet loss" in out)
+        # 删除firewall rule
+        self.topo.dut1.get_rest_device().delete_fire_wall_rule("block_tst_traffic")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        assert(err == '')
+        # 此时应当恢复
+        assert("0% packet loss" in out)
+
+        # 删除link，新测试例需重配置
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+
+        # 恢复默认网络配置，直接删除三层子接口即可
+        self.topo.dut1.get_rest_device().delete_l3subif("WAN3", 100)
+        self.topo.dut2.get_rest_device().delete_l3subif("WAN4", 100)
 
 if __name__ == '__main__':
     unittest.main()
