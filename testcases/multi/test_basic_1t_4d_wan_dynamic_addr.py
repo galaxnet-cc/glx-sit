@@ -153,7 +153,6 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
 
     #  测试主接口互通
     def test_basic_traffic_with_main_interface_local_static_peer_dhcp(self):
-        return
         # dut1网络配置
         # pfsense对侧11.11.11.1/24，本地配置成11.11.11.2/24
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN3", "11.11.11.2/24")
