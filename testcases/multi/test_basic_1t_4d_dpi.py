@@ -12,7 +12,7 @@ from topo.topo_1t_4d import Topo1T4D
 SKIP_SETUP = False
 SKIP_TEARDOWN = False
 
-class TestBasic1T4D(unittest.TestCase):
+class TestBasic1T4DDpi(unittest.TestCase):
 
     # 创建一个最基本的配置场景：
     # dut1--wan1---dut2---wan3---dut3---wan1--dut4
@@ -60,7 +60,8 @@ class TestBasic1T4D(unittest.TestCase):
         # create dut2/dut3 tunnel.
         # NC上需要显示创建双向tunnel
         self.topo.dut2.get_rest_device().create_glx_tunnel(tunnel_id=23)
-        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23)
+        # need explitly mark as passive.
+        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23, is_passive=True)
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().create_glx_link(link_id=23, wan_name="WAN3",
                                                          remote_ip="192.168.23.2", remote_port=2288,
@@ -95,15 +96,8 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True)
 
         # 等待link up
-        # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
+        # 端口注册时间2s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
         time.sleep(10)
-
-        # dut2 dut4 link aging time update.
-        # lower the timeout to make testcase not running that long happy
-        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
-        assert (err == '')
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
-        assert (err == '')
 
     def tearDown(self):
         if SKIP_TEARDOWN:
@@ -161,7 +155,7 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_logical_interface_dhcp("WAN1")
 
         # dut1上关闭dpi
-        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True)
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=False)
 
         # 无论失败成功，都删除dns block rule
         self.topo.dut1.get_rest_device().delete_fire_wall_rule("block_app_dns")
@@ -172,12 +166,6 @@ class TestBasic1T4D(unittest.TestCase):
 
         # wait for all passive link to be aged.
         time.sleep(20)
-        # dut2 dut4 link aging time update.
-        # lower the timeout to make testcase not running that long happy
-        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
-        assert (err == '')
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
-        assert (err == '')
 
     # 测试dig工具被firewall拦截
     def test_dpi_block_app_dns(self):
@@ -191,7 +179,9 @@ class TestBasic1T4D(unittest.TestCase):
         # 首次应当需要识别并生成fast-tuple，所以会有流量被加密
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show node counters")
         assert(err == '')
-        assert("esp4-encrypt" in out)
+        assert("ACL deny packets" not in out)
+        # 221213: 不能检查esp了，因为tunnel bfd follow同样的路径，也会加密送到对方，以便验证加密通路可用。
+        #assert("esp4-encrypt" in out)
         # 检查是否有dns的fast-tuple生成
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx dpi fast-tuple4")
         assert(err == '')
@@ -207,7 +197,8 @@ class TestBasic1T4D(unittest.TestCase):
         assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show node counters")
         assert(err == '')
-        assert("esp4-encrypt" not in out)
+        # 221213: 不能检查esp了，因为tunnel bfd follow同样的路径，也会加密送到对方，以便验证加密通路可用。
+        #assert("esp4-encrypt" not in out)
         assert("ACL deny packets" in out)
 
 if __name__ == '__main__':

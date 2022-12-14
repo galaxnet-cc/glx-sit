@@ -62,7 +62,8 @@ class TestBasic1T4DAcc(unittest.TestCase):
         # create dut2/dut3 tunnel.
         # NC上需要显示创建双向tunnel
         self.topo.dut2.get_rest_device().create_glx_tunnel(tunnel_id=23)
-        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23)
+        # need explitly mark as passive.
+        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23, is_passive=True)
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().create_glx_link(link_id=23, wan_name="WAN3",
                                                          remote_ip="192.168.23.2", remote_port=2288,
@@ -89,16 +90,8 @@ class TestBasic1T4DAcc(unittest.TestCase):
         self.topo.tst.add_ns_route("dut1", "192.168.34.0/24", "192.168.1.1")
 
         # 等待link up
-        # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
+        # 端口注册时间2s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
         time.sleep(10)
-
-        # dut2 dut4 link aging time update.
-        # lower the timeout to make testcase not running that long happy
-        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
-        assert (err == '')
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
-        assert (err == '')
-
 
     def tearDown(self):
         if SKIP_TEARDOWN:
@@ -164,12 +157,6 @@ class TestBasic1T4DAcc(unittest.TestCase):
 
         # wait for all passive link to be aged.
         time.sleep(20)
-        # dut2 dut4 link aging time update.
-        # lower the timeout to make testcase not running that long happy
-        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
-        assert (err == '')
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
-        assert (err == '')
 
     #  测试加速流量
     def test_basic_traffic(self):

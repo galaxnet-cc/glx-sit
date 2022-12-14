@@ -36,11 +36,6 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         # enable dut2 WAN2 tcp listen.
         self.topo.dut2.get_rest_device().set_logical_interface_tcp_listen_enable("WAN2", True)
 
-        # lower the timeout to make testcase not running that long happy
-        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
-        assert (err == '')
-
-
     def tearDown(self):
         if SKIP_TEARDOWN:
             return
@@ -53,10 +48,6 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN2")
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN2")
         self.topo.dut2.get_rest_device().set_logical_interface_tcp_listen_enable("WAN2", False)
-
-        # revert the gc time.
-        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
-        assert (err == '')
 
     def test_dut1_2_udp_link(self):
         # create dut1<>dut2 2 udp links.

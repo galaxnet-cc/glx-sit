@@ -65,7 +65,8 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         # create dut2/dut3 tunnel.
         # NC上需要显示创建双向tunnel
         self.topo.dut2.get_rest_device().create_glx_tunnel(tunnel_id=23)
-        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23)
+        # need explitly mark as passive.
+        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23, is_passive=True)
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().create_glx_link(link_id=23, wan_name="WAN3",
                                                          remote_ip="192.168.23.2", remote_port=2288,
@@ -95,13 +96,6 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         self.topo.tst.add_ns_route("dut1", "192.168.4.0/24", "192.168.1.1")
         self.topo.tst.add_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
         self.topo.tst.add_ns_route("dut4", "192.168.1.0/24", "192.168.4.1")
-
-        # dut2 dut4 link aging time update.
-        # lower the timeout to make testcase not running that long happy
-        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
-        assert (err == '')
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 15')
-        assert (err == '')
 
     def tearDown(self):
         if SKIP_TEARDOWN:
@@ -156,12 +150,6 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
 
         # wait for all passive link to be aged.
         time.sleep(20)
-        # dut2 dut4 link aging time update.
-        # lower the timeout to make testcase not running that long happy
-        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
-        assert (err == '')
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f'vppctl set glx global passive-link-gc-time 120')
-        assert (err == '')
 
     #  测试主接口互通
     def test_basic_traffic_with_main_interface_local_static_peer_dhcp(self):

@@ -69,6 +69,10 @@ python3 -m unittest testcases.single.test_rest_vpp_consistency_1d_glx.TestRestVp
 python3 -m unittest testcases/test_something.py
 ```
 
+## 关于BUG
+
+在测试用例中，如果因为BUG需要暂时workaround，需要在github上的vpp/fwdmd项目中增加issue，记录链接到用例中，以便后续解决后搜索优化用例。
+
 ## 待改进点
 
 1. (DONE)~~topo对象支持读取配置文件。~~

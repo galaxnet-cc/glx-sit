@@ -197,9 +197,11 @@ class RestDevice:
         link_data['LinkId'] = link_id
         return self.do_delete_request("Link", link_data)
 
-    def create_glx_tunnel(self, tunnel_id):
+    # add passive flag.
+    def create_glx_tunnel(self, tunnel_id, is_passive=False):
         tunnel_data = {}
         tunnel_data['TunnelId'] = tunnel_id
+        tunnel_data['IsPassive'] = is_passive
         return self.do_post_request("Tunnel", tunnel_data)
 
     def delete_glx_tunnel(self, tunnel_id):
