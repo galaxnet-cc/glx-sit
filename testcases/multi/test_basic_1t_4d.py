@@ -10,7 +10,7 @@ from topo.topo_1t_4d import Topo1T4D
 # 就需要打开setup/teardown，并支持在一个复杂拓朴下，测试多个测试例了。　
 #
 SKIP_SETUP = False
-SKIP_TEARDOWN = True
+SKIP_TEARDOWN = False
 
 class TestBasic1T4D(unittest.TestCase):
 
@@ -214,8 +214,8 @@ class TestBasic1T4D(unittest.TestCase):
             f"vppctl set interface state {wan1VppIf} up")
         assert(err == '')
 
-        # 10s足够link & bfd恢复了
-        time.sleep(10)
+        # 5s足够link & bfd恢复了
+        time.sleep(5)
         # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")

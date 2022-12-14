@@ -66,7 +66,8 @@ class TestBasic1T4DL3Subif(unittest.TestCase):
                                                          tunnel_id=12,
                                                          route_label="0x1200010")
         # create dut1<>dut2 link2.（共享tunnel id & route label）
-        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=12)
+        # not need to duplicate create.
+        #self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=12)
         self.topo.dut1.get_rest_device().create_glx_link(link_id=122, wan_name="WAN1.200",
                                                          remote_ip="192.168.12.2", remote_port=2288,
                                                          tunnel_id=12,
