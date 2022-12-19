@@ -306,21 +306,21 @@ class RestDevice:
         label_data["RouteLabel"] = route_label
         return self.do_delete_request("EdgeRouteLabelFwdEntry", label_data)
 
-    def create_edge_route(self, route_prefix, route_label, is_acc=False, is_acc_reverse=False, segment=0):
+    def create_edge_route(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0):
         route_data = {}
         route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
-        route_data["RouteProtocol"] = "overlay"
+        route_data["RouteProtocol"] = route_protocol
         route_data["RouteLabel"] = route_label
         route_data["IsAcc"] = is_acc
         route_data["IsAccReverse"] = is_acc_reverse
         return self.do_post_request("EdgeRoute", route_data)
 
-    def delete_edge_route(self, route_prefix, segment=0):
+    def delete_edge_route(self, route_prefix, route_protocol="overlay", segment=0):
         route_data = {}
         route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
-        route_data["RouteProtocol"] = "overlay"
+        route_data["RouteProtocol"] = route_protocol
         return self.do_delete_request("EdgeRoute", route_data)
 
     def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, steering_type=0, steering_mode=0, steering_interface="", app_id=65535):
@@ -409,13 +409,14 @@ class RestDevice:
         data["Id"] = segment_id
         return self.do_post_request("Segment", data)
 
-    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False,dns_intercept_enable=False, route_label="0xffffffffffffffff"):
+    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, dns_intercept_enable=False, dns_ip_collect_enable=False, route_label="0xffffffffffffffff"):
         data = {}
         data["Id"] = segment_id
         data["AccEnable"] = acc_enable
         data["IntEdgeEnable"] = int_edge_enable
         data["DnsInterceptEnable"] = dns_intercept_enable
-        data["RouteLabel"] = route_label
+        data["DnsIpCollectEnable"] = dns_ip_collect_enable
+        data["AccRouteLabel"] = route_label
         return self.do_patch_request("Segment", data)
 
     def delete_segment(self, segment_id):
@@ -423,11 +424,13 @@ class RestDevice:
         data["Id"] = segment_id
         return self.do_delete_request("Segment", data)
 
-    def create_segment_acc_prop(self, segment_id, acc_ip1="1.1.1.1"):
+    def create_segment_acc_prop(self, segment_id, batch_route_file_path="", acc_ip1="1.1.1.1", is_delivered_acc_fib=False):
         data = {}
         data["Segment"] = segment_id
         data["AccIps"] = []
         data["AccIps"].append({"Ip4Address": acc_ip1})
+        data["BatchRouteFilePath"] = batch_route_file_path
+        data["IsDeliveredAccFib"] = is_delivered_acc_fib
         return self.do_post_request("SegmentAccProperties", data)
 
     def delete_segment_acc_prop(self, segment_id):
@@ -435,11 +438,13 @@ class RestDevice:
         data["Segment"] = segment_id
         return self.do_delete_request("SegmentAccProperties", data)
 
-    def update_segment_acc_prop(self, segment_id, acc_ip1="1.1.1.1"):
+    def update_segment_acc_prop(self, segment_id, batch_route_file_path="", acc_ip1="1.1.1.1", is_delivered_acc_fib=False):
         data = {}
         data["Segment"] = segment_id
         data["AccIps"] = []
         data["AccIps"].append({"Ip4Address": acc_ip1})
+        data["BatchRouteFilePath"] = batch_route_file_path
+        data["IsDeliveredAccFib"] = is_delivered_acc_fib
         return self.do_patch_request("SegmentAccProperties", data)
 
     def update_dpi_setting(self, dpi_enable=False):
@@ -461,3 +466,9 @@ class RestDevice:
         l3subif_data['PhysicalInterface'] = physical_interface
         l3subif_data['SubId'] = sub_id
         return self.do_delete_request("L3SubInterface", l3subif_data)
+
+    def delete_route_action(self, is_all=False, segment_id=0):
+        data={}
+        data["IsAll"] = is_all
+        data["Segment"] = segment_id
+        return self.do_action_request("BatchRouteFlush", data)

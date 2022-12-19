@@ -993,11 +993,6 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == "")
         assert("dns-intercept" in out)
 
-        # 检查nat是否有且只有一条规则
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep DNAT | wc -l")
-        assert(err == '')
-        assert("1" in out)
-
         # 创建获取一个新 bvi 和一个新 logical interface
         self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24")
         self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "routed", "default")
@@ -1047,6 +1042,14 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == "")
         assert("dns-intercept" not in out)
 
+        # 将LAN1改动改回
+        self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "switched", "default")
+        # 删除test bridge
+        self.topo.dut1.get_rest_device().delete_bridge("test")
+        # 删除segment 1
+        self.topo.dut1.get_rest_device().delete_segment(segment_id=1)
+
+    def test_glx_namespace_nat_rules(self):
         # 检查nat规则
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep SNAT | wc -l")
         assert(err == '')
@@ -1054,13 +1057,30 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep DNAT | wc -l")
         assert(err == '')
         assert("0" in out)
-
-        # 将LAN1改动改回
-        self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "switched", "default")
-        # 删除test bridge
-        self.topo.dut1.get_rest_device().delete_bridge("test")
-        # 删除segment 1
-        self.topo.dut1.get_rest_device().delete_segment(segment_id=1)
+        # 开启 segment DnsInterceptEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_intercept_enable=True)
+        # 检查nat是否有且只有一条规则
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep DNAT | wc -l")
+        assert(err == '')
+        assert("1" in out)
+        # 关闭 segment DnsInterceptEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_intercept_enable=False)
+        # 检查nat规则
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep SNAT | wc -l")
+        assert(err == '')
+        assert("1" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep DNAT | wc -l")
+        assert(err == '')
+        assert("0" in out)
+        # 重启vpp，模拟vpp crash场景
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart vpp")
+        assert(err == '')
+        # 等待fwdmd配置
+        time.sleep(10)
+        # 检查nat规则
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -L -nv -t nat | grep SNAT | wc -l")
+        assert(err == '')
+        assert("1" in out)
 
 if __name__ == '__main__':
     unittest.main()

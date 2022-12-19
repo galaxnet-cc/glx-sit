@@ -115,7 +115,7 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
     def tearDown(self):
         if SKIP_TEARDOWN:
             return
-        
+
         # kill dnsmasq
         self.topo.tst.get_ns_cmd_result("dut4", "kill -9 $(pidof dnsmasq)")
         self.topo.tst.get_ns_cmd_result("dut4", "rm /tmp/autodns.conf")

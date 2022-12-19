@@ -1,0 +1,274 @@
+import unittest
+import time
+
+from topo.topo_1d import Topo1D
+
+class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
+
+    # 因只验证rest与vpp的一致性，不验证功能，因此只使用单台设备拓朴。
+    def setUp(self):
+        self.topo = Topo1D()
+
+    def tearDown(self):
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset flush")
+
+    def test_glx_segment_dnsipcollect_enable(self):
+        # 开启 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True)
+        # 向set中写入数据
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 1.1.1.0/24")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
+        assert(err == '')
+        # 检测是否已经下发路由成功
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" in out)
+        # 从set中删除数据
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset del local 1.1.1.0/24")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset del acc 2.2.2.0/24")
+        assert(err == '')
+        # 检测路由已经删除
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" not in out)
+        # 向set中写入数据
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 1.1.1.0/24")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
+        assert(err == '')
+        # 重启vpp，模拟vpp crash场景
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart vpp")
+        assert(err == '')
+        # 等待fwdmd配置
+        time.sleep(10)
+        # 检测路由是否已经重新配置
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" in out)
+        # 关闭 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False, dns_ip_collect_enable=False)
+        # 检测路由是否已删除
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" not in out)
+
+    def test_glx_segment_delivery_batch_route(self):
+        # 获取chnroute.txt中的路由数目
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wc -l /opt/chnroute.txt")
+        assert(err == "")
+        outlist = out.split(' ')
+        chnroute_num = int(outlist[0])
+        # 开启acc_enable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        # 获取acc table与local table中的路由数目
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        assert(err == "")
+        local_route_num_before = int(out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep / | wc -l")
+        assert(err == "")
+        acc_route_num_before = int(out)
+        # 创建SegmentAccProperties，添加BatchRouteFilePath
+        self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt")
+        time.sleep(5)
+        # 获取local table中的路由数目
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        assert(err == "")
+        local_route_num_after = int(out)
+        # 检测比较local table是否增加了相应条数路由
+        assert((local_route_num_after - local_route_num_before - 1) == chnroute_num)
+        # 更改SegmentAccProperties IsAcc属性
+        self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", is_delivered_acc_fib=True)
+        time.sleep(5)
+        # 获取acc table与local table中的路由数目
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        assert(err == "")
+        local_route_num_after = int(out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep / | wc -l")
+        assert(err == "")
+        acc_route_num_after = int(out)
+        # 检测比较acc table是否增加相应条数路由
+        assert(acc_route_num_after - acc_route_num_before == chnroute_num)
+        assert(local_route_num_after == local_route_num_before + 1)
+        # 删除SegmentAccProperties BatchRouteFilePath属性
+        self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="")
+        time.sleep(5)
+        # 获取acc table中的路由数目
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        assert(err == "")
+        local_route_num_after = int(out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep / | wc -l")
+        assert(err == "")
+        acc_route_num_after = int(out)
+        # 检测比较路由数目是否恢复初始状态
+        assert(acc_route_num_after == acc_route_num_before)
+        assert(local_route_num_after == local_route_num_before + 1)
+        # 关闭acc_enable
+        self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
+
+    def test_glx_segment_flush_ip_collect_route(self):
+        # 开启 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True)
+        # 向set中写入数据
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 1.1.1.0/24")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
+        assert(err == '')
+        # 检测是否已经下发路由成功
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" in out)
+        # 发送flush Action
+        self.topo.dut1.get_rest_device().delete_route_action(segment_id=0)
+        # 检测路由已经删除
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" not in out)
+        # 关闭 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False, dns_ip_collect_enable=False)
+
+    def test_glx_edge_route_local(self):
+        # 检测没有将要配置的路由
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("8.8.8.8/32" not in out)
+        # 配置edge route local模式
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="8.8.8.8/32", route_label="0x3400010", route_protocol="local")
+        # 检查配置的路由已经下发
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("8.8.8.8/32" in out)
+        # 删除配置的edge route
+        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="8.8.8.8/32", route_protocol="local")
+        # 检测配置路由已经删除
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("8.8.8.8/32" not in out)
+
+    def test_dnsipcollect_after_fwdmd_restart(self):
+        # 开启 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True)
+        # 检测路由不存在
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" not in out)
+        # 重启fwdmd
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart fwdmd")
+        assert(err == '')
+        # 等待fwdmd配置
+        time.sleep(10)
+        # 向set中写入数据
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 1.1.1.0/24")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
+        assert(err == '')
+        # 检测是否已经下发路由成功
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" in out)
+        # 关闭 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False, dns_ip_collect_enable=False)
+        # 检测路由是否已删除
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" not in out)
+
+    def test_dnsipcollect_when_fwdmd_restart(self):
+        # 开启 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True)
+        # 检测路由不存在
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" not in out)
+        # 停止fwdmd
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl stop fwdmd")
+        assert(err == '')
+        # 向set中写入数据
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 1.1.1.0/24")
+        assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
+        assert(err == '')
+         # 重启fwdmd
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart fwdmd")
+        assert(err == '')
+        # 等待fwdmd配置
+        time.sleep(10)
+        # 检测是否已经下发路由成功
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" in out)
+        # 关闭 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False, dns_ip_collect_enable=False)
+        # 检测路由是否已删除
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
+        assert(err == "")
+        assert("1.1.1.0/24" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
+        assert(err == "")
+        assert("2.2.2.0/24" not in out)
+
+    def test_dnsipcollect_when_change_routelabel(self):
+        # 开启 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True, route_label="10000")
+        # 向set中写入数据
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.0/24")
+        assert(err == '')
+        # 检测是否已经下发路由成功
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 1.1.1.0/24")
+        assert(err == "")
+        assert("1.1.1.0/24" in out)
+        assert("route-label: 10000" in out)
+        # 更新 segment AccRouteLabel
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True, route_label="20000")
+        # 向set中写入数据
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
+        assert(err == '')
+        # 等待路由更新
+        time.sleep(3)
+        # 检测下发的路由的AccRouteLabel是否已经更改
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 1.1.1.0/24")
+        assert(err == "")
+        assert("1.1.1.0/24" in out)
+        assert("route-label: 20000" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 2.2.2.0/24")
+        assert(err == "")
+        assert("2.2.2.0/24" in out)
+        assert("route-label: 20000" in out)
+        # 关闭 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False, dns_ip_collect_enable=False)
