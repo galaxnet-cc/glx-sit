@@ -424,13 +424,13 @@ class RestDevice:
         data["Id"] = segment_id
         return self.do_delete_request("Segment", data)
 
-    def create_segment_acc_prop(self, segment_id, batch_route_file_path="", acc_ip1="1.1.1.1", is_delivered_acc_fib=False):
+    def create_segment_acc_prop(self, segment_id, batch_route_file_path="", acc_ip1="1.1.1.1", acc_fib_type=""):
         data = {}
         data["Segment"] = segment_id
         data["AccIps"] = []
         data["AccIps"].append({"Ip4Address": acc_ip1})
         data["BatchRouteFilePath"] = batch_route_file_path
-        data["IsDeliveredAccFib"] = is_delivered_acc_fib
+        data["AccFibType"] = acc_fib_type
         return self.do_post_request("SegmentAccProperties", data)
 
     def delete_segment_acc_prop(self, segment_id):
@@ -438,13 +438,13 @@ class RestDevice:
         data["Segment"] = segment_id
         return self.do_delete_request("SegmentAccProperties", data)
 
-    def update_segment_acc_prop(self, segment_id, batch_route_file_path="", acc_ip1="1.1.1.1", is_delivered_acc_fib=False):
+    def update_segment_acc_prop(self, segment_id, batch_route_file_path="", acc_ip1="1.1.1.1", acc_fib_type=""):
         data = {}
         data["Segment"] = segment_id
         data["AccIps"] = []
         data["AccIps"].append({"Ip4Address": acc_ip1})
         data["BatchRouteFilePath"] = batch_route_file_path
-        data["IsDeliveredAccFib"] = is_delivered_acc_fib
+        data["AccFibType"] = acc_fib_type
         return self.do_patch_request("SegmentAccProperties", data)
 
     def update_dpi_setting(self, dpi_enable=False):
