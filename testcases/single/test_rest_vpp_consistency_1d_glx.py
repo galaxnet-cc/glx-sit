@@ -1082,5 +1082,23 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         assert(err == '')
         assert("1" in out)
 
+    # 测试glx link不加密
+    def test_glx_link_no_encryption(self):
+        # create a link with no encryption
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, no_encryption=True)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        assert(err == '')
+        assert(f"link-id 1" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ikev2 profile")
+        assert(err == '')
+        # no ikev2 profile is installed.
+        assert(f"ActiveIkeV2Profile_1" not in out)
+        assert(f"glx_link0" not in out)
+        # remove the link
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        assert(err == '')
+        assert(f"link-id 1" not in out)
+
 if __name__ == '__main__':
     unittest.main()

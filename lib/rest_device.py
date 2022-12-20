@@ -181,7 +181,7 @@ class RestDevice:
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
         return self.do_patch_request("Bridge", bridge_data)
 
-    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff", is_tcp=False):
+    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff", is_tcp=False, no_encryption=False):
         link_data = {}
         link_data['LinkId'] = link_id
         link_data['LocalWanName'] = wan_name
@@ -190,6 +190,7 @@ class RestDevice:
         link_data['TunnelId'] = tunnel_id
         link_data['RouteLabel'] = route_label
         link_data['IsTcp'] = is_tcp
+        link_data['NoEncryption'] = no_encryption
         return self.do_post_request("Link", link_data)
 
     def delete_glx_link(self, link_id):
