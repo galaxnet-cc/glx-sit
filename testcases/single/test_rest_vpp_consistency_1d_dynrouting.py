@@ -2,6 +2,7 @@ from cgi import test
 import unittest
 import time
 
+from lib.util import glx_assert
 from topo.topo_1d import Topo1D
 
 
@@ -33,8 +34,8 @@ class TestRestVppConsistency1DDynRouting(unittest.TestCase):
         # verify ospf is enabled on the interface.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "show ip ospf interface"')
-        assert(err == '')
-        assert("LAN1 is up" in out)
+        glx_assert(err == '')
+        glx_assert("LAN1 is up" in out)
 
         # delete default seg ospf.
         self.topo.dut1.get_rest_device().delete_ospf_interface("LAN1", 1)
@@ -43,13 +44,13 @@ class TestRestVppConsistency1DDynRouting(unittest.TestCase):
         # verify ospf is not enabled on the interface.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "show ip ospf interface"')
-        assert('ospfd is not running' in err)
-        assert("LAN1 is up" not in out)
+        glx_assert('ospfd is not running' in err)
+        glx_assert("LAN1 is up" not in out)
         # verify ospf is stopped.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "show ip ospf"')
-        assert('ospfd is not running' in err)
-        assert("" == out)
+        glx_assert('ospfd is not running' in err)
+        glx_assert("" == out)
 
         # revert back to bridged mode.
         result = self.topo.dut1.get_rest_device().update_physical_interface(

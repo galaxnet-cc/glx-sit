@@ -1,6 +1,7 @@
 import unittest
 import time
 
+from lib.util import glx_assert
 from topo.topo_1t_4d import Topo1T4D
 
 # 有时候需要反复测试一个用例，可先打开SKIP_TEARDOWN执行一轮用例初始化
@@ -69,22 +70,22 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 12,"')
         print(err)
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 22,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
 
         # verify dut2.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 12,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 22,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
 
         # delete the link.
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
@@ -94,9 +95,9 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         time.sleep(20)
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link')
-        assert (err == '')
-        assert(f'link-id 12,' not in out)
-        assert(f'link-id 22,' not in out)
+        glx_assert (err == '')
+        glx_assert(f'link-id 12,' not in out)
+        glx_assert(f'link-id 22,' not in out)
 
     def test_dut1_1_udp_1_tcp_link(self):
         # create dut1<>dut2 1 tcp + 1 udp links.
@@ -119,22 +120,22 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 12,"')
         print(err)
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 22,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
 
         # verify dut2.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 12,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 22,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
 
         # delete the link.
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
@@ -144,9 +145,9 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         time.sleep(20)
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link')
-        assert (err == '')
-        assert(f'link-id 12,' not in out)
-        assert(f'link-id 22,' not in out)
+        glx_assert (err == '')
+        glx_assert(f'link-id 12,' not in out)
+        glx_assert(f'link-id 22,' not in out)
 
     def test_dut1_2_tcp_link(self):
         # create dut1<>dut2 2 tcp links.
@@ -169,22 +170,22 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 12,"')
         print(err)
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 22,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
 
         # verify dut2.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 12,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link | grep -C 4 "link-id 22,"')
-        assert (err == '')
-        assert(f'state: active' in out)
+        glx_assert (err == '')
+        glx_assert(f'state: active' in out)
 
         # delete the link.
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
@@ -194,9 +195,9 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         time.sleep(20)
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link')
-        assert (err == '')
-        assert(f'link-id 12,' not in out)
-        assert(f'link-id 22,' not in out)
+        glx_assert (err == '')
+        glx_assert(f'link-id 12,' not in out)
+        glx_assert(f'link-id 22,' not in out)
 
 
 if __name__ == '__main__':

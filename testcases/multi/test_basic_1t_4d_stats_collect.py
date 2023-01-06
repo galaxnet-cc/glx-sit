@@ -1,5 +1,6 @@
 import unittest
 import time
+import math
 
 from lib.util import glx_assert
 from topo.topo_1t_4d import Topo1T4D
@@ -63,8 +64,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # create dut2/dut3 tunnel.
         # NC上需要显示创建双向tunnel
         self.topo.dut2.get_rest_device().create_glx_tunnel(tunnel_id=23)
-        # need explitly mark as passive.
-        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23, is_passive=True)
+        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23)
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().create_glx_link(link_id=23, wan_name="WAN3",
                                                          remote_ip="192.168.23.2", remote_port=2288,
@@ -101,10 +101,6 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         if SKIP_TEARDOWN:
             return
 
-        # 关闭dns-ip-collect
-        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_enable=False, acc_enable=True)
-        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset flush")
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.4.0/24")
 
         # 无条件恢复加速带来的配置改动
@@ -165,8 +161,8 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # wait for all passive link to be aged.
         time.sleep(20)
 
-    # 测试dns-ip-collect
-    def test_dns_ip_collect(self):
+    # 测试stats collect
+    def test_stats_collect(self):
         # dut1 (acc cpe) 准备
         # 1. 开启acc
         # 2. 设置加速ip
@@ -191,36 +187,48 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
 
-        # 开启dns-ip-collect
-        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_enable=True, acc_enable=True, route_label="0x3400010")
-
-        # ipset add acc table
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.1/32")
-
-        # 检测dut4上是否有nat session
-        self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 1000 -i 0.01")
         glx_assert(err == '')
-        glx_assert("1.1.1.1" in out)
 
-        # ipset add local table
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 2.2.2.2/32")
-
-        # 配置业务策略强制本地nat走WAN1
-        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
-                                                       src_prefix="192.168.1.0/24",
-                                                       dst_prefix="2.2.2.2/32",
-                                                       steering_type=1,
-                                                       steering_mode=1,
-                                                       steering_interface="WAN1",
-                                                       protocol=0,
-                                                       direct_enable=True)
-
-        # 检测dut4上是否有nat session
-        self.topo.tst.get_ns_cmd_result("dut1", "ping 2.2.2.2 -c 5 -i 0.05")
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
+        linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 TxPackets")
+        linkTxPacket = linkTxPacket.rstrip()
         glx_assert(err == '')
-        glx_assert("2.2.2.2" in out)
+        linkTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 TxBytes")
+        linkTxBytes = linkTxBytes.rstrip()
+        glx_assert(err == '')
+        glx_assert(math.isclose(1400, linkTxBytes/linkTxPacket, abs_tol=100))
+
+        linkRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 RxPackets")
+        linkRxPacket = linkRxPacket.rstrip()
+        glx_assert(err == '')
+        linkRxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 RxBytes")
+        linkRxBytes = linkRxBytes.rstrip()
+        glx_assert(err == '')
+        glx_assert(math.isclose(1400, linkRxBytes/linkRxPacket, abs_tol=100))
+
+        tunnelTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#12 TxPackets")
+        tunnelTxPacket = tunnelTxPacket.rstrip()
+        glx_assert(err == '')
+        tunnelTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#12 TxBytes")
+        tunnelTxBytes = tunnelTxBytes.rstrip()
+        glx_assert(err == '')
+        glx_assert(math.isclose(1400, tunnelTxBytes/tunnelTxPacket, abs_tol=100))
+
+        tunnelRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#12 RxPackets")
+        tunnelRxPacket = tunnelRxPacket.rstrip()
+        glx_assert(err == '')
+        tunnelRxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#12 RxBytes")
+        tunnelRxBytes = tunnelRxBytes.rstrip()
+        glx_assert(err == '')
+        glx_assert(math.isclose(1400, tunnelRxBytes/tunnelRxPacket, abs_tol=100))
 
 if __name__ == '__main__':
     unittest.main()
