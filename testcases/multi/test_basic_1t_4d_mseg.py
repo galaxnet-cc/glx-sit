@@ -1,6 +1,7 @@
 import unittest
 import time
 
+from lib.util import glx_assert
 from topo.topo_1t_4d import Topo1T4D
 
 # 有时候需要反复测试一个用例，可先打开SKIP_TEARDOWN执行一轮用例初始化
@@ -186,23 +187,23 @@ class TestBasic1T4DMseg(unittest.TestCase):
 
         # 验证segment 1 流量可通
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
-        assert("100% packet loss" not in out)
+        glx_assert("100% packet loss" not in out)
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时不应当再丢包
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
         # 验证segment 2 流量可通
         out, err = self.topo.tst.get_ns_cmd_result("dut1s2", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
-        assert("100% packet loss" not in out)
+        glx_assert("100% packet loss" not in out)
         out, err = self.topo.tst.get_ns_cmd_result("dut1s2", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时不应当再丢包
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
         # 清理资源
         # remove route.

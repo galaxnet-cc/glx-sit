@@ -1,6 +1,7 @@
 import unittest
 import time
 
+from lib.util import glx_assert
 from topo.topo_1t_4d import Topo1T4D
 
 SKIP_SETUP = False
@@ -66,11 +67,11 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
     def test_dynamic_route(self):
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "show ip ospf interface" -c "clear ip ospf process"')
-        assert (err == '')
+        glx_assert (err == '')
 
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "show ip ospf interface" -c "clear ip ospf process"')
-        assert (err == '')
+        glx_assert (err == '')
 
         # fwdmd store route message to redis db and distribute route message to vpp
 
@@ -78,84 +79,84 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.8/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         # sleep enough to wait ospf resync.
         time.sleep(120)
         segment, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.8/32" "Segment"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         segment = segment.rstrip()
-        assert (segment == '0')
+        glx_assert (segment == '0')
         dst, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.8/32" "Dst"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         dst = dst.rstrip()
-        assert (dst == '8.8.8.8/32')
+        glx_assert (dst == '8.8.8.8/32')
         gw, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.8/32" "Gw" '
         )
-        assert (err == '')
+        glx_assert (err == '')
         gw = gw.rstrip()
-        assert (gw == '192.168.1.2')
+        glx_assert (gw == '192.168.1.2')
         protocol, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.8/32" "Protocol" '
         )
         protocol = protocol.rstrip()
-        assert (err == '')
-        assert (protocol == '11')
+        glx_assert (err == '')
+        glx_assert (protocol == '11')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show ip fib table 0 8.8.8.8'
         )
-        assert (err == '')
-        assert ('8.8.8.8' in out)
+        glx_assert (err == '')
+        glx_assert ('8.8.8.8' in out)
         # delete route
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "no ip route 8.8.8.8/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         time.sleep(5)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hgetall "ZebraRouteContext#0#8.8.8.8/32"'
         )
         out = out.rstrip()
-        assert (err == '')
-        assert (out == '')
+        glx_assert (err == '')
+        glx_assert (out == '')
 
         # update route message in redis db and update route message to vpp when fwdmd restart,flushing the expired redis data
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.8/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.9/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.10/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.11/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.12/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.13/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "ip route 8.8.8.14/32 Null0"'
         )
-        assert (err == '')
+        glx_assert (err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'systemctl stop fwdmd.service'
         )
-        assert (err == '')
+        glx_assert (err == '')
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "no ip route 8.8.8.8/32 Null0"'
         )
@@ -163,19 +164,19 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'systemctl restart fwdmd.service'
         )
-        assert (err == '')
+        glx_assert (err == '')
         time.sleep(105)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hgetall "ZebraRouteContext#0#8.8.8.8/32"'
         )
-        assert (err == '')
-        assert (out == '')
+        glx_assert (err == '')
+        glx_assert (out == '')
 
         # when the vpp restarts,read the redis db and redistribute to the vpp
         _,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'systemctl restart vpp'
         )
-        assert(err == '')
+        glx_assert(err == '')
         time.sleep(30)
         out,err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hgetall "ZebraRouteContext#0#8.8.8.9/32"'
@@ -184,30 +185,30 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.9/32" "Segment"'
         )
         segment1 = segment1.rstrip()
-        assert (err == '')
-        assert (segment1 == '0')
+        glx_assert (err == '')
+        glx_assert (segment1 == '0')
         dst, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.9/32" "Dst"'
         )
         dst = dst.rstrip()
-        assert (err == '')
-        assert (dst == '8.8.8.9/32')
+        glx_assert (err == '')
+        glx_assert (dst == '8.8.8.9/32')
         gw, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.9/32" "Gw" '
         )
         gw = gw.rstrip()
-        assert (err == '')
-        assert (gw == '192.168.1.2')
+        glx_assert (err == '')
+        glx_assert (gw == '192.168.1.2')
         protocol, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.9/32" "Protocol" '
         )
-        assert (err == '')
-        assert (protocol == '11')
+        glx_assert (err == '')
+        glx_assert (protocol == '11')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show ip fib table 0 8.8.8.9/32'
         )
-        assert (err == '')
-        assert ('8.8.8.9' in out)
+        glx_assert (err == '')
+        glx_assert ('8.8.8.9' in out)
 
         # when the ospf is disabled,flush the ospf routes in redis and vpp
         _,err = self.topo.dut2.get_rest_device().delete_ospf_interface("WAN1",1)
@@ -216,11 +217,11 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hgetall "ZebraRouteContext#0#8.8.8.9/32"'
         )
-        assert (err == '')
-        assert (out == '')
+        glx_assert (err == '')
+        glx_assert (out == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show ip fib table 0 8.8.8.9'
         )
         out = out.rstrip()
-        assert (err == '')
-        assert ('8.8.8.9' not in out)
+        glx_assert (err == '')
+        glx_assert ('8.8.8.9' not in out)

@@ -1,6 +1,7 @@
 import unittest
 import time
 
+from lib.util import glx_assert
 from topo.topo_1t_4d import Topo1T4D
 
 # 有时候需要反复测试一个用例，可先打开SKIP_TEARDOWN执行一轮用例初始化
@@ -192,58 +193,58 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         # 1. 开启acc
         # 2. 设置加速ip
         result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
-        assert(result.status_code == 200)
+        glx_assert(result.status_code == 200)
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
         self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
 
         # 开启autodns
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, route_label="0x3400010")
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
-        assert(err == "")
+        glx_assert(err == "")
 
         # dut4 (int edge)准备
         # 1. 配置回程路由　
         self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
 
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
-        assert("100% packet loss" not in out)
+        glx_assert("100% packet loss" not in out)
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时不应当再丢包
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
         # dig并检测结果
         _, err = self.topo.tst.get_ns_cmd_result("dut4", "dnsmasq -C /tmp/autodns.conf")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.2 www.baidu.com +tries=5 +timeout=1")
-        assert(err == '')
+        glx_assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx auto-dns ips")
-        assert(err == '')
-        assert("1.1.1.1" in out)
+        glx_assert(err == '')
+        glx_assert("1.1.1.1" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 1.1.1.1/32")
-        assert(err == '')
-        assert("is_acc: 1" in out)
+        glx_assert(err == '')
+        glx_assert("is_acc: 1" in out)
 
         # flush掉数据
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl flush glx auto-dns ips")
-        assert(err == '')
-        assert("1.1.1.1" not in out)
+        glx_assert(err == '')
+        glx_assert("1.1.1.1" not in out)
 
         # dig并检测结果
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.2 www.google.com +tries=5 +timeout=1")
-        assert(err == '')
+        glx_assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx auto-dns ips")
-        assert(err == '')
-        assert("2.2.2.2" in out)
+        glx_assert(err == '')
+        glx_assert("2.2.2.2" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 2.2.2.2/32")
-        assert(err == '')
-        assert("is_acc: 1" in out)
+        glx_assert(err == '')
+        glx_assert("is_acc: 1" in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl flush glx auto-dns ips")
-        assert(err == '')
-        assert("2.2.2.2" not in out)
+        glx_assert(err == '')
+        glx_assert("2.2.2.2" not in out)
 
     def test_basic_dns_intercept(self):
         # 这里的测试配置，需要在teardown中无条件进行各种清理，恢复系统到初始状态。
@@ -252,96 +253,96 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         # 1. 开启acc
         # 2. 设置加速ip
         result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
-        assert(result.status_code == 200)
+        glx_assert(result.status_code == 200)
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
         self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
 
         # 开启dns-intercept
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_intercept_enable=True, acc_enable=True, route_label="0x3400010")
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
-        assert(err == "")
+        glx_assert(err == "")
 
         # dut4 (int edge)准备
         # 1. 配置回程路由　
         self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
 
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
-        assert("100% packet loss" not in out)
+        glx_assert("100% packet loss" not in out)
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时不应当再丢包
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
         # 开启dut1，dut4的dnsmasq的能力
         _, err = self.topo.tst.get_ns_cmd_result("dut4", "dnsmasq -C /tmp/autodns.conf")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns dnsmasq -C /tmp/autodns.conf")
-        assert(err == '')
+        glx_assert(err == '')
 
         # dig并检测结果
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.3 www.baidu.com +tries=5 +timeout=1")
-        assert(err == '')
+        glx_assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx auto-dns ips")
-        assert(err == '')
-        assert("1.1.1.1" in out)
+        glx_assert(err == '')
+        glx_assert("1.1.1.1" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 1.1.1.1/32")
-        assert(err == '')
-        assert("is_acc: 1" in out)
+        glx_assert(err == '')
+        glx_assert("is_acc: 1" in out)
 
         # flush掉数据
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl flush glx auto-dns ips")
-        assert(err == '')
-        assert("1.1.1.1" not in out)
+        glx_assert(err == '')
+        glx_assert("1.1.1.1" not in out)
 
         # dig并检测结果
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.3 www.google.com +tries=5 +timeout=1")
-        assert(err == '')
+        glx_assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx auto-dns ips")
-        assert(err == '')
-        assert("2.2.2.2" in out)
+        glx_assert(err == '')
+        glx_assert("2.2.2.2" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 2.2.2.2/32")
-        assert(err == '')
-        assert("is_acc: 1" in out)
+        glx_assert(err == '')
+        glx_assert("is_acc: 1" in out)
 
         # flush掉数据
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl flush glx auto-dns ips")
-        assert(err == '')
-        assert("2.2.2.2" not in out)
+        glx_assert(err == '')
+        glx_assert("2.2.2.2" not in out)
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns iptables -t nat -F")
-        assert(err == '')
+        glx_assert(err == '')
 
     #  测试tun0 snat是否正确
     def test_basic_snat_exitif(self):
         # 在default ns中ping通 dut2
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip link add v1 type veth peer name v1p")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip link set v1 netns ctrl-ns")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip link set v1 up")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip addr add 192.168.2.1/24 dev v1")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip route add 192.168.12.2 dev tun0")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip link set v1p netns default")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec default ip link set v1p up")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec default ip addr add 192.168.2.2/24 dev v1p")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec default ip route add 192.168.12.0/24 dev v1p")
-        assert(err == '')
+        glx_assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec default ping 192.168.12.2 -c 5 -i 0.05")
-        assert(err == '')
-        assert("0% packet loss" in out)
+        glx_assert(err == '')
+        glx_assert("0% packet loss" in out)
 
         # flush 
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip link del v1")
-        assert(err == '')
+        glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ip route del 192.168.12.2 dev tun0")
-        assert(err == '')
+        glx_assert(err == '')
 
 if __name__ == '__main__':
     unittest.main()

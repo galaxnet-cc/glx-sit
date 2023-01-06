@@ -29,6 +29,9 @@ test-multi-auto-dns:
 test-multi-dnsipcollect:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_dnsipcollect.py
 
+test-multi-stats-collect:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_stats_collect.py
+
 test-multi-l3subif:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_l3subif.py
 

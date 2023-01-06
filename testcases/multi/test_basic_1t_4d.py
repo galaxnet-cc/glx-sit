@@ -1,6 +1,7 @@
 import unittest
 import time
 
+from lib.util import glx_assert
 from topo.topo_1t_4d import Topo1T4D
 
 # 有时候需要反复测试一个用例，可先打开SKIP_TEARDOWN执行一轮用例初始化
@@ -157,101 +158,101 @@ class TestBasic1T4D(unittest.TestCase):
     #  测试icmp/udp/tcp流量
     def test_basic_traffic(self):
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
-        assert("100% packet loss" not in out)
+        glx_assert("100% packet loss" not in out)
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时不应当再丢包
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
         # 添加firewall rule阻断
         self.topo.dut1.get_rest_device().set_fire_wall_rule(
             "block_tst_traffic", 1, "192.168.4.2/32", "Deny")
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时应当不通
-        assert("100% packet loss" in out)
+        glx_assert("100% packet loss" in out)
         # 删除firewall rule
         self.topo.dut1.get_rest_device().delete_fire_wall_rule("block_tst_traffic")
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时应当恢复
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
     # 测试tunnel bfd联动机制以及fwdmd
     def test_tunnel_bfd(self):
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
-        assert("100% packet loss" not in out)
+        glx_assert("100% packet loss" not in out)
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时不应当再丢包
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
         # 清除事件队列
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli del /glx/eventqueue/TunnelStateEvent")
-        assert(err == '')
+        glx_assert(err == '')
         # 将WAN1接口设置为down状态
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl set interface state {wan1VppIf} down")
-        assert(err == '')
+        glx_assert(err == '')
         # 5s is enough for event being handled and event generated.
         # tunnel bfd is 3*1 interval.
         time.sleep(5)
         # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        assert(err == '')
-        assert("TunnelId\":12" in out)
-        assert("IsUp\":false" in out)
+        glx_assert(err == '')
+        glx_assert("TunnelId\":12" in out)
+        glx_assert("IsUp\":false" in out)
 
         # 将WAN1接口设置为up状态
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl set interface state {wan1VppIf} up")
-        assert(err == '')
+        glx_assert(err == '')
 
-        # 5s足够link & bfd恢复了
-        time.sleep(5)
+        # 10s足够link & bfd恢复了
+        time.sleep(10)
         # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        assert(err == '')
-        assert("TunnelId\":12" in out)
-        assert("IsUp\":true" in out)
+        glx_assert(err == '')
+        glx_assert("TunnelId\":12" in out)
+        glx_assert("IsUp\":true" in out)
 
         # 暂停fwdmd，模拟fwdmd重启过程中消息丢失场景
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"systemctl stop fwdmd")
-        assert(err == '')
+        glx_assert(err == '')
 
         # 将WAN1接口设置为down状态
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl set interface state {wan1VppIf} down")
-        assert(err == '')
+        glx_assert(err == '')
         # 确保bfd down掉
         time.sleep(5)
 
         # 重启fwdmd，确保fwdm启动后重新拉取到bfd down消息。
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"systemctl start fwdmd")
-        assert(err == '')
+        glx_assert(err == '')
         # 确保fwdmd重启ok
         time.sleep(10)
         # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        assert(err == '')
-        assert("TunnelId\":12" in out)
-        assert("IsUp\":false" in out)
+        glx_assert(err == '')
+        glx_assert("TunnelId\":12" in out)
+        glx_assert("IsUp\":false" in out)
 
         # 将WAN1接口设置为up状态
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl set interface state {wan1VppIf} up")
-        assert(err == '')
+        glx_assert(err == '')
         # 确保bfd up
         # 因为前面一共down掉了(5+10)，passive link被老化，对端ikev2 sa被移除。
         # 30s足够应该足够恢复（ikev2 sa keepalive detect time为3 * 5s）
@@ -260,14 +261,14 @@ class TestBasic1T4D(unittest.TestCase):
         # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        assert(err == '')
-        assert("TunnelId\":12" in out)
-        assert("IsUp\":true" in out)
+        glx_assert(err == '')
+        glx_assert("TunnelId\":12" in out)
+        glx_assert("IsUp\":true" in out)
 
         # 模拟vpp重启
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"systemctl restart vpp")
-        assert(err == '')
+        glx_assert(err == '')
         # 等待fwdmd检测vpp重启，并重新下发所有状态。
         # 20s足够了
         time.sleep(30)
@@ -275,19 +276,19 @@ class TestBasic1T4D(unittest.TestCase):
         # 读取事件队列（此时需要控制平面支持处理重复up上报）
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        assert(err == '')
-        assert("TunnelId\":12" in out)
-        assert("IsUp\":true" in out)
+        glx_assert(err == '')
+        glx_assert("TunnelId\":12" in out)
+        glx_assert("IsUp\":true" in out)
 
         # 检测经过这些场景验证，业务仍能恢复。
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
-        assert("100% packet loss" not in out)
+        glx_assert("100% packet loss" not in out)
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时不应当再丢包
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
 if __name__ == '__main__':
     unittest.main()

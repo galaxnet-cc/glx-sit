@@ -1,6 +1,7 @@
 import unittest
 import time
 
+from lib.util import glx_assert
 from topo.topo_1t_4d import Topo1T4D
 
 # 有时候需要反复测试一个用例，可先打开SKIP_TEARDOWN执行一轮用例初始化
@@ -166,7 +167,7 @@ class TestBasic1T4DAcc(unittest.TestCase):
         # 1. 开启acc
         # 2. 设置加速ip
         result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
-        assert(result.status_code == 200)
+        glx_assert(result.status_code == 200)
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
         self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.34.1/32", route_label="0x3400010", is_acc=True)
 
@@ -176,7 +177,7 @@ class TestBasic1T4DAcc(unittest.TestCase):
         # 2. 配置回程路由　
         # 3. DUT3的WAN关闭NAT能力，以便于WAN IP(34.1)被访问
         result = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
-        assert(result.status_code == 200)
+        glx_assert(result.status_code == 200)
         self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
         # dut3 turn off WAN1 NAT.
         self.topo.dut3.get_rest_device().set_logical_interface_nat_direct("WAN1", False)
@@ -185,22 +186,22 @@ class TestBasic1T4DAcc(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
 
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.34.1 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
-        assert("100% packet loss" not in out)
+        glx_assert("100% packet loss" not in out)
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.34.1 -c 5 -i 0.05")
-        assert(err == '')
+        glx_assert(err == '')
         # 此时不应当再丢包
-        assert("0% packet loss" in out)
+        glx_assert("0% packet loss" in out)
 
         # 检查dut1上存在使用加速ip的nat session
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show nat44 sessions")
-        assert(err == '')
-        assert("222.222.222.222" in out)
+        glx_assert(err == '')
+        glx_assert("222.222.222.222" in out)
         # 检查dut4上同样存在使用加速ip的nat session
         out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"vppctl show nat44 sessions")
-        assert(err == '')
-        assert("222.222.222.222" in out)
+        glx_assert(err == '')
+        glx_assert("222.222.222.222" in out)
 
 if __name__ == '__main__':
     unittest.main()
