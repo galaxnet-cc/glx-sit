@@ -31,6 +31,9 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # 1<>2 192.168.12.0/24
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.1/24")
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.2/24")
+        # dut1<->dut2 wan pair 2.
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.22.1/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.22.2/24")
         # 2<>3 192.168.23.0/24
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN3", "192.168.23.1/24")
         self.topo.dut3.get_rest_device().set_logical_interface_static_ip("WAN3", "192.168.23.2/24")
@@ -49,6 +52,12 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
                                                          remote_ip="192.168.12.2", remote_port=2288,
                                                          tunnel_id=12,
                                                          route_label="0x1200010")
+        # create dut1<>dut2 link2.（共享tunnel id & route label）
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=122, wan_name="WAN2",
+                                                         remote_ip="192.168.22.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+
         # create dut3<>dut4 link.
         self.topo.dut4.get_rest_device().create_glx_tunnel(tunnel_id=34)
         self.topo.dut4.get_rest_device().create_glx_link(link_id=34, wan_name="WAN1",
@@ -101,6 +110,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         if SKIP_TEARDOWN:
             return
 
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.4.0/24")
 
         # 无条件恢复加速带来的配置改动
@@ -137,6 +147,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # 删除dut1/2资源
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=12)
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=122)
 
         # 删除label policy.
         self.topo.dut1.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x1200010")
@@ -151,6 +162,8 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # revert to default.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN2")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN2")
 
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN3")
         self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN3")
@@ -187,9 +200,29 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
 
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 1000 -i 0.01")
+        # 配置策略强制走link0
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN1",
+                                                       protocol=0,
+                                                       direct_enable=False)
+
+        # 清除接口计数
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        glx_assert(err == '')
+        # iperf打流
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "iperf3 -s -D")
+        glx_assert(err == '')
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
+        glx_assert(err == '')
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10 -R")
         glx_assert(err == '')
 
+        # 每个包大小应约为1400bytes
+        # link0 tx
         linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget LinkState#12 TxPackets")
         linkTxPacket = linkTxPacket.rstrip()
@@ -198,8 +231,10 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
             f"redis-cli hget LinkState#12 TxBytes")
         linkTxBytes = linkTxBytes.rstrip()
         glx_assert(err == '')
-        glx_assert(math.isclose(1400, linkTxBytes/linkTxPacket, abs_tol=100))
+        print("link0 tx: ", int(linkTxBytes)/int(linkTxPacket))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
 
+        # link0 rx
         linkRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget LinkState#12 RxPackets")
         linkRxPacket = linkRxPacket.rstrip()
@@ -208,8 +243,35 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
             f"redis-cli hget LinkState#12 RxBytes")
         linkRxBytes = linkRxBytes.rstrip()
         glx_assert(err == '')
-        glx_assert(math.isclose(1400, linkRxBytes/linkRxPacket, abs_tol=100))
+        print("link0 rx: ", int(linkRxBytes)/int(linkRxPacket))
+        glx_assert(math.isclose(1400, int(linkRxBytes)/int(linkRxPacket), abs_tol=100))
 
+        # 配置策略强制走link1
+        self.topo.dut1.get_rest_device().update_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN2",
+                                                       protocol=0,
+                                                       direct_enable=False)
+        # iperf打流
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
+        glx_assert(err == '')
+
+        # link1 tx
+        linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#122 TxPackets")
+        linkTxPacket = linkTxPacket.rstrip()
+        glx_assert(err == '')
+        linkTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#122 TxBytes")
+        linkTxBytes = linkTxBytes.rstrip()
+        glx_assert(err == '')
+        print("link1 tx: ", int(linkTxBytes)/int(linkTxPacket))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+
+        # tunnel tx
         tunnelTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget TunnelState#12 TxPackets")
         tunnelTxPacket = tunnelTxPacket.rstrip()
@@ -218,8 +280,10 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
             f"redis-cli hget TunnelState#12 TxBytes")
         tunnelTxBytes = tunnelTxBytes.rstrip()
         glx_assert(err == '')
-        glx_assert(math.isclose(1400, tunnelTxBytes/tunnelTxPacket, abs_tol=100))
+        print("tunnel tx: ", int(tunnelTxBytes)/int(tunnelTxPacket))
+        glx_assert(math.isclose(1400, int(tunnelTxBytes)/int(tunnelTxPacket), abs_tol=100))
 
+        # tunnel rx
         tunnelRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget TunnelState#12 RxPackets")
         tunnelRxPacket = tunnelRxPacket.rstrip()
@@ -228,7 +292,11 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
             f"redis-cli hget TunnelState#12 RxBytes")
         tunnelRxBytes = tunnelRxBytes.rstrip()
         glx_assert(err == '')
-        glx_assert(math.isclose(1400, tunnelRxBytes/tunnelRxPacket, abs_tol=100))
+        print("tunnel rx: ", int(tunnelRxBytes)/int(tunnelRxPacket))
+        glx_assert(math.isclose(1400, int(tunnelRxBytes)/int(tunnelRxPacket), abs_tol=100))
+
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
+        glx_assert(err == '')
 
 if __name__ == '__main__':
     unittest.main()

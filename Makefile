@@ -59,8 +59,11 @@ test-single-l3subif:
 test-single-dnsipcollect:
 	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_dnsipcollect.py
 
+test-single-statscollect:
+	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_statscollect.py
+
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。
-test-multi-all: test-multi-basic test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp test-multi-glx-nego test-multi-auto-dns test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect
+test-multi-all: test-multi-basic test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp test-multi-glx-nego test-multi-auto-dns test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect
 	echo "test-multi-all-finished"
