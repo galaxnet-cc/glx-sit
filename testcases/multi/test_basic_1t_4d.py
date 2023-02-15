@@ -290,5 +290,30 @@ class TestBasic1T4D(unittest.TestCase):
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
 
+    def test_bizpol_overlay_enable(self):
+        # remove route.
+        self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24")
+        # use bizpol to steering the traffic.
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       protocol=0,
+                                                       overlay_enable=True,
+                                                       route_label="0x3400010")
+
+        # 测试流量
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # 移除配置
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+        # 无需移除路由，依赖setup.
+
 if __name__ == '__main__':
     unittest.main()

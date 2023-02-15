@@ -324,7 +324,10 @@ class RestDevice:
         route_data["RouteProtocol"] = route_protocol
         return self.do_delete_request("EdgeRoute", route_data)
 
-    def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, steering_type=0, steering_mode=0, steering_interface="", app_id=65535):
+    def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
+                      direct_enable=False,
+                      steering_type=0, steering_mode=0, steering_interface="",
+                      overlay_enable=False, acc_enable=False, route_label="0xffffffffff"):
         bizpol_data = {}
         bizpol_data["Name"] = name
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
@@ -335,9 +338,15 @@ class RestDevice:
         bizpol_data["SteeringMode"] = steering_mode
         bizpol_data["SteeringInterface"] = steering_interface
         bizpol_data["AppId"] = app_id
+        bizpol_data["OverlayEnable"] = overlay_enable
+        bizpol_data["AccEnable"] = acc_enable
+        bizpol_data["RouteLabel"] = route_label
         return self.do_post_request("BusinessPolicy", bizpol_data)
 
-    def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, direct_enable, steering_type=0, steering_mode=0, steering_interface="", app_id=65535):
+    def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
+                      direct_enable=False,
+                      steering_type=0, steering_mode=0, steering_interface="",
+                      overlay_enable=False, acc_enable=False, route_label="0xffffffffff"):
         bizpol_data = {}
         bizpol_data["Name"] = name
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
@@ -348,6 +357,9 @@ class RestDevice:
         bizpol_data["SteeringMode"] = steering_mode
         bizpol_data["SteeringInterface"] = steering_interface
         bizpol_data["AppId"] = app_id
+        bizpol_data["OverlayEnable"] = overlay_enable
+        bizpol_data["AccEnable"] = acc_enable
+        bizpol_data["RouteLabel"] = route_label
         return self.do_patch_request("BusinessPolicy", bizpol_data)
 
     def delete_bizpol(self, name):
