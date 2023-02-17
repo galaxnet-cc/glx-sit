@@ -350,10 +350,12 @@ class RestDevice:
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
                       tag1="", tag2=""):
         bizpol_data = {}
+        bizpol_data["Segment"] = 0
         bizpol_data["Name"] = name
+        bizpol_data["Priority"] = priority
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
         bizpol_data["DstAddressWithPrefix"] = dst_prefix
-        bizpol_data["Protocol"] = protocol
+        bizpol_data["L4Protocol"] = protocol
         bizpol_data["DirectEnable"] = direct_enable
         bizpol_data["SteeringType"] = steering_type
         bizpol_data["SteeringMode"] = steering_mode
@@ -361,7 +363,7 @@ class RestDevice:
         bizpol_data["AppId"] = app_id
         bizpol_data["OverlayEnable"] = overlay_enable
         bizpol_data["AccEnable"] = acc_enable
-        bizpol_data["RouteLabel"] = route_label
+        bizpol_data["RouteLabelOverride"] = route_label
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         return self.do_post_request("BusinessPolicy", bizpol_data)
@@ -369,12 +371,15 @@ class RestDevice:
     def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
                       direct_enable=False,
                       steering_type=0, steering_mode=0, steering_interface="",
-                      overlay_enable=False, acc_enable=False, route_label="0xffffffffff"):
+                      overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
+                      tag1="", tag2=""):
         bizpol_data = {}
+        bizpol_data["Segment"] = 0
         bizpol_data["Name"] = name
+        bizpol_data["Priority"] = priority
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
         bizpol_data["DstAddressWithPrefix"] = dst_prefix
-        bizpol_data["Protocol"] = protocol
+        bizpol_data["L4Protocol"] = protocol
         bizpol_data["DirectEnable"] = direct_enable
         bizpol_data["SteeringType"] = steering_type
         bizpol_data["SteeringMode"] = steering_mode
@@ -382,7 +387,9 @@ class RestDevice:
         bizpol_data["AppId"] = app_id
         bizpol_data["OverlayEnable"] = overlay_enable
         bizpol_data["AccEnable"] = acc_enable
-        bizpol_data["RouteLabel"] = route_label
+        bizpol_data["RouteLabelOverride"] = route_label
+        bizpol_data['Tag1'] = tag1
+        bizpol_data['Tag2'] = tag2
         return self.do_patch_request("BusinessPolicy", bizpol_data)
 
     def delete_bizpol(self, name):
