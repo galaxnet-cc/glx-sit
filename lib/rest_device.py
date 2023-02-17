@@ -36,6 +36,20 @@ class RestDevice:
             obj_data), headers=REQUEST_HEADER_CTYPE)
         return response
 
+    def do_get_configs_request(self, obj_name, filter=""):
+        url = f'http://{self.api_ip}:{self.api_port}/public/v1/config/{obj_name}s'
+        if filter != "":
+            url = url + "?" + filter
+        response = requests.get(url, headers=REQUEST_HEADER_CTYPE)
+        return response
+
+    def do_get_states_request(self, obj_name, filter=""):
+        url = f'http://{self.api_ip}:{self.api_port}/public/v1/state/{obj_name}s'
+        if filter != "":
+            url = url + "?" + filter
+        response = requests.get(url, headers=REQUEST_HEADER_CTYPE)
+        return response
+
     def update_physical_interface(self, name, mtu, mode, bridgeName):
         physical_interface_data = {}
         physical_interface_data["Name"] = name
@@ -181,7 +195,7 @@ class RestDevice:
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
         return self.do_patch_request("Bridge", bridge_data)
 
-    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff", is_tcp=False, no_encryption=False):
+    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff", is_tcp=False, no_encryption=False, tag1="", tag2=""):
         link_data = {}
         link_data['LinkId'] = link_id
         link_data['LocalWanName'] = wan_name
@@ -191,6 +205,8 @@ class RestDevice:
         link_data['RouteLabel'] = route_label
         link_data['IsTcp'] = is_tcp
         link_data['NoEncryption'] = no_encryption
+        link_data['Tag1'] = tag1
+        link_data['Tag2'] = tag2
         return self.do_post_request("Link", link_data)
 
     def delete_glx_link(self, link_id):
@@ -199,10 +215,12 @@ class RestDevice:
         return self.do_delete_request("Link", link_data)
 
     # add passive flag.
-    def create_glx_tunnel(self, tunnel_id, is_passive=False):
+    def create_glx_tunnel(self, tunnel_id, is_passive=False, tag1="", tag2=""):
         tunnel_data = {}
         tunnel_data['TunnelId'] = tunnel_id
         tunnel_data['IsPassive'] = is_passive
+        tunnel_data['Tag1'] = tag1
+        tunnel_data['Tag2'] = tag2
         return self.do_post_request("Tunnel", tunnel_data)
 
     def delete_glx_tunnel(self, tunnel_id):
@@ -307,7 +325,7 @@ class RestDevice:
         label_data["RouteLabel"] = route_label
         return self.do_delete_request("EdgeRouteLabelFwdEntry", label_data)
 
-    def create_edge_route(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0):
+    def create_edge_route(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0, tag1="", tag2=""):
         route_data = {}
         route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
@@ -315,6 +333,8 @@ class RestDevice:
         route_data["RouteLabel"] = route_label
         route_data["IsAcc"] = is_acc
         route_data["IsAccReverse"] = is_acc_reverse
+        route_data['Tag1'] = tag1
+        route_data['Tag2'] = tag2
         return self.do_post_request("EdgeRoute", route_data)
 
     def delete_edge_route(self, route_prefix, route_protocol="overlay", segment=0):
@@ -327,7 +347,8 @@ class RestDevice:
     def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
                       direct_enable=False,
                       steering_type=0, steering_mode=0, steering_interface="",
-                      overlay_enable=False, acc_enable=False, route_label="0xffffffffff"):
+                      overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
+                      tag1="", tag2=""):
         bizpol_data = {}
         bizpol_data["Name"] = name
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
@@ -341,6 +362,8 @@ class RestDevice:
         bizpol_data["OverlayEnable"] = overlay_enable
         bizpol_data["AccEnable"] = acc_enable
         bizpol_data["RouteLabel"] = route_label
+        bizpol_data['Tag1'] = tag1
+        bizpol_data['Tag2'] = tag2
         return self.do_post_request("BusinessPolicy", bizpol_data)
 
     def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
