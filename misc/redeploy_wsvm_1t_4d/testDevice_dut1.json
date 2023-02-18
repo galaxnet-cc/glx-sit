@@ -33,6 +33,16 @@
       "OverlayEnable": true
     },
     {
+      "Name": "WAN4",
+      "Description": "WAN4 physical interface(to DUT3)",
+      "Mtu": 1500,
+      "Mode": "routed",
+      "InfraType": "vpp",
+      "InfraInterface": "GigabitEthernetb/0/0",
+      "BridgeName": "",
+      "OverlayEnable": true
+    },
+    {
       "Name": "LAN1",
       "Description": "LAN1 physical interface",
       "Mtu": 1500,

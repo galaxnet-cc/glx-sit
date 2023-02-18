@@ -19,9 +19,6 @@ class TestBasic1T4D(unittest.TestCase):
     # dut1--wan1---dut2---wan3---dut3---wan1--dut4
     # |________88.0/24 tst ___ 89.0/24_________|
     #
-    # TODO:
-    # 1. 未来我们还需要补充单NC接入双CPE时，CPE之间转发的场景验证。目前看这个场景应该是可以工作的（tunnel-rx-routing会优先查看CPE注册的route-label，然后再查NC表项，即精确表项优先）。
-    #    故先覆盖NC间转发即。
     def setUp(self):
         self.topo = Topo1T4D()
 

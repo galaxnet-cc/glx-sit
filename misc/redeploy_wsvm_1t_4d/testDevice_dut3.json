@@ -31,6 +31,16 @@
             "InfraInterface": "GigabitEthernet6/0/0",
             "BridgeName": "",
             "OverlayEnable": true
+        },
+        {
+            "Name": "WAN4",
+            "Description": "WAN4 physical interface(to DUT1)",
+            "Mtu": 1500,
+            "Mode": "routed",
+            "InfraType": "vpp",
+            "InfraInterface": "GigabitEthernet9/0/0",
+            "BridgeName": "",
+            "OverlayEnable": true
         }
     ]
 }
