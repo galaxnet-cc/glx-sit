@@ -81,14 +81,15 @@ class RestDevice:
         host_stack_dnsmasq_data['LeaseTIme'] = lease_time
         return self.do_post_request("HostStackDhcp", host_stack_dnsmasq_data)
 
-    def delete_fire_wall_rule(self, rule_name):
+    def delete_fire_wall_rule(self, rule_name, segment=0):
         rule_data = {}
+        rule_data['Segment'] = segment
         rule_data['Name'] = rule_name
         return self.do_delete_request("FirewallRule", rule_data)
 
-    def update_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535):
+    def update_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535, segment=0):
         rule_data = {}
-        rule_data['Segment'] = 0
+        rule_data['Segment'] = segment
         rule_data['Name'] = rule_name
         rule_data['Priority'] = priority
         rule_data['SrcAddressWithPrefix'] = "0.0.0.0/0"
@@ -98,9 +99,9 @@ class RestDevice:
         rule_data['AppId'] = app_id
         return self.do_patch_request("FirewallRule", rule_data)
 
-    def set_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535):
+    def set_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535, segment=0):
         rule_data = {}
-        rule_data['Segment'] = 0
+        rule_data['Segment'] = segment
         rule_data['Name'] = rule_name
         rule_data['Priority'] = priority
         rule_data['SrcAddressWithPrefix'] = "0.0.0.0/0"
@@ -348,9 +349,9 @@ class RestDevice:
                       direct_enable=False,
                       steering_type=0, steering_mode=0, steering_interface="",
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
-                      tag1="", tag2=""):
+                      tag1="", tag2="", segment=0):
         bizpol_data = {}
-        bizpol_data["Segment"] = 0
+        bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
         bizpol_data["Priority"] = priority
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
@@ -372,9 +373,9 @@ class RestDevice:
                       direct_enable=False,
                       steering_type=0, steering_mode=0, steering_interface="",
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
-                      tag1="", tag2=""):
+                      tag1="", tag2="", segment=0):
         bizpol_data = {}
-        bizpol_data["Segment"] = 0
+        bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
         bizpol_data["Priority"] = priority
         bizpol_data["SrcAddressWithPrefix"] = src_prefix
@@ -392,8 +393,9 @@ class RestDevice:
         bizpol_data['Tag2'] = tag2
         return self.do_patch_request("BusinessPolicy", bizpol_data)
 
-    def delete_bizpol(self, name):
+    def delete_bizpol(self, name, segment=0):
         bizpol_data = {}
+        bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
         return self.do_delete_request("BusinessPolicy", bizpol_data)
 
@@ -489,6 +491,25 @@ class RestDevice:
         data["BatchRouteFilePath"] = batch_route_file_path
         data["AccFibType"] = acc_fib_type
         return self.do_patch_request("SegmentAccProperties", data)
+
+    def create_segment_prop(self, segment_id, ip1="1.1.1.1"):
+        data = {}
+        data["Segment"] = segment_id
+        data["Ips"] = []
+        data["Ips"].append({"Ip4Address": ip1})
+        return self.do_post_request("SegmentProperties", data)
+
+    def delete_segment_prop(self, segment_id):
+        data = {}
+        data["Segment"] = segment_id
+        return self.do_delete_request("SegmentProperties", data)
+
+    def update_segment_prop(self, segment_id, ip1="3.3.3.3"):
+        data = {}
+        data["Segment"] = segment_id
+        data["Ips"] = []
+        data["Ips"].append({"Ip4Address": ip1})
+        return self.do_patch_request("SegmentProperties", data)
 
     def update_dpi_setting(self, dpi_enable=False):
         data = {}

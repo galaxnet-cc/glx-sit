@@ -35,6 +35,9 @@ test-multi-dnsipcollect:
 test-multi-stats-collect:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_stats_collect.py
 
+test-multi-segment-detection:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_segment_detection.py
+
 test-multi-l3subif:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_l3subif.py
 
@@ -68,8 +71,11 @@ test-single-statscollect:
 test-single-configurefilter:
 	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_configurefilter.py
 
+test-single-segment-detection:
+	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_basicmultisegment.py
+
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。
-test-multi-all: test-multi-basic test-multi-hubspoke test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp test-multi-glx-nego test-multi-auto-dns test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect
+test-multi-all: test-multi-basic test-multi-hubspoke test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp test-multi-glx-nego test-multi-auto-dns test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect test-multi-segment-detection
 	echo "test-multi-all-finished"
