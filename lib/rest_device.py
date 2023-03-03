@@ -495,8 +495,8 @@ class RestDevice:
     def create_segment_prop(self, segment_id, ip1="1.1.1.1"):
         data = {}
         data["Segment"] = segment_id
-        data["Ips"] = []
-        data["Ips"].append({"Ip4Address": ip1})
+        data["E2EIps"] = []
+        data["E2EIps"].append({"Ip4Address": ip1})
         return self.do_post_request("SegmentProperties", data)
 
     def delete_segment_prop(self, segment_id):
@@ -507,8 +507,8 @@ class RestDevice:
     def update_segment_prop(self, segment_id, ip1="3.3.3.3"):
         data = {}
         data["Segment"] = segment_id
-        data["Ips"] = []
-        data["Ips"].append({"Ip4Address": ip1})
+        data["E2EIps"] = []
+        data["E2EIps"].append({"Ip4Address": ip1})
         return self.do_patch_request("SegmentProperties", data)
 
     def update_dpi_setting(self, dpi_enable=False):

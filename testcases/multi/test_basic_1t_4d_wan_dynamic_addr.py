@@ -1,5 +1,6 @@
 import unittest
 import time
+import math
 
 from lib.util import glx_assert
 from topo.topo_1t_4d import Topo1T4D
@@ -365,6 +366,404 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         # 恢复默认网络配置
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3")
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
+
+    def test_nat_bizpol_with_pppoe_create_first(self):
+        # dut2 turn off WAN1 NAT.
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", False)
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
+        # dut1 turn off other WAN NAT
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
+        
+        # dut1网络配置
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN3", "dut1", "dut1")
+
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "30.30.30.1/24")
+
+        # dut2网络配置
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN4", "20.20.20.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_gw("WAN4", "20.20.20.1")
+        
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "30.30.30.2/24")
+
+        # 创建1->2 link
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN3",
+                                                         remote_ip="20.20.20.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=122, wan_name="WAN1",
+                                                         remote_ip="30.30.30.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+
+        time.sleep(15)
+
+        # bizpol牵引流量至WAN3
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="169.254.100.2",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN3",
+                                                       route_label="0x1200010",
+                                                       direct_enable=True,
+                                                       protocol=0)
+        time.sleep(5)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        glx_assert("100% packet loss" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        glx_assert("0% packet loss" in out)
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+
+        # bizpol牵引流量至WAN1
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="169.254.100.2",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN1",
+                                                       route_label="0x1200010",
+                                                       direct_enable=True,
+                                                       protocol=0)
+        time.sleep(5)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        glx_assert("100% packet loss" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        glx_assert("0% packet loss" in out)
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+
+        # 删除link
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=122)
+
+        # dut2 turn on WAN1 NAT.
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+        # dut1 turn on other WAN NAT
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+
+        # logif切回到dhcp
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+
+    def test_nat_bizpol_with_pppoe_create_after(self):
+        # bizpol牵引流量至WAN3
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="169.254.100.2",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN3",
+                                                       route_label="0x1200010",
+                                                       direct_enable=True,
+                                                       protocol=0)
+        time.sleep(5)
+        # dut2 turn off WAN1 NAT.
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", False)
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
+        # dut1 turn off other WAN NAT
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
+        
+        # dut1网络配置
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN3", "dut1", "dut1")
+
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "30.30.30.1/24")
+
+        # dut2网络配置
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN4", "20.20.20.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_gw("WAN4", "20.20.20.1")
+        
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "30.30.30.2/24")
+
+        # 创建1->2 link
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN3",
+                                                         remote_ip="20.20.20.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=122, wan_name="WAN1",
+                                                         remote_ip="30.30.30.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+
+        time.sleep(15)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        glx_assert("100% packet loss" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        glx_assert("0% packet loss" in out)
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+
+        # bizpol牵引流量至WAN1
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="169.254.100.2",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN1",
+                                                       route_label="0x1200010",
+                                                       direct_enable=True,
+                                                       protocol=0)
+        time.sleep(5)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        glx_assert("100% packet loss" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        glx_assert("0% packet loss" in out)
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+
+        # 删除link
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=122)
+
+        # dut2 turn on WAN1 NAT.
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+        # dut1 turn on other WAN NAT
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+
+        # logif切回到dhcp
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+
+    def test_traffic_bizpol_with_pppoe_create_first(self):
+        # dut1网络配置
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN3", "dut1", "dut1")
+        time.sleep(10)
+
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "30.30.30.1/24")
+
+        # dut2网络配置
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN4", "20.20.20.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_gw("WAN4", "20.20.20.1")
+        
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "30.30.30.2/24")
+
+        # 创建1->2 link
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN3",
+                                                         remote_ip="20.20.20.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=122, wan_name="WAN1",
+                                                         remote_ip="30.30.30.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+
+        time.sleep(15)
+
+        # bizpol牵引流量至WAN3
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN3",
+                                                       protocol=0)
+        time.sleep(5)
+        
+        # 清除接口计数
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        glx_assert(err == '')
+        # iperf打流
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "iperf3 -s -D")
+        glx_assert(err == '')
+        time.sleep(5)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
+        glx_assert(err == '')
+
+        time.sleep(20)
+
+        # 每个包大小应约为1400bytes
+        # link tx
+        linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 TxPackets")
+        linkTxPacket = linkTxPacket.rstrip()
+        glx_assert(err == '')
+        linkTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 TxBytes")
+        linkTxBytes = linkTxBytes.rstrip()
+        glx_assert(err == '')
+        print("link tx: ", int(linkTxBytes)/int(linkTxPacket))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+
+        # bizpol牵引流量至WAN1
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN1",
+                                                       protocol=0)
+        time.sleep(5)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
+        glx_assert(err == '')
+
+        time.sleep(20)
+        
+        linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#122 TxPackets")
+        linkTxPacket = linkTxPacket.rstrip()
+        glx_assert(err == '')
+        linkTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#122 TxBytes")
+        linkTxBytes = linkTxBytes.rstrip()
+        glx_assert(err == '')
+        print("link tx: ", int(linkTxBytes)/int(linkTxPacket))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+
+        # 删除link
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=122)
+
+        # logif切回到dhcp
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
+        glx_assert(err == '')
+
+    def test_traffic_bizpol_with_pppoe_create_after(self):
+        # bizpol牵引流量至WAN3
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN3",
+                                                       protocol=0)
+        time.sleep(5)
+        
+        # dut1网络配置
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN3", "dut1", "dut1")
+        time.sleep(10)
+
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "30.30.30.1/24")
+
+        # dut2网络配置
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN4", "20.20.20.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_gw("WAN4", "20.20.20.1")
+        
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "30.30.30.2/24")
+
+        # 创建1->2 link
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN3",
+                                                         remote_ip="20.20.20.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=122, wan_name="WAN1",
+                                                         remote_ip="30.30.30.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+
+        time.sleep(15)
+        
+        # 清除接口计数
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        glx_assert(err == '')
+        # iperf打流
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "iperf3 -s -D")
+        glx_assert(err == '')
+        time.sleep(5)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
+        glx_assert(err == '')
+
+        time.sleep(20)
+
+        # 每个包大小应约为1400bytes
+        # link tx
+        linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 TxPackets")
+        linkTxPacket = linkTxPacket.rstrip()
+        glx_assert(err == '')
+        linkTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 TxBytes")
+        linkTxBytes = linkTxBytes.rstrip()
+        glx_assert(err == '')
+        print("link tx: ", int(linkTxBytes)/int(linkTxPacket))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+
+        # bizpol牵引流量至WAN1
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN1",
+                                                       protocol=0)
+        time.sleep(5)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
+        glx_assert(err == '')
+
+        time.sleep(20)
+        
+        linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#122 TxPackets")
+        linkTxPacket = linkTxPacket.rstrip()
+        glx_assert(err == '')
+        linkTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#122 TxBytes")
+        linkTxBytes = linkTxBytes.rstrip()
+        glx_assert(err == '')
+        print("link tx: ", int(linkTxBytes)/int(linkTxPacket))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+
+        # 删除link
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=122)
+
+        # logif切回到dhcp
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
+        glx_assert(err == '')
 
 if __name__ == '__main__':
     unittest.main()

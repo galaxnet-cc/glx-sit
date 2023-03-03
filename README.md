@@ -24,20 +24,20 @@ ssh-keygen -p -m PEM -f ~/.ssh/id_rsa
 
 ```
 cd misc/redeploy_hw_1t_4d/
-sh redeploy.sh
+./redeploy.sh
 ```
 
 如果不进行出厂初始化，只更新包可以添加-f参数。
 
 ```
-sh redeploy.sh -f
+./redeploy.sh -f
 ```
 
 ### 复位实验环境（恢复出厂激活状态）
 
 ```
 cd misc/redeploy_hw_1t_4d/
-sh redeploy.sh -r
+./redeploy.sh -r
 
 
 ```

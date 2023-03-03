@@ -105,6 +105,26 @@ class TestRestVppConsistency1DBasicMultiSegment(unittest.TestCase):
         glx_assert(err == "")
         glx_assert("segment-id [1] configed" not in out)
 
+        # delete non default segment with segment properties
+        self.topo.dut1.get_rest_device().create_segment(1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        glx_assert(err == "")
+        glx_assert("segment-id [1] configed" in out)
+        self.topo.dut1.get_rest_device().create_segment_prop(segment_id=1)
+
+        resp = self.topo.dut1.get_rest_device().delete_segment(1)
+        glx_assert(resp.status_code != 410)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        glx_assert(err == "")
+        glx_assert("segment-id [1] configed" in out)
+
+        resp = self.topo.dut1.get_rest_device().delete_segment_prop(segment_id=1)
+        glx_assert(resp.status_code == 410)
+        self.topo.dut1.get_rest_device().delete_segment(1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        glx_assert(err == "")
+        glx_assert("segment-id [1] configed" not in out)
+
     def test_non_default_segment_recover(self):
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns delete ctrl-ns-seg-1")
         
@@ -123,8 +143,8 @@ class TestRestVppConsistency1DBasicMultiSegment(unittest.TestCase):
         glx_assert(err == "")
         glx_assert("1.1.1.1" in out)
 
-        # 重启fwdmd
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl restart fwdmd")
+        # 重启vpp
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl restart vpp")
         glx_assert(err == "")
         time.sleep(10)
 
@@ -150,3 +170,52 @@ class TestRestVppConsistency1DBasicMultiSegment(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
         glx_assert(err == "")
         glx_assert("segment-id [1] configed" not in out)
+
+    def test_no_to_update_return_status_code_ok(self):
+        self.topo.dut1.get_rest_device().create_segment(segment_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
+        glx_assert(err == "")
+        glx_assert("segment-id [1] configed" in out)
+
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=1, route_label="")
+        glx_assert(resp.status_code == 200)
+
+        self.topo.dut1.get_rest_device().delete_segment(segment_id=1)
+
+
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, tag1="kk")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        glx_assert(err == '')
+        glx_assert(f"link-id 1" in out)
+
+        data={}
+        data["IgnoreNotSpecifiedTable"] = True
+        linkTable = {}
+        linkTable["Table"] = "Link"
+        link1 = {}
+        link1["LinkId"] = 1
+        link1["Tag1"] = "kkkk"
+        linkTable["Items"] = []
+        linkTable["Items"].append(link1)
+        data["Tables"] = []
+        data["Tables"].append(linkTable)
+
+        resp = self.topo.dut1.get_rest_device().update_config_action(data)
+        glx_assert(resp.status_code == 200)
+
+        data={}
+        data["IgnoreNotSpecifiedTable"] = True
+        linkTable = {}
+        linkTable["Table"] = "Link"
+        link1 = {}
+        link1["LinkId"] = 1
+        link1["Tag1"] = "kkkk"
+        linkTable["Items"] = []
+        linkTable["Items"].append(link1)
+        data["Tables"] = []
+        data["Tables"].append(linkTable)
+
+        resp = self.topo.dut1.get_rest_device().update_config_action(data)
+        glx_assert(resp.status_code == 200)
+
+        self.topo.dut1.get_rest_device().delete_glx_link(1)
