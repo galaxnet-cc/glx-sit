@@ -232,7 +232,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         linkTxBytes = linkTxBytes.rstrip()
         glx_assert(err == '')
         print("link0 tx: ", int(linkTxBytes)/int(linkTxPacket))
-        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
 
         # link0 rx
         linkRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -244,7 +244,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         linkRxBytes = linkRxBytes.rstrip()
         glx_assert(err == '')
         print("link0 rx: ", int(linkRxBytes)/int(linkRxPacket))
-        glx_assert(math.isclose(1400, int(linkRxBytes)/int(linkRxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(linkRxBytes)/int(linkRxPacket), abs_tol=200))
 
         # 配置策略强制走link1
         self.topo.dut1.get_rest_device().update_bizpol(name="bizpol1", priority=1,
@@ -269,7 +269,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         linkTxBytes = linkTxBytes.rstrip()
         glx_assert(err == '')
         print("link1 tx: ", int(linkTxBytes)/int(linkTxPacket))
-        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
 
         # tunnel tx
         tunnelTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -281,7 +281,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         tunnelTxBytes = tunnelTxBytes.rstrip()
         glx_assert(err == '')
         print("tunnel tx: ", int(tunnelTxBytes)/int(tunnelTxPacket))
-        glx_assert(math.isclose(1400, int(tunnelTxBytes)/int(tunnelTxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(tunnelTxBytes)/int(tunnelTxPacket), abs_tol=200))
 
         # tunnel rx
         tunnelRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(

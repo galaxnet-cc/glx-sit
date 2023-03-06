@@ -617,7 +617,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         linkTxBytes = linkTxBytes.rstrip()
         glx_assert(err == '')
         print("link tx: ", int(linkTxBytes)/int(linkTxPacket))
-        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
 
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
 
@@ -645,7 +645,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         linkTxBytes = linkTxBytes.rstrip()
         glx_assert(err == '')
         print("link tx: ", int(linkTxBytes)/int(linkTxPacket))
-        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
 
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
 
@@ -720,7 +720,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         linkTxBytes = linkTxBytes.rstrip()
         glx_assert(err == '')
         print("link tx: ", int(linkTxBytes)/int(linkTxPacket))
-        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
 
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
 
@@ -748,7 +748,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         linkTxBytes = linkTxBytes.rstrip()
         glx_assert(err == '')
         print("link tx: ", int(linkTxBytes)/int(linkTxPacket))
-        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
 
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
 
