@@ -363,8 +363,9 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(f'[nat]' in out)
         # try to change wan mode to pppoe is not allowed.
         result = self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "test")
-        # this should be failed with 500.
-        glx_assert(result.status_code == 500)
+        # this should be success with 200.
+        glx_assert(result.status_code == 200)
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
 
     def test_glx_bizpol_tunnel_config_w_steering(self):
@@ -433,7 +434,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
         glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'tx policer' | awk '{{print $5}}'")
         glx_assert(err == '')
         glxTxIndex = glxTxIndex.rstrip()
         glx_assert(glxTxIndex == vppTxIndex)
@@ -455,7 +456,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
         glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'tx policer' | awk '{{print $5}}'")
         glx_assert(err == '')
         glxTxIndex = glxTxIndex.rstrip()
         glx_assert(glxTxIndex == vppTxIndex)
@@ -477,7 +478,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
         glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'tx policer' | awk '{{print $5}}'")
         glx_assert(err == '')
         glxTxIndex = glxTxIndex.rstrip()
         glx_assert(glxTxIndex == vppTxIndex)
@@ -496,7 +497,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         vppRxIndex = vppRxIndex.rstrip()
         glx_assert(vppRxIndex == rxIndex)
         glxRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep rx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'rx policer' | awk '{{print $5}}'")
         glx_assert(err == '')
         glxRxIndex = glxRxIndex.rstrip()
         glx_assert(glxRxIndex == vppRxIndex)
@@ -515,7 +516,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
         glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'tx policer' | awk '{{print $5}}'")
         glx_assert(err == '')
         glxTxIndex = glxTxIndex.rstrip()
         glx_assert(glxTxIndex == vppTxIndex)
@@ -534,7 +535,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         vppRxIndex = vppRxIndex.rstrip()
         glx_assert(vppRxIndex == rxIndex)
         glxRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep rx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'rx policer' | awk '{{print $5}}'")
         glx_assert(err == '')
         glxRxIndex = glxRxIndex.rstrip()
         glx_assert(glxRxIndex == vppRxIndex)
@@ -554,7 +555,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
         glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'tx policer' | awk '{{print $5}}'")
         glx_assert(err == '')
         glxTxIndex = glxTxIndex.rstrip()
         glx_assert(glxTxIndex == vppTxIndex)
@@ -573,7 +574,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         vppRxIndex = vppRxIndex.rstrip()
         glx_assert(vppRxIndex == rxIndex)
         glxRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep rx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'rx policer' | awk '{{print $5}}'")
         glx_assert(err == '')
         glxRxIndex = glxRxIndex.rstrip()
         glx_assert(glxRxIndex == vppRxIndex)
@@ -584,11 +585,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # delete the limit.
         self.topo.dut1.get_rest_device().delete_overlay_traffic_limit()
         glxTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep tx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'tx policer' | awk '{{print $5}}'")
         glxTxIndex = glxTxIndex.rstrip()
         glx_assert(glxTxIndex == "4294967295")
         glxRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show glx global | grep rx | awk '{{print $5}}'")
+            f"vppctl show glx global | grep 'rx policer' | awk '{{print $5}}'")
         glxRxIndex = glxRxIndex.rstrip()
         glx_assert(glxRxIndex == "4294967295")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
