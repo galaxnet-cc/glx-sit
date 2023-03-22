@@ -86,7 +86,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 1" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 1" in out)
         # delete the link
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
@@ -95,12 +95,12 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # verify link members count changed.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         # delete the tunnel
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
 
     def test_glx_tunnel_multi_link_config(self):
         self.topo.dut1.get_rest_device().create_glx_link(link_id=1, tunnel_id=1)
@@ -110,7 +110,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 1" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 1" in out)
         # add link2
         self.topo.dut1.get_rest_device().create_glx_link(link_id=2, wan_name="WAN2", tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
@@ -119,7 +119,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 2" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 2" in out)
         # delete the link 1
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
@@ -128,7 +128,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # verify link members count changed.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 1" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 1" in out)
         # delete the link 2
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=2)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
@@ -137,24 +137,24 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # verify link members count changed.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         # delete the tunnel
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
 
     def test_glx_single_route_config(self):
         # prepare the tunnel
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         # add the route.
         self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         glx_assert(err == '')
-        glx_assert(f"0x1234" in out)
+        glx_assert(f"0x0000001234" in out)
         # 0824: the route is not associated with tunnel, so tunnel can be deleted.
         # try to delete the tunnel and failed.
         #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
@@ -168,24 +168,24 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
 
     def test_glx_multi_route_config(self):
         # prepare the tunnel
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         # add the route 1.
         self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         glx_assert(err == '')
-        glx_assert(f"0x1234" in out)
+        glx_assert(f"0x0000001234" in out)
         # add the route 2.
         self.topo.dut1.get_rest_device().create_edge_route(route_prefix="2.2.2.2/32", route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 2.2.2.2")
         glx_assert(err == '')
-        glx_assert(f"0x1234" in out)
+        glx_assert(f"0x0000001234" in out)
         # 0824: the route is not associated with tunnel, so tunnel can be deleted.
         # try to delete the tunnel and failed.
         #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
@@ -204,23 +204,23 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
 
     def test_glx_route_multi_tunnel_config(self):
         # prepare the tunnel 1 & 2
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=2)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 2 members 0" in out)
+        glx_assert(f"tunnel-id 2(0x00000002) members 0" in out)
         # add the route.
         self.topo.dut1.get_rest_device().create_edge_route(route_prefix="1.1.1.1/32", route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 1.1.1.1")
         glx_assert(err == '')
-        glx_assert(f"0x1234" in out)
+        glx_assert(f"0x0000001234" in out)
         # 0824: the route is not associated with tunnel, so tunnel can be deleted.
         # try to delete the tunnel and failed.
         #result = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
@@ -236,23 +236,23 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 2 members 0" not in out)
+        glx_assert(f"tunnel-id 2(0x00000002) members 0" not in out)
 
     def test_glx_route_label_fwd_config(self):
         # prepare the tunnel
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         # add the route label fwd entry.
         self.topo.dut1.get_rest_device().create_glx_route_label_fwd(route_label="0x1234", tunnel_id1=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx route-label-fwd")
         glx_assert(err == '')
-        glx_assert('0x1234' in out)
+        glx_assert('0x0000001234' in out)
         #glx_assert(f"is_failover: 1" in out)
         # try to delete the tunnel and failed.
         # 220926: tunnel因允许passive/active创建，不再报错，改为判断不为500，这里有点违背了http RESTful逻辑。
@@ -265,24 +265,24 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_route_label_fwd(route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx route-label-fwd")
         glx_assert(err == '')
-        glx_assert('0x1234' not in out)
+        glx_assert('0x0000001234' not in out)
         # delete the tunnels and now it should ok.
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
 
     def test_glx_route_label_policy_type_tunnel_config(self):
         # prepare the tunnel
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         # add the route label policy entry.
         self.topo.dut1.get_rest_device().create_glx_route_label_policy_type_tunnel(route_label="0x1234", tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx route-label")
         glx_assert(err == '')
-        glx_assert('0x1234' in out)
+        glx_assert('0x0000001234' in out)
         #glx_assert(f"is_failover: 1" in out)
         # try to delete the tunnel and failed.
         # 220926: tunnel因允许passive/active创建，不再报错，改为判断不为500，这里有点违背了http RESTful逻辑。
@@ -294,24 +294,24 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_route_label_policy_type_tunnel(route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx route-label")
         glx_assert(err == '')
-        glx_assert('0x1234' not in out)
+        glx_assert('0x0000001234' not in out)
         # delete the tunnels and now it should ok.
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
 
     def test_glx_route_label_policy_type_table_config(self):
         # add the route label policy entry.
         self.topo.dut1.get_rest_device().create_glx_route_label_policy_type_table(route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx route-label")
         glx_assert(err == '')
-        glx_assert('0x1234' in out)
+        glx_assert('0x0000001234' in out)
         # delete the route label policy entry.
         self.topo.dut1.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx route-label")
         glx_assert(err == '')
-        glx_assert('0x1234' not in out)
+        glx_assert('0x0000001234' not in out)
 
     def test_glx_bizpol_nat_config(self):
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_sit", priority=1,
@@ -640,7 +640,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("is_acc: 1" in fibResult)
         glx_assert("1.1.1.1" in fibResult)
-        glx_assert("0x1234" in fibResult)
+        glx_assert("0x0000001234" in fibResult)
         # try to disable acc when there is route.
         result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
         # this should be failed with 500.
@@ -652,7 +652,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         fibResult, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 128")
         glx_assert(err == '')
         glx_assert(f"1.1.1.1/32" not in fibResult)
-        glx_assert("0x1234" not in fibResult)
+        glx_assert("0x0000001234" not in fibResult)
         # acc disable should ok.
         # try to disable acc when there is route.
         result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
@@ -723,11 +723,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=2)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 2 members 0" in out)
+        glx_assert(f"tunnel-id 2(0x00000002) members 0" in out)
 
         # update to t1 ok.
         self.topo.dut1.get_rest_device().update_glx_default_edge_route_label_fwd(tunnel_id1=1)
@@ -784,11 +784,11 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 2 members 0" not in out)
+        glx_assert(f"tunnel-id 2(0x00000002) members 0" not in out)
 
     # 创建特定route_label的fwd表项
     def test_glx_edge_route_label_fwd_entry_non_default(self):
@@ -796,17 +796,17 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" in out)
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=2)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 2 members 0" in out)
+        glx_assert(f"tunnel-id 2(0x00000002) members 0" in out)
 
         # create a edge route label fwd entry.
         self.topo.dut1.get_rest_device().create_glx_edge_route_label_fwd(route_label="0x1234", tunnel_id1=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
         glx_assert(err == '')
-        glx_assert(f"0x1234" in out)
+        glx_assert(f"0x0000001234" in out)
 
         # update to t1 ok.
         self.topo.dut1.get_rest_device().update_glx_edge_route_label_fwd(route_label="0x1234", tunnel_id1=1)
@@ -862,17 +862,17 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 1 members 0" not in out)
+        glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
         self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=2)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
         glx_assert(err == '')
-        glx_assert(f"tunnel-id 2 members 0" not in out)
+        glx_assert(f"tunnel-id 2(0x00000002) members 0" not in out)
 
         # remove the label should ok.
         self.topo.dut1.get_rest_device().delete_glx_edge_route_label_fwd(route_label="0x1234")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx edge-route-label-fwd")
         glx_assert(err == '')
-        glx_assert(f"0x1234" not in out)
+        glx_assert(f"0x0000001234" not in out)
 
     def test_glx_dpi_sameprocess_mode(self):
         # enable dpi.

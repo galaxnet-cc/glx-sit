@@ -676,59 +676,110 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert("test_acl5" not in out)
 
     def test_host_stack_dnsmasq(self):
+        # set a false dhcp router, check if it can be reconfigured
+        options=[
+            {"OptionCode": 3, "OptionValue": "192.168.88"}
+        ]
+        result=self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.88.50", 
+                                                                  ip_num=101, lease_time="12h", dns_server1="8.8.8.8", 
+                                                                  acc_domain_list="a.b.c", local_domain_list="x.y.z", 
+                                                                  dhcp_enable=True, options=options)
+        glx_assert(result.status_code == 500)
         # check if config file exists
-        a=self.topo.dut1.get_rest_device().set_host_stack_dnsmasq("default", "255.255.255.0",
-                                                                "192.168.88.50", "192.168.88.150", "12h")
+        options=[
+            {"OptionCode": 3, "OptionValue": "192.168.88.1"}, {"OptionCode": 6, "OptionValue": "8.8.8.8"}
+        ]
+        result=self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.88.50", 
+                                                                  ip_num=101, lease_time="12h", dns_server1="8.8.8.8", 
+                                                                  acc_domain_list="a.b.c", local_domain_list="x.y.z", 
+                                                                  dhcp_enable=True, options=options)
+        glx_assert(result.status_code == 201)
         out, err = self.topo.dut1.get_vpp_ssh_device(
-        ).get_cmd_result(f"ip netns exec ctrl-ns ls /tmp")
+        ).get_cmd_result(f"ip netns exec ctrl-ns ls /var/run")
         glx_assert(err == '')
-        glx_assert("dnsmasq_default.pid" in out)
-        glx_assert("dnsmasq_dhcp_default.conf" in out)
-        glx_assert("dnsmasq_dhcp_default.leases" in out)
+        glx_assert("glx_dnsmasq_default.pid" in out)
+        glx_assert("glx_dnsmasq_base_default.conf" in out)
+        glx_assert("glx_dnsmasq_dhcp_default.conf" in out)
+        glx_assert("glx_dnsmasq_dns_default.conf" in out)
+        glx_assert("glx_dnsmasq_dhcp_default.leases" in out)
         # check conf
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns cat /tmp/dnsmasq_dhcp_default.conf")
+            f"ip netns exec ctrl-ns cat /var/run/glx_dnsmasq_base_default.conf")
+        glx_assert(err == '')
+        glx_assert("conf-file=/var/run/glx_dnsmasq_dhcp_default.conf" in out)
+        glx_assert("conf-file=/var/run/glx_dnsmasq_dns_default.conf" not in out)
+        glx_assert("server=8.8.8.8" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns cat /var/run/glx_dnsmasq_dhcp_default.conf")
         glx_assert(err == '')
         glx_assert("dhcp-range=192.168.88.50,192.168.88.150,255.255.255.0,12h" in out)
+        glx_assert("dhcp-option=6,8.8.8.8" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns cat /var/run/glx_dnsmasq_dns_default.conf")
+        glx_assert(err == '')
+        glx_assert("/a.b.c/acc" in out)
+        glx_assert("/x.y.z/local" in out)
         # check if process exists
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
         glx_assert(err == '')
-        glx_assert("/tmp/dnsmasq_dhcp_default.conf" in out)
+        glx_assert("/var/run/glx_dnsmasq_base_default.conf" in out)
 
         # update
-        self.topo.dut1.get_rest_device().update_host_stack_dnsmasq("default", "255.255.255.0",
-                                                                   "192.168.88.100", "192.168.88.150", "12h")
+        options=[
+            {"OptionCode": 3, "OptionValue": "192.168.88.1"}, {"OptionCode": 6, "OptionValue": "114.114.114.114"}
+        ]
+        result = self.topo.dut1.get_rest_device().update_host_stack_dnsmasq(name="default", start_ip="192.168.88.100",
+                                                                   ip_num=101, lease_time="12h", 
+                                                                   local_dns_server_enable=True, options=options)
+        glx_assert(result.status_code == 200)
         out, err = self.topo.dut1.get_vpp_ssh_device(
-        ).get_cmd_result(f"ip netns exec ctrl-ns ls /tmp")
+        ).get_cmd_result(f"ip netns exec ctrl-ns ls /var/run")
         glx_assert(err == '')
-        glx_assert("dnsmasq_default.pid" in out)
-        glx_assert("dnsmasq_dhcp_default.conf" in out)
-        glx_assert("dnsmasq_dhcp_default.leases" in out)
+        glx_assert("glx_dnsmasq_default.pid" in out)
+        glx_assert("glx_dnsmasq_base_default.conf" in out)
+        glx_assert("glx_dnsmasq_dhcp_default.conf" in out)
+        glx_assert("glx_dnsmasq_dns_default.conf" in out)
+        glx_assert("glx_dnsmasq_dhcp_default.leases" in out)
         # check conf
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns cat /tmp/dnsmasq_dhcp_default.conf")
+            f"ip netns exec ctrl-ns cat /var/run/glx_dnsmasq_base_default.conf")
+        glx_assert(err == '')
+        glx_assert("conf-file=/var/run/glx_dnsmasq_dhcp_default.conf" not in out)
+        glx_assert("conf-file=/var/run/glx_dnsmasq_dns_default.conf" in out)
+        glx_assert("server=8.8.8.8" not in out)
+        # 192.168.88.1 is bvi ip address
+        glx_assert("dhcp-option=6,192.168.88.1" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns cat /var/run/glx_dnsmasq_dhcp_default.conf")
         glx_assert(err == '')
         glx_assert("dhcp-range=192.168.88.50,192.168.88.150,255.255.255.0,12h" not in out)
-        glx_assert("dhcp-range=192.168.88.100,192.168.88.150,255.255.255.0,12h" in out)
+        glx_assert("dhcp-range=192.168.88.100,192.168.88.200,255.255.255.0,12h" in out)
+        glx_assert("dhcp-option=6,114.114.114.114" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns cat /var/run/glx_dnsmasq_dns_default.conf")
+        glx_assert(err == '')
+        glx_assert("/a.b.c/acc" not in out)
+        glx_assert("/x.y.z/local" not in out)
         # check if process exists
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
         glx_assert(err == '')
-        glx_assert("/tmp/dnsmasq_dhcp_default.conf" in out)
+        glx_assert("/var/run/glx_dnsmasq_base_default.conf" in out)
 
         # delete and verify
         self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq("default")
         out, err = self.topo.dut1.get_vpp_ssh_device(
-        ).get_cmd_result(f"ip netns exec ctrl-ns ls /tmp")
+        ).get_cmd_result(f"ip netns exec ctrl-ns ls /var/run")
         glx_assert(err == '')
-        glx_assert("dnsmasq_default.pid" not in out)
-        glx_assert("dnsmasq_dhcp_default.conf" not in out)
-        glx_assert("dnsmasq_dhcp_default.leases" in out)
+        glx_assert("glx_dnsmasq_default.pid" not in out)
+        glx_assert("glx_dnsmasq_base_default.conf" not in out)
+        glx_assert("glx_dnsmasq_dhcp_default.conf" not in out)
+        glx_assert("glx_dnsmasq_dns_default.conf" not in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
         glx_assert(err == '')
-        glx_assert("/tmp/dnsmasq_dhcp_default.conf" not in out)
+        glx_assert("/var/run/glx_dnsmasq_base_default.conf" not in out)
 
     def test_bridge(self):
         # Add new ip address

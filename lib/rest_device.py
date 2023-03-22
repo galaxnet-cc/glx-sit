@@ -61,25 +61,38 @@ class RestDevice:
     def delete_host_stack_dnsmasq(self, name):
         host_stack_dnsmasq_data = {}
         host_stack_dnsmasq_data['Name'] = name
-        return self.do_delete_request("HostStackDhcp", host_stack_dnsmasq_data)
+        return self.do_delete_request("DhcpAndDnsSettings", host_stack_dnsmasq_data)
 
-    def update_host_stack_dnsmasq(self, name, gateway, start_ip, end_ip, lease_time):
+    def update_host_stack_dnsmasq(self, name, start_ip, ip_num, lease_time, dns_server1="", dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
         host_stack_dnsmasq_data = {}
         host_stack_dnsmasq_data['Name'] = name
-        host_stack_dnsmasq_data['GatewayIP'] = gateway
         host_stack_dnsmasq_data['StartIP'] = start_ip
-        host_stack_dnsmasq_data['EndIP'] = end_ip
+        host_stack_dnsmasq_data['IPNum'] = ip_num
+        host_stack_dnsmasq_data['NetMask'] = net_mask
         host_stack_dnsmasq_data['LeaseTIme'] = lease_time
-        return self.do_patch_request("HostStackDhcp", host_stack_dnsmasq_data)
+        host_stack_dnsmasq_data['UpstreamDnsServer1'] = dns_server1
+        host_stack_dnsmasq_data['UpstreamDnsServer2'] = dns_server2
+        host_stack_dnsmasq_data['AccDomainList'] = acc_domain_list
+        host_stack_dnsmasq_data['LocalDomainList'] = local_domain_list
+        host_stack_dnsmasq_data['DhcpEnable'] = dhcp_enable
+        host_stack_dnsmasq_data['LocalDnsServerEnable'] = local_dns_server_enable
+        host_stack_dnsmasq_data['Options'] = options
+        return self.do_patch_request("DhcpAndDnsSettings", host_stack_dnsmasq_data)
 
-    def set_host_stack_dnsmasq(self, name, gateway, start_ip, end_ip, lease_time):
+    def set_host_stack_dnsmasq(self, name, start_ip, ip_num, lease_time, dns_server1="", dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
         host_stack_dnsmasq_data = {}
         host_stack_dnsmasq_data['Name'] = name
-        host_stack_dnsmasq_data['GatewayIP'] = gateway
         host_stack_dnsmasq_data['StartIP'] = start_ip
-        host_stack_dnsmasq_data['EndIP'] = end_ip
+        host_stack_dnsmasq_data['IPNum'] = ip_num
         host_stack_dnsmasq_data['LeaseTIme'] = lease_time
-        return self.do_post_request("HostStackDhcp", host_stack_dnsmasq_data)
+        host_stack_dnsmasq_data['UpstreamDnsServer1'] = dns_server1
+        host_stack_dnsmasq_data['UpstreamDnsServer2'] = dns_server2
+        host_stack_dnsmasq_data['AccDomainList'] = acc_domain_list
+        host_stack_dnsmasq_data['LocalDomainList'] = local_domain_list
+        host_stack_dnsmasq_data['DhcpEnable'] = dhcp_enable
+        host_stack_dnsmasq_data['LocalDnsServerEnable'] = local_dns_server_enable
+        host_stack_dnsmasq_data['Options'] = options
+        return self.do_post_request("DhcpAndDnsSettings", host_stack_dnsmasq_data)
 
     def delete_fire_wall_rule(self, rule_name, segment=0):
         rule_data = {}

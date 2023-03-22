@@ -389,8 +389,8 @@ class TestRestVppConsistency1DConfigureFilter(unittest.TestCase):
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show ip fib table 0 | grep 1.1.1.1/32 -A 5")
         glx_assert(err == '')
-        glx_assert("0x222" in out)
-        glx_assert("0x111" not in out)
+        glx_assert("0x0000000222" in out)
+        glx_assert("0x0000000111" not in out)
 
         # 删除
         resp = self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="1.1.1.1/32")
