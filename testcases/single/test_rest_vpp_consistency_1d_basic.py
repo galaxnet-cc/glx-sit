@@ -879,3 +879,27 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(result.status_code == 410)
         # check back to switched interface.
         self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "switched", "default")
+
+    def test_port_mapping(self):
+        self.topo.dut1.get_rest_device().create_port_mapping(logic_if="WAN1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 static mappings | grep 'TCP local 169.254.100.2:7777'")
+        glx_assert(err == '')
+        glx_assert("7777 vrf 0" in out)
+        self.topo.dut1.get_rest_device().create_segment(1)
+        self.topo.dut1.get_rest_device().update_port_mapping(logic_if="WAN1", segment=1, internal_addr="169.254.101.2")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 static mappings | grep 'TCP local 169.254.100.2:7777'")
+        glx_assert(err == '')
+        glx_assert("7777 vrf 0" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 static mappings | grep 'TCP local 169.254.101.2:7777'")
+        glx_assert(err == '')
+        glx_assert("7777 vrf 1" in out)
+        # this should be failed with 500 because there are reference to the segment.
+        result = self.topo.dut1.get_rest_device().delete_segment(1)
+        glx_assert(result.status_code == 500)
+        # delete
+        self.topo.dut1.get_rest_device().delete_port_mapping(logic_if="WAN1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 static mappings | grep 'TCP local 169.254.101.2:7777'")
+        glx_assert(err == '')
+        glx_assert("7777 vrf 1" not in out)
+        result = self.topo.dut1.get_rest_device().delete_segment(1)
+        glx_assert(result.status_code == 410)

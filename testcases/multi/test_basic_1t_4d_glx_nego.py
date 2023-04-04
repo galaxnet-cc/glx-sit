@@ -68,22 +68,22 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
 
         # verify dut1.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 12,"')
+            f'vppctl show glx link | grep -C 4 "link-id 12(0x0000000c),"')
         print(err)
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 22,"')
+            f'vppctl show glx link | grep -C 4 "link-id 22(0x00000016),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
 
         # verify dut2.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 12,"')
+            f'vppctl show glx link | grep -C 4 "link-id 12(0x0000000c),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 22,"')
+            f'vppctl show glx link | grep -C 4 "link-id 22(0x00000016),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
 
@@ -96,8 +96,8 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link')
         glx_assert (err == '')
-        glx_assert(f'link-id 12,' not in out)
-        glx_assert(f'link-id 22,' not in out)
+        glx_assert(f'link-id 12' not in out)
+        glx_assert(f'link-id 22' not in out)
 
     def test_dut1_1_udp_1_tcp_link(self):
         # create dut1<>dut2 1 tcp + 1 udp links.
@@ -118,22 +118,22 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
 
         # verify dut1.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 12,"')
+            f'vppctl show glx link | grep -C 4 "link-id 12(0x0000000c),"')
         print(err)
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 22,"')
+            f'vppctl show glx link | grep -C 4 "link-id 22(0x00000016),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
 
         # verify dut2.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 12,"')
+            f'vppctl show glx link | grep -C 4 "link-id 12(0x0000000c),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 22,"')
+            f'vppctl show glx link | grep -C 4 "link-id 22(0x00000016),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
 
@@ -146,8 +146,8 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link')
         glx_assert (err == '')
-        glx_assert(f'link-id 12,' not in out)
-        glx_assert(f'link-id 22,' not in out)
+        glx_assert(f'link-id 12' not in out)
+        glx_assert(f'link-id 22' not in out)
 
     def test_dut1_2_tcp_link(self):
         # create dut1<>dut2 2 tcp links.
@@ -168,22 +168,22 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
 
         # verify dut1.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 12,"')
+            f'vppctl show glx link | grep -C 4 "link-id 12(0x0000000c),"')
         print(err)
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 22,"')
+            f'vppctl show glx link | grep -C 4 "link-id 22(0x00000016),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
 
         # verify dut2.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 12,"')
+            f'vppctl show glx link | grep -C 4 "link-id 12(0x0000000c),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f'vppctl show glx link | grep -C 4 "link-id 22,"')
+            f'vppctl show glx link | grep -C 4 "link-id 22(0x00000016),"')
         glx_assert (err == '')
         glx_assert(f'state: active' in out)
 
@@ -196,8 +196,8 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show glx link')
         glx_assert (err == '')
-        glx_assert(f'link-id 12,' not in out)
-        glx_assert(f'link-id 22,' not in out)
+        glx_assert(f'link-id 12' not in out)
+        glx_assert(f'link-id 22' not in out)
 
 
 if __name__ == '__main__':

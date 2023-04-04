@@ -105,7 +105,7 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         )
         protocol = protocol.rstrip()
         glx_assert (err == '')
-        glx_assert (protocol == '11')
+        glx_assert (protocol == '188')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show ip fib table 0 8.8.8.8'
         )
@@ -203,7 +203,7 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.9/32" "Protocol" '
         )
         glx_assert (err == '')
-        glx_assert (protocol == '11')
+        glx_assert (protocol == '188')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'vppctl show ip fib table 0 8.8.8.9/32'
         )

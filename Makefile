@@ -41,6 +41,9 @@ test-multi-segment-detection:
 test-multi-dhcp-and-dns:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_dhcp_and_dns_settings.py
 
+test-multi-wan-dnat:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_wan_dnat.py
+
 test-multi-l3subif:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_l3subif.py
 
@@ -80,5 +83,5 @@ test-single-segment-detection:
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。
-test-multi-all: test-multi-basic test-multi-hubspoke test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect test-multi-segment-detection test-multi-dhcp-and-dns
+test-multi-all: test-multi-basic test-multi-hubspoke test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dnat
 	echo "test-multi-all-finished"

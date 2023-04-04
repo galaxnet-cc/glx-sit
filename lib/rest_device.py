@@ -488,7 +488,7 @@ class RestDevice:
         data["AccIps"] = []
         data["AccIps"].append({"Ip4Address": acc_ip1})
         data["BatchRouteFilePath"] = batch_route_file_path
-        data["AccFibType"] = acc_fib_type
+        data["BatchRouteFibType"] = acc_fib_type
         return self.do_post_request("SegmentAccProperties", data)
 
     def delete_segment_acc_prop(self, segment_id):
@@ -502,7 +502,7 @@ class RestDevice:
         data["AccIps"] = []
         data["AccIps"].append({"Ip4Address": acc_ip1})
         data["BatchRouteFilePath"] = batch_route_file_path
-        data["AccFibType"] = acc_fib_type
+        data["BatchRouteFibType"] = acc_fib_type
         return self.do_patch_request("SegmentAccProperties", data)
 
     def create_segment_prop(self, segment_id, ip1="1.1.1.1"):
@@ -543,6 +543,33 @@ class RestDevice:
         l3subif_data['PhysicalInterface'] = physical_interface
         l3subif_data['SubId'] = sub_id
         return self.do_delete_request("L3SubInterface", l3subif_data)
+
+    def create_port_mapping(self, logic_if, external_port=7777, protocol="tcp", segment=0, internal_addr="169.254.100.2", internal_port=7777):
+        data = {}
+        data['Interface'] = logic_if
+        data['ExternalPort'] = external_port
+        data['Protocol'] = protocol
+        data['Segment'] = segment
+        data['InternalAddr'] = internal_addr
+        data['InternalPort'] = internal_port
+        return self.do_post_request("PortMapping", data)
+
+    def update_port_mapping(self, logic_if, external_port=7777, protocol="tcp", segment=0, internal_addr="169.254.100.2", internal_port=7777):
+        data = {}
+        data['Interface'] = logic_if
+        data['ExternalPort'] = external_port
+        data['Protocol'] = protocol
+        data['Segment'] = segment
+        data['InternalAddr'] = internal_addr
+        data['InternalPort'] = internal_port
+        return self.do_patch_request("PortMapping", data)
+
+    def delete_port_mapping(self, logic_if, external_port=7777, protocol="tcp"):
+        data = {}
+        data['Interface'] = logic_if
+        data['ExternalPort'] = external_port
+        data['Protocol'] = protocol
+        return self.do_delete_request("PortMapping", data)
 
     def delete_route_action(self, is_all=False, segment_id=0):
         data={}
