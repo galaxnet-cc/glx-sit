@@ -903,3 +903,51 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert("7777 vrf 1" not in out)
         result = self.topo.dut1.get_rest_device().delete_segment(1)
         glx_assert(result.status_code == 410)
+
+    def test_update_config_get_all_keys(self):
+        self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx tunnel")
+        glx_assert(err == '')
+        glx_assert("tunnel-id 1(0x00000001)" in out)
+
+        data1={}
+        data1["IgnoreNotSpecifiedTable"] = True
+        table = {}
+        table["Table"] = "EdgeRouteLabelFwdEntry"
+        entry1 = {}
+        entry1["RouteLabel"] = "0"
+        entry1["IsDefault"] = True
+        nexthopTunnel = {}
+        nexthopTunnel["TunnelId"] = 1
+        nexthopTunnel["TunnelPriority"] = 0
+        nexthopTunnel["TunnelWeight"] = 0
+        entry1["NexthopTunnels"] = []
+        entry1["NexthopTunnels"].append(nexthopTunnel)
+        table["Items"] = []
+        table["Items"].append(entry1)
+        data1["Tables"] = []
+        data1["Tables"].append(table)
+        
+        resp = self.topo.dut1.get_rest_device().update_config_action(data1)
+        glx_assert(resp.status_code == 200)
+
+        data1={}
+        data1["IgnoreNotSpecifiedTable"] = True
+        table = {}
+        table["Table"] = "EdgeRouteLabelFwdEntry"
+        entry1 = {}
+        entry1["RouteLabel"] = "0"
+        entry1["IsDefault"] = True
+        entry1["NexthopTunnels"] = []
+        table["Items"] = []
+        table["Items"].append(entry1)
+        data1["Tables"] = []
+        data1["Tables"].append(table)
+        
+        resp = self.topo.dut1.get_rest_device().update_config_action(data1)
+        glx_assert(resp.status_code == 200)
+
+        # self.topo.dut1.get_rest_device().update_glx_edge_route_label_fwd(route_label="0", tunnel_id1=None)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx edge-route-label-fwd")
+        glx_assert(err == '')
+        glx_assert("tunnel-id 1(0x00000001)" not in out)
