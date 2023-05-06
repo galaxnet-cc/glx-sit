@@ -462,12 +462,14 @@ class RestDevice:
     def update_config_action(self, data):
         return self.do_action_request("UpdateConfig", data)
 
-    def create_segment(self, segment_id):
+    def create_segment(self, segment_id, tag1="", tag2=""):
         data = {}
         data["Id"] = segment_id
+        data["Tag1"] = tag1
+        data["Tag2"] = tag2
         return self.do_post_request("Segment", data)
 
-    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, dns_intercept_enable=False, dns_ip_collect_enable=False, route_label="0xffffffffffffffff"):
+    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, dns_intercept_enable=False, dns_ip_collect_enable=False, route_label="0xffffffffffffffff", tag1="", tag2=""):
         data = {}
         data["Id"] = segment_id
         data["AccEnable"] = acc_enable
@@ -475,6 +477,8 @@ class RestDevice:
         data["DnsInterceptEnable"] = dns_intercept_enable
         data["DnsIpCollectEnable"] = dns_ip_collect_enable
         data["AccRouteLabel"] = route_label
+        data["Tag1"] = tag1
+        data["Tag2"] = tag2
         return self.do_patch_request("Segment", data)
 
     def delete_segment(self, segment_id):

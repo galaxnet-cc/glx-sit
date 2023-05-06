@@ -534,3 +534,123 @@ class TestRestVppConsistency1DConfigureFilter(unittest.TestCase):
 
         resp = self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
         glx_assert(resp.status_code == 410)
+
+    def test_segment_filter_with_tag(self):
+        # 过滤条件不生效，创建两个segment
+        data1={}
+        data1["IgnoreNotSpecifiedTable"] = True
+        segmentTable = {}
+        segmentTable["Table"] = "Segment"
+        segmentTable["Filters"] = "Filter[Id][eq]=1"
+        segment1 = {}
+        segment1["Id"] = 1
+        segment1["AccEnable"] = False
+        segment1["IntEdgeEnable"] = False
+        segment1["DnsInterceptEnable"] = False
+        segment1["DnsIpCollectEnable"] = False
+        segment1["AccRouteLabel"] = "0xffffffffffffffff"
+        segment1["Tag1"] = "tag1"
+        segment1["Tag2"] = "tag2"
+        segment2 = {}
+        segment2["Id"] = 2
+        segment2["AccEnable"] = False
+        segment2["IntEdgeEnable"] = False
+        segment2["DnsInterceptEnable"] = False
+        segment2["DnsIpCollectEnable"] = False
+        segment2["AccRouteLabel"] = "0xffffffffffffffff"
+        segment2["Tag1"] = "tag1"
+        segment2["Tag2"] = "tag2"
+        segmentTable["Items"] = []
+        segmentTable["Items"].append(segment1)
+        segmentTable["Items"].append(segment2)
+        data1["Tables"] = []
+        data1["Tables"].append(segmentTable)
+
+        resp = self.topo.dut1.get_rest_device().update_config_action(data1)
+        glx_assert(resp.status_code == 200)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx segment")
+        glx_assert(err == '')
+        glx_assert("segment-id [1] configed" in out)
+        glx_assert("segment-id [2] configed" in out)
+
+        # 过滤得到segment 1
+        resp = self.topo.dut1.get_rest_device().do_get_configs_request("Segment", filter="Filter[Id][eq]=1")
+        glx_assert(resp.status_code == 200)
+        data = json.loads(resp.text)
+        glx_assert(data["ObjCount"] == 1)
+        glx_assert(data["Objects"][0]["Object"]["Id"] == 1)
+        
+
+        # 更新过滤不生效，segment 1更新；删除过滤生效，只对segment 2进行删除
+        data2={}
+        data2["IgnoreNotSpecifiedTable"] = True
+        segmentTable = {}
+        segmentTable["Table"] = "Segment"
+        segmentTable["Filters"] = "Filter[Tag1][eq]=tag1&Filter[Id][eq]=2"
+        segment1["Id"] = 1
+        segment1["AccEnable"] = False
+        segment1["IntEdgeEnable"] = False
+        segment1["DnsInterceptEnable"] = False
+        segment1["DnsIpCollectEnable"] = False
+        segment1["AccRouteLabel"] = "0x7777"
+        segment1["Tag1"] = "kkkk"
+        segment1["Tag2"] = "emmm"
+        segmentTable["Items"] = []
+        segmentTable["Items"].append(segment1)
+        data2["Tables"] = []
+        data2["Tables"].append(segmentTable)
+
+        resp = self.topo.dut1.get_rest_device().update_config_action(data2)
+        glx_assert(resp.status_code == 200)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx segment segment-id 2")
+        glx_assert(err == '')
+        glx_assert("segment-id [2] configed" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx segment segment-id 1")
+        glx_assert(err == '')
+        glx_assert("segment-id [1] configed" in out)
+        
+        tag1, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Segment#1 Tag1")
+        glx_assert(err == '')
+        tag1 = tag1.rstrip()
+        glx_assert("kkkk" == tag1)
+        accRouteLabel, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Segment#1 AccRouteLabel")
+        glx_assert(err == '')
+        accRouteLabel = accRouteLabel.rstrip()
+        glx_assert("0x7777" == accRouteLabel)
+        
+
+        # 过滤条件为空，删除segment
+        data3={}
+        data3["IgnoreNotSpecifiedTable"] = True
+        segmentTable = {}
+        segmentTable["Table"] = "Segment"
+        segmentTable["Filters"] = ""
+        segment0 = {}
+        segment0["Id"] = 0
+        segment2 = {}
+        segment2["Id"] = 2
+        segment2["AccEnable"] = False
+        segment2["IntEdgeEnable"] = False
+        segment2["DnsInterceptEnable"] = False
+        segment2["DnsIpCollectEnable"] = False
+        segment2["AccRouteLabel"] = "0xffffffffffffffff"
+        segment2["Tag1"] = "tag1"
+        segment2["Tag2"] = "tag2"
+        segmentTable["Items"] = []
+        segmentTable["Items"].append(segment0)
+        segmentTable["Items"].append(segment2)
+        data3["Tables"] = []
+        data3["Tables"].append(segmentTable)
+
+        resp = self.topo.dut1.get_rest_device().update_config_action(data3)
+        glx_assert(resp.status_code == 200)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx segment")
+        glx_assert(err == '')
+        glx_assert("segment-id [1] configed" not in out)
+        glx_assert("segment-id [2] configed" in out)
+
+        # 删除
+        resp = self.topo.dut1.get_rest_device().delete_segment(segment_id=2)
+        glx_assert(resp.status_code == 410)
