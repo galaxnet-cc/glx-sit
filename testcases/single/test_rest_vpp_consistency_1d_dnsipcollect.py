@@ -22,6 +22,8 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
         glx_assert(err == '')
+        # 增加一点延迟以便go处理完毕
+        time.sleep(5)
         # 检测是否已经下发路由成功
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
         glx_assert(err == "")
@@ -34,6 +36,8 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset del acc 2.2.2.0/24")
         glx_assert(err == '')
+        # 增加一点延迟以便go处理完毕
+        time.sleep(5)
         # 检测路由已经删除
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
         glx_assert(err == "")
@@ -78,17 +82,17 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         # 开启acc_enable
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
         # 获取acc table与local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_before = int(out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         acc_route_num_before = int(out)
         # 创建SegmentAccProperties，添加BatchRouteFilePath
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", acc_fib_type="local")
         time.sleep(5)
         # 获取local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_after = int(out)
         # 检测比较local table是否增加了相应条数路由
@@ -97,10 +101,10 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", acc_fib_type="acc")
         time.sleep(5)
         # 获取acc table与local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_after = int(out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         acc_route_num_after = int(out)
         # 检测比较acc table是否增加相应条数路由
@@ -110,10 +114,10 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="")
         time.sleep(5)
         # 获取acc table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_after = int(out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         acc_route_num_after = int(out)
         # 检测比较路由数目是否恢复初始状态
@@ -131,6 +135,8 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(err == '')
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
         glx_assert(err == '')
+        # 增加延迟以便下发成功
+        time.sleep(5)
         # 检测是否已经下发路由成功
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
         glx_assert(err == "")
@@ -251,7 +257,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         # 向set中写入数据
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.0/24")
         glx_assert(err == '')
-        time.sleep(3)
+        time.sleep(5)
         # 检测是否已经下发路由成功
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 1.1.1.0/24")
         glx_assert(err == "")
@@ -263,7 +269,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
         glx_assert(err == '')
         # 等待路由更新
-        time.sleep(3)
+        time.sleep(5)
         # 检测下发的路由的AccRouteLabel是否已经更改
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 1.1.1.0/24")
         glx_assert(err == "")
@@ -286,18 +292,20 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         # 开启acc_enable
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
         # 获取acc table与local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_before = int(out)
         # 创建SegmentAccProperties，添加BatchRouteFilePath
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", acc_fib_type="local")
+        # wait for data saved to disk before restart.
+        time.sleep(5)
         # 重启fwdmd
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart fwdmd")
         glx_assert(err == '')
         # 等待fwdmd配置
         time.sleep(10)
         # 获取local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_after = int(out)
         # 检测比较local table是否增加了相应条数路由
@@ -306,7 +314,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="")
         time.sleep(5)
         # 获取local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_after = int(out)
         # 检测比较路由数目是否恢复初始状态
@@ -325,7 +333,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         # 开启acc_enable
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
         # 获取acc table与local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_before = int(out)
         # 创建SegmentAccProperties，添加BatchRouteFilePath
@@ -336,7 +344,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         # 等待vpp配置
         time.sleep(10)
         # 获取local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_after = int(out)
         # 检测比较local table是否增加了相应条数路由
@@ -345,7 +353,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="")
         time.sleep(5)
         # 获取local table中的路由数目
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep / | wc -l")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
         local_route_num_after = int(out)
         # 检测比较路由数目是否恢复初始状态
@@ -365,7 +373,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, route_label="0x777")
         # 创建SegmentAccProperties，添加BatchRouteFilePath
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", acc_fib_type="acc")
-        time.sleep(3)
+        time.sleep(5)
         # 获取acc table中的路由数目
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep 0x0000000777 | wc -l")
         glx_assert(err == "")
@@ -373,7 +381,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(acc_route_num_before == chnroute_num)
         #修改routelabel
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, route_label="0x999")
-        time.sleep(3)
+        time.sleep(5)
         # 检测比较acc table是否增加了相应条数路由
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep 0x0000000777 | wc -l")
         glx_assert(err == "")
@@ -385,7 +393,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(acc_route_num_after == chnroute_num)
         # 删除SegmentAccProperties BatchRouteFilePath属性
         self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="")
-        time.sleep(3)
+        time.sleep(5)
         # 获取acc table中的路由数目
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep 0x0000000999 | wc -l")
         glx_assert(err == "")
@@ -412,7 +420,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(acc_route_num_before == 0)
         # 创建SegmentAccProperties，添加BatchRouteFilePath
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", acc_fib_type="acc")
-        time.sleep(3)
+        time.sleep(5)
         # 获取acc table中的路由数目
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep 0x0000000777 | wc -l")
         glx_assert(err == "")
@@ -441,5 +449,5 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(err == "")
         # 关闭acc_enable
         self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
-        time.sleep(3)
+        time.sleep(5)
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)

@@ -955,7 +955,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
     def test_addr_group(self):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
         glx_assert(err == '')
-        glx_assert("No glx addr group configured..." in out)
+        glx_assert("No glx addr group configured" in out)
         # create
         self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup1", addr_with_prefix1="1.1.1.0/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
@@ -985,7 +985,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_addr_group(group_name="addrgroup2")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
         glx_assert(err == '')
-        glx_assert("No glx addr group configured..." in out)
+        glx_assert("No glx addr group configured" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 9218")
         glx_assert(err == '')
         glx_assert("2.2.0.0/16" not in out)
@@ -993,7 +993,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
     def test_port_group(self):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group")
         glx_assert(err == '')
-        glx_assert("No glx port group configured..." in out)
+        glx_assert("No glx port group configured" in out)
         # create
         self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup1", protocol1="tcp", port_list1="7777,9990~9999")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group | grep 'port group id: 1' -A 2")
@@ -1011,8 +1011,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # restart fwdmd
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart fwdmd")
         glx_assert(err == '')
-        # 等待fwdmd配置
-        time.sleep(5)
+        # 等待fwdmd重启完成（10s足够）
+        time.sleep(10)
         resp = self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup2", protocol1="tcp", port_list1="9999")
         glx_assert(resp.status_code == 500)
         self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup2", protocol1="tcp", port_list1="3333")
@@ -1024,16 +1024,16 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_port_group(group_name="portgroup2")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group")
         glx_assert(err == '')
-        glx_assert("No glx port group configured..." in out)
+        glx_assert("No glx port group configured" in out)
 
     def test_bizpol_with_obj_group(self):
         # 确保分配的group id为1
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
         glx_assert(err == '')
-        glx_assert("No glx addr group configured..." in out)
+        glx_assert("No glx addr group configured" in out)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group")
         glx_assert(err == '')
-        glx_assert("No glx port group configured..." in out)
+        glx_assert("No glx port group configured" in out)
         # create group
         self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup1", addr_with_prefix1="1.1.1.0/24")
         self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup1", protocol1="tcp", port_list1="7777")
@@ -1076,7 +1076,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # 确保分配的group id为1
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group")
         glx_assert(err == '')
-        glx_assert("No glx port group configured..." in out)
+        glx_assert("No glx port group configured" in out)
         # create group
         self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup1", protocol1="tcp", port_list1="7777")
         # create firewall

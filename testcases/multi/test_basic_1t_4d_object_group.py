@@ -277,7 +277,5 @@ class TestBasic1T4DObjectGroup(unittest.TestCase):
         self.topo.tst.get_ns_cmd_result("dut4", "pkill nc")
         # 无需恢复路由，依赖setup.
 
-    def test_port_group(self):
-
 if __name__ == '__main__':
     unittest.main()
