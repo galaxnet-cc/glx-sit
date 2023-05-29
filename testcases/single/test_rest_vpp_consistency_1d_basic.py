@@ -951,3 +951,157 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx edge-route-label-fwd")
         glx_assert(err == '')
         glx_assert("tunnel-id 1(0x00000001)" not in out)
+
+    def test_addr_group(self):
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
+        glx_assert(err == '')
+        glx_assert("No glx addr group configured..." in out)
+        # create
+        self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup1", addr_with_prefix1="1.1.1.0/24")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
+        glx_assert(err == '')
+        glx_assert("addr group id: 1 configured" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 9218")
+        glx_assert(err == '')
+        glx_assert("1.1.1.0/24" in out)
+        # update
+        self.topo.dut1.get_rest_device().update_addr_group(group_name="addrgroup1", addr_with_prefix1="2.2.0.0/16")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 9218")
+        glx_assert(err == '')
+        glx_assert("1.1.1.0/24" not in out)
+        glx_assert("2.2.0.0/16" in out)
+        # detect conflicts
+        resp = self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup2", addr_with_prefix1="2.2.2.0/24")
+        glx_assert(resp.status_code == 500)
+        self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup2", addr_with_prefix1="1.1.1.0/24")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
+        glx_assert(err == '')
+        glx_assert("addr group id: 2 configured" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 9219")
+        glx_assert(err == '')
+        glx_assert("1.1.1.0/24" in out)
+        # delete
+        self.topo.dut1.get_rest_device().delete_addr_group(group_name="addrgroup1")
+        self.topo.dut1.get_rest_device().delete_addr_group(group_name="addrgroup2")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
+        glx_assert(err == '')
+        glx_assert("No glx addr group configured..." in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 9218")
+        glx_assert(err == '')
+        glx_assert("2.2.0.0/16" not in out)
+
+    def test_port_group(self):
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group")
+        glx_assert(err == '')
+        glx_assert("No glx port group configured..." in out)
+        # create
+        self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup1", protocol1="tcp", port_list1="7777,9990~9999")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group | grep 'port group id: 1' -A 2")
+        glx_assert(err == '')
+        glx_assert("tcp ports: 7777" in out)
+        glx_assert("tcp ports: 9990~9999" in out)
+        # update
+        self.topo.dut1.get_rest_device().update_port_group(group_name="portgroup1", protocol1="tcp", port_list1="9990~9995,9997~9999")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group | grep 'port group id: 1' -A 2")
+        glx_assert(err == '')
+        glx_assert("tcp ports: 7777" not in out)
+        glx_assert("tcp ports: 9990~9999" not in out)
+        glx_assert("tcp ports: 9990~9995" in out)
+        glx_assert("tcp ports: 9997~9999" in out)
+        # restart fwdmd
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart fwdmd")
+        glx_assert(err == '')
+        # 等待fwdmd配置
+        time.sleep(5)
+        resp = self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup2", protocol1="tcp", port_list1="9999")
+        glx_assert(resp.status_code == 500)
+        self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup2", protocol1="tcp", port_list1="3333")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group | grep 'port group id: 2' -A 1")
+        glx_assert(err == '')
+        glx_assert("tcp ports: 3333" in out)
+        # delete
+        self.topo.dut1.get_rest_device().delete_port_group(group_name="portgroup1")
+        self.topo.dut1.get_rest_device().delete_port_group(group_name="portgroup2")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group")
+        glx_assert(err == '')
+        glx_assert("No glx port group configured..." in out)
+
+    def test_bizpol_with_obj_group(self):
+        # 确保分配的group id为1
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
+        glx_assert(err == '')
+        glx_assert("No glx addr group configured..." in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group")
+        glx_assert(err == '')
+        glx_assert("No glx port group configured..." in out)
+        # create group
+        self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup1", addr_with_prefix1="1.1.1.0/24")
+        self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup1", protocol1="tcp", port_list1="7777")
+        # create bizpol
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_test", priority=1,
+                                                       src_prefix="1.1.1.0/24",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       dst_addr_group="addrgroup1", dst_port_group="portgroup1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show bizpol bizpol | grep 1.1.1.0")
+        glx_assert(err == "")
+        glx_assert("dst-addr-group-id 1" in out)
+        glx_assert("dst-port-group-id 1" in out)
+        # update
+        self.topo.dut1.get_rest_device().update_bizpol(name="bizpol_test", priority=1,
+                                                       src_prefix="0.0.0.0/0",
+                                                       dst_prefix="1.1.1.0/24",
+                                                       protocol=0,
+                                                       src_addr_group="addrgroup1", src_port_group="portgroup1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show bizpol bizpol | grep 1.1.1.0")
+        glx_assert(err == "")
+        glx_assert("src-addr-group-id 1" in out)
+        glx_assert("src-port-group-id 1" in out)
+        glx_assert("dst-addr-group-id 0" in out)
+        glx_assert("dst-port-group-id 0" in out)
+        # check relation
+        resp = self.topo.dut1.get_rest_device().delete_addr_group(group_name="addrgroup1")
+        glx_assert(resp.status_code == 500)
+        resp = self.topo.dut1.get_rest_device().delete_port_group(group_name="portgroup1")
+        glx_assert(resp.status_code == 500)
+        # delete
+        self.topo.dut1.get_rest_device().delete_bizpol("bizpol_test")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show bizpol bizpol | grep 1.1.1.0")
+        glx_assert(err == "")
+        glx_assert("src-addr-group-id 1" not in out)
+        self.topo.dut1.get_rest_device().delete_addr_group(group_name="addrgroup1")
+        self.topo.dut1.get_rest_device().delete_port_group(group_name="portgroup1")
+
+    def test_firewall_with_obj_group(self):
+        # 确保分配的group id为1
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx port-group")
+        glx_assert(err == '')
+        glx_assert("No glx port group configured..." in out)
+        # create group
+        self.topo.dut1.get_rest_device().create_port_group(group_name="portgroup1", protocol1="tcp", port_list1="7777")
+        # create firewall
+        self.topo.dut1.get_rest_device().set_fire_wall_rule(rule_name="firewall_test", priority=1,
+                                                            dest_address="1.1.1.0/24",
+                                                            action="Deny",
+                                                            dst_port_group="portgroup1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show acl-plugin acl | grep 1.1.1.0")
+        glx_assert(err == "")
+        glx_assert("dst-port-group-id 1" in out)
+        # update
+        self.topo.dut1.get_rest_device().update_fire_wall_rule(rule_name="firewall_test", priority=1,
+                                                               dest_address="1.1.1.0/24",
+                                                               action="Deny",
+                                                               src_port_group="portgroup1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show acl-plugin acl | grep 1.1.1.0")
+        glx_assert(err == "")
+        glx_assert("src-port-group-id 1" in out)
+        glx_assert("dst-port-group-id 0" in out)
+        # check relation
+        resp = self.topo.dut1.get_rest_device().delete_port_group(group_name="portgroup1")
+        glx_assert(resp.status_code == 500)
+        # delete
+        self.topo.dut1.get_rest_device().delete_fire_wall_rule("firewall_test")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show acl-plugin acl | grep 1.1.1.0")
+        glx_assert(err == "")
+        glx_assert("src-port-group-id 1" not in out)
+        self.topo.dut1.get_rest_device().delete_port_group(group_name="portgroup1")

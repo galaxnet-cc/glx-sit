@@ -100,7 +100,8 @@ class RestDevice:
         rule_data['Name'] = rule_name
         return self.do_delete_request("FirewallRule", rule_data)
 
-    def update_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535, segment=0):
+    def update_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535, segment=0,
+                              src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group="",):
         rule_data = {}
         rule_data['Segment'] = segment
         rule_data['Name'] = rule_name
@@ -110,9 +111,14 @@ class RestDevice:
         rule_data['Action'] = action
         rule_data['L4Protocol'] = 0
         rule_data['AppId'] = app_id
+        rule_data["SrcAddrGroup"] = src_addr_group
+        rule_data["DstAddrGroup"] = dst_addr_group
+        rule_data["SrcPortGroup"] = src_port_group
+        rule_data["DstPortGroup"] = dst_port_group
         return self.do_patch_request("FirewallRule", rule_data)
 
-    def set_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535, segment=0):
+    def set_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535, segment=0,
+                           src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group=""):
         rule_data = {}
         rule_data['Segment'] = segment
         rule_data['Name'] = rule_name
@@ -122,6 +128,10 @@ class RestDevice:
         rule_data['Action'] = action
         rule_data['L4Protocol'] = 0
         rule_data['AppId'] = app_id
+        rule_data["SrcAddrGroup"] = src_addr_group
+        rule_data["DstAddrGroup"] = dst_addr_group
+        rule_data["SrcPortGroup"] = src_port_group
+        rule_data["DstPortGroup"] = dst_port_group
         return self.do_post_request("FirewallRule", rule_data)
 
     def set_logical_interface_segment(self, name, segment_id):
@@ -362,6 +372,7 @@ class RestDevice:
                       direct_enable=False,
                       steering_type=0, steering_mode=0, steering_interface="",
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
+                      src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group="",
                       tag1="", tag2="", segment=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
@@ -378,6 +389,10 @@ class RestDevice:
         bizpol_data["OverlayEnable"] = overlay_enable
         bizpol_data["AccEnable"] = acc_enable
         bizpol_data["RouteLabelOverride"] = route_label
+        bizpol_data["SrcAddrGroup"] = src_addr_group
+        bizpol_data["DstAddrGroup"] = dst_addr_group
+        bizpol_data["SrcPortGroup"] = src_port_group
+        bizpol_data["DstPortGroup"] = dst_port_group
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         return self.do_post_request("BusinessPolicy", bizpol_data)
@@ -386,6 +401,7 @@ class RestDevice:
                       direct_enable=False,
                       steering_type=0, steering_mode=0, steering_interface="",
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
+                      src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group="",
                       tag1="", tag2="", segment=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
@@ -402,6 +418,10 @@ class RestDevice:
         bizpol_data["OverlayEnable"] = overlay_enable
         bizpol_data["AccEnable"] = acc_enable
         bizpol_data["RouteLabelOverride"] = route_label
+        bizpol_data["SrcAddrGroup"] = src_addr_group
+        bizpol_data["DstAddrGroup"] = dst_addr_group
+        bizpol_data["SrcPortGroup"] = src_port_group
+        bizpol_data["DstPortGroup"] = dst_port_group
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         return self.do_patch_request("BusinessPolicy", bizpol_data)
@@ -580,3 +600,43 @@ class RestDevice:
         data["IsAll"] = is_all
         data["Segment"] = segment_id
         return self.do_action_request("BatchRouteFlush", data)
+
+    def create_addr_group(self, group_name, addr_with_prefix1):
+        data = {}
+        data['AddrGroupName'] = group_name
+        data['AddrGroupMembers'] = []
+        data['AddrGroupMembers'].append({"IpAddrWithPrefix": addr_with_prefix1})
+        return self.do_post_request("AddrGroup", data)
+
+    def update_addr_group(self, group_name, addr_with_prefix1):
+        data = {}
+        data['AddrGroupName'] = group_name
+        data['AddrGroupMembers'] = []
+        data['AddrGroupMembers'].append({"IpAddrWithPrefix": addr_with_prefix1})
+        return self.do_patch_request("AddrGroup", data)
+
+    def delete_addr_group(self, group_name):
+        data = {}
+        data['AddrGroupName'] = group_name
+        return self.do_delete_request("AddrGroup", data)
+
+    def create_port_group(self, group_name, protocol1, port_list1):
+        data = {}
+        data['PortGroupName'] = group_name
+        data['PortGroupMembers'] = []
+        data['PortGroupMembers'].append({"ProtocolType": protocol1,
+                                         "PortList": port_list1})
+        return self.do_post_request("PortGroup", data)
+
+    def update_port_group(self, group_name, protocol1, port_list1):
+        data = {}
+        data['PortGroupName'] = group_name
+        data['PortGroupMembers'] = []
+        data['PortGroupMembers'].append({"ProtocolType": protocol1,
+                                         "PortList": port_list1})
+        return self.do_patch_request("PortGroup", data)
+
+    def delete_port_group(self, group_name):
+        data = {}
+        data['PortGroupName'] = group_name
+        return self.do_delete_request("PortGroup", data)
