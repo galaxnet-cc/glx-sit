@@ -373,6 +373,9 @@ class RestDevice:
                       steering_type=0, steering_mode=0, steering_interface="",
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
                       src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group="",
+                      src_port_first=0, src_port_last=65535,
+                      dst_port_first=0, dst_port_last=65535,
+                      sched_class="",
                       tag1="", tag2="", segment=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
@@ -393,6 +396,11 @@ class RestDevice:
         bizpol_data["DstAddrGroup"] = dst_addr_group
         bizpol_data["SrcPortGroup"] = src_port_group
         bizpol_data["DstPortGroup"] = dst_port_group
+        bizpol_data["L4SourcePortOrICMPTypeFirst"] = src_port_first
+        bizpol_data["L4SourcePortOrICMPTypeLast"] = src_port_last
+        bizpol_data["L4DestPortOrICMPCodeFirst"] = dst_port_first
+        bizpol_data["L4DestPortOrICMPCodeLast"] = dst_port_last
+        bizpol_data["SchedClass"] = sched_class
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         return self.do_post_request("BusinessPolicy", bizpol_data)
@@ -402,6 +410,9 @@ class RestDevice:
                       steering_type=0, steering_mode=0, steering_interface="",
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
                       src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group="",
+                      src_port_first=0, src_port_last=65535,
+                      dst_port_first=0, dst_port_last=65535,
+                      sched_class="",
                       tag1="", tag2="", segment=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
@@ -422,6 +433,11 @@ class RestDevice:
         bizpol_data["DstAddrGroup"] = dst_addr_group
         bizpol_data["SrcPortGroup"] = src_port_group
         bizpol_data["DstPortGroup"] = dst_port_group
+        bizpol_data["L4SourcePortOrICMPTypeFirst"] = src_port_first
+        bizpol_data["L4SourcePortOrICMPTypeLast"] = src_port_last
+        bizpol_data["L4DestPortOrICMPCodeFirst"] = dst_port_first
+        bizpol_data["L4DestPortOrICMPCodeLast"] = dst_port_last
+        bizpol_data["SchedClass"] = sched_class
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         return self.do_patch_request("BusinessPolicy", bizpol_data)
@@ -640,3 +656,34 @@ class RestDevice:
         data = {}
         data['PortGroupName'] = group_name
         return self.do_delete_request("PortGroup", data)
+
+    # bw unit is in kbps, default 10Mbps
+    def update_sched_wan_agg_global_params(self,
+                                           tx_enable=False,
+                                           tx_agg_bw=10000,
+                                           tx_critical_bw=2000,
+                                           tx_high_bw=4000,
+                                           tx_normal_bw=3000,
+                                           tx_low_bw=1000,
+                                           rx_enable=False,
+                                           rx_agg_bw=10000,
+                                           rx_critical_bw=2000,
+                                           rx_high_bw=4000,
+                                           rx_normal_bw=3000,
+                                           rx_low_bw=1000):
+        data = {}
+        # 使用默认名称
+        data["Name"] = "default"
+        data["TxEnable"] = tx_enable
+        data["TxAggregateBandwidth"] = tx_agg_bw
+        data["TxCriticalSchedClassBandwidth"] = tx_critical_bw
+        data["TxHighSchedClassBandwidth"] = tx_high_bw
+        data["TxNormalSchedClassBandwidth"] = tx_normal_bw
+        data["TxLowSchedClassBandwidth"] = tx_low_bw
+        data["RxEnable"] = rx_enable
+        data["RxAggregateBandwidth"] = rx_agg_bw
+        data["RxCriticalSchedClassBandwidth"] = rx_critical_bw
+        data["RxHighSchedClassBandwidth"] = rx_high_bw
+        data["RxNormalSchedClassBandwidth"] = rx_normal_bw
+        data["RxLowSchedClassBandwidth"] = rx_low_bw
+        return self.do_patch_request("WanAggregateScheduler", data)

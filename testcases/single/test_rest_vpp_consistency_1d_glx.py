@@ -1102,5 +1102,70 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(f"link-id 1" not in out)
 
+    # 验证port range可以正确配置，避免功能异常
+    def test_glx_bizpol_port_range(self):
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_port_range",priority=1,
+                                                       src_prefix="192.168.89.5/32",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       # tcp
+                                                       protocol=1,
+                                                       src_port_first=10000,
+                                                       src_port_last=20000,
+                                                       dst_port_first=10000,
+                                                       dst_port_last=20000,
+                                                       direct_enable=True)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep 192.168.89.5")
+        glx_assert(err == '')
+        glx_assert('sport 10000-20000' in out)
+        glx_assert('dport 10000-20000' in out)
+        glx_assert('[nat]' in out)
+
+        self.topo.dut1.get_rest_device().update_bizpol(name="bizpol_port_range",priority=1,
+                                                       src_prefix="192.168.89.5/32",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       # tcp
+                                                       protocol=1,
+                                                       src_port_first=30000,
+                                                       src_port_last=40000,
+                                                       dst_port_first=30000,
+                                                       dst_port_last=40000,
+                                                       direct_enable=True)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep 192.168.89.5")
+        glx_assert(err == '')
+        glx_assert('sport 10000-20000' not in out)
+        glx_assert('sport 30000-40000' in out)
+        glx_assert('dport 10000-20000' not in out)
+        glx_assert('dport 30000-40000' in out)
+        glx_assert('[nat]' in out)
+
+        # delete the bizpol.
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_port_range")
+
+    def test_glx_bizpol_sched_class(self):
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_sched_class",priority=1,
+                                                       src_prefix="192.168.89.6/32",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       sched_class="normal",
+                                                       direct_enable=True)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep 192.168.89.6")
+        glx_assert(err == '')
+        glx_assert('sched-class 2' in out)
+        glx_assert('[nat]' in out)
+
+        self.topo.dut1.get_rest_device().update_bizpol(name="bizpol_sched_class",priority=1,
+                                                       src_prefix="192.168.89.6/32",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       sched_class="high",
+                                                       direct_enable=True)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep 192.168.89.6")
+        glx_assert(err == '')
+        glx_assert('sched-class 1' in out)
+        glx_assert('[nat]' in out)
+
+        # delete the bizpol.
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sched_class")
+
 if __name__ == '__main__':
     unittest.main()
