@@ -277,5 +277,67 @@ class TestBasic1T4DObjectGroup(unittest.TestCase):
         self.topo.tst.get_ns_cmd_result("dut4", "pkill nc")
         # 无需恢复路由，依赖setup.
 
+    def test_bizpol_session_misc_change_with_obj_group(self):
+        # remove route.
+        self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24")
+        # 创建group
+        # 不能在这里建立，因为仍会查到并记录到session上
+        #self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup1", addr_with_prefix1="192.168.4.0/24")
+
+        # 清除计数
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear bizpol sessions")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear node counters")
+
+        # 初始情况下，不配置addr group
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       overlay_enable=True,
+                                                       route_label="0x3400010")
+
+        # 测试流量
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为0即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # 创建add group.
+        self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup1", addr_with_prefix1="192.168.4.0/24")
+        # update bizpol
+        # self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+        # time.sleep(5)
+        self.topo.dut1.get_rest_device().update_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       overlay_enable=True,
+                                                       dst_addr_group="addrgroup1",
+                                                       route_label="0x3400010")
+
+        # 重新发包，触发misc change.
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show node counters | grep misc")
+        glx_assert(err == '')
+        # 有session因misc变动的删除计数
+        glx_assert("misc change" in out)
+        # session数量仍为1
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show bizpol sessions | grep elements")
+        glx_assert(err == '')
+        # 仍只有一个session (2个elements，正反向)
+        glx_assert("2 active" in out)
+
+        # 移除配置
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+        self.topo.dut1.get_rest_device().delete_addr_group(group_name="addrgroup1")
+
 if __name__ == '__main__':
     unittest.main()
