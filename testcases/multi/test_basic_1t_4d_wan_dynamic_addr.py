@@ -695,8 +695,9 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                          tunnel_id=12,
                                                          route_label="0x1200010")
 
+        # 等待link up
         time.sleep(15)
-        
+
         # 清除接口计数
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
         glx_assert(err == '')
@@ -706,8 +707,6 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         time.sleep(5)
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
         glx_assert(err == '')
-
-        time.sleep(20)
 
         # 每个包大小应约为1400bytes
         # link tx
@@ -734,11 +733,13 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                        protocol=0)
         time.sleep(5)
 
+        # 清除接口计数
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        glx_assert(err == '')
+
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
         glx_assert(err == '')
 
-        time.sleep(20)
-        
         linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget LinkState#122 TxPackets")
         linkTxPacket = linkTxPacket.rstrip()

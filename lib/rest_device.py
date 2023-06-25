@@ -233,6 +233,12 @@ class RestDevice:
         link_data['Tag2'] = tag2
         return self.do_post_request("Link", link_data)
 
+    def update_glx_link(self, link_id, qos_level=0):
+        link_data = {}
+        link_data['LinkId'] = link_id
+        link_data['QosLevel'] = qos_level
+        return self.do_patch_request("Link", link_data)
+
     def delete_glx_link(self, link_id):
         link_data = {}
         link_data['LinkId'] = link_id
@@ -376,7 +382,9 @@ class RestDevice:
                       src_port_first=0, src_port_last=65535,
                       dst_port_first=0, dst_port_last=65535,
                       sched_class="",
-                      tag1="", tag2="", segment=0):
+                      tag1="", tag2="",
+                      segment=0,
+                      qos_level=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
@@ -403,6 +411,7 @@ class RestDevice:
         bizpol_data["SchedClass"] = sched_class
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
+        bizpol_data['QosLevel'] = qos_level
         return self.do_post_request("BusinessPolicy", bizpol_data)
 
     def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
@@ -413,7 +422,9 @@ class RestDevice:
                       src_port_first=0, src_port_last=65535,
                       dst_port_first=0, dst_port_last=65535,
                       sched_class="",
-                      tag1="", tag2="", segment=0):
+                      tag1="", tag2="",
+                      segment=0,
+                      qos_level=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
@@ -440,6 +451,7 @@ class RestDevice:
         bizpol_data["SchedClass"] = sched_class
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
+        bizpol_data['QosLevel'] = qos_level
         return self.do_patch_request("BusinessPolicy", bizpol_data)
 
     def delete_bizpol(self, name, segment=0):
@@ -505,7 +517,10 @@ class RestDevice:
         data["Tag2"] = tag2
         return self.do_post_request("Segment", data)
 
-    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, dns_intercept_enable=False, dns_ip_collect_enable=False, route_label="0xffffffffffffffff", tag1="", tag2=""):
+    def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, dns_intercept_enable=False,
+                       dns_ip_collect_enable=False, route_label="0xffffffffffffffff",
+                       tag1="", tag2="",
+                       min_qos_level=0, max_qos_level=7):
         data = {}
         data["Id"] = segment_id
         data["AccEnable"] = acc_enable
@@ -515,6 +530,8 @@ class RestDevice:
         data["AccRouteLabel"] = route_label
         data["Tag1"] = tag1
         data["Tag2"] = tag2
+        data["MinQosLevel"] = min_qos_level
+        data["MaxQosLevel"] = max_qos_level
         return self.do_patch_request("Segment", data)
 
     def delete_segment(self, segment_id):
