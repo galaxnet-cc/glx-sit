@@ -43,6 +43,16 @@
       "OverlayEnable": true
     },
     {
+      "Name": "WAN5",
+      "Description": "WAN5 physical interface(to one-arm-br)",
+      "Mtu": 1500,
+      "Mode": "routed",
+      "InfraType": "vpp",
+      "InfraInterface": "GigabitEthernetc/0/0",
+      "BridgeName": "",
+      "OverlayEnable": true
+    },
+    {
       "Name": "LAN1",
       "Description": "LAN1 physical interface",
       "Mtu": 1500,

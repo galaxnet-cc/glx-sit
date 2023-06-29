@@ -59,6 +59,9 @@ test-multi-sched:
 test-multi-qos-level:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_qos_level.py
 
+test-multi-onearm:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_onearm.py
+
 # 单机测试例
 
 test-single-all:
@@ -88,6 +91,9 @@ test-single-configurefilter:
 
 test-single-segment-detection:
 	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_basicmultisegment.py
+
+test-single-onearm:
+	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_onearm.py
 
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。

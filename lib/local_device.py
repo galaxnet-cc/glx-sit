@@ -4,11 +4,12 @@ import os
 import subprocess
 
 class LocalDevice:
-    def __init__(self, if1, if2, if3=None, if4=None):
+    def __init__(self, if1, if2, if3=None, if4=None, if5=None):
         self.if1 = if1
         self.if2 = if2
         self.if3 = if3
         self.if4 = if4
+        self.if5 = if5
 
     def add_ns(self, ns_name):
         os.system(f'ip netns add {ns_name}')

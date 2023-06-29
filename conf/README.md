@@ -10,4 +10,12 @@ wsvm是基于办公室物理机的虚拟拓朴。
 
 tst拓朴中的LinuxIf1/3与DUT1相连， LinuxIf2/4与DUT4相连。
 
+## 20230629 更新拓朴以支持单臂模式
+
+tst linux5接入one-arm-br
+dut1 wan5接入one-arm br
+dut2 wan5接入uplink-br
+
+详见自动化测试拓朴设计
+
 # hw

@@ -41,6 +41,16 @@
             "InfraInterface": "GigabitEthernet9/0/0",
             "BridgeName": "",
             "OverlayEnable": true
+        },
+        {
+            "Name": "WAN5",
+            "Description": "WAN5 physical interface(to uplink-br)",
+            "Mtu": 1500,
+            "Mode": "routed",
+            "InfraType": "vpp",
+            "InfraInterface": "GigabitEtherneta/0/0",
+            "BridgeName": "",
+            "OverlayEnable": true
         }
     ]
 }

@@ -60,7 +60,8 @@ class Topo1T4D:
                              if1=tstconf['LinuxIf1'],
                              if2=tstconf['LinuxIf2'],
                              if3=tstconf['LinuxIf3'],
-                             if4=tstconf['LinuxIf4'])
+                             if4=tstconf['LinuxIf4'],
+                             if5=tstconf['LinuxIf5'])
 
     def have_pfsense(self):
         return self.sitconf["Topos"]["Topo1T4D"]["HavePfsense"]

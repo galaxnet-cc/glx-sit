@@ -4,19 +4,20 @@
       "Desc": "本地测试环境，可以根据需要自行设置",
       "Duts": {
         "DUT1": {
-          "MgmtIp": "192.168.122.88",
+          "MgmtIp": "192.168.31.201",
           "SshUsername": "root",
           "SshPassword": "OBCubuntuD102",
           "IfMap": {
-            "WAN1": "GigabitEthernet8/0/0",
-            "WAN2": "GigabitEthernet6/0/0",
-            "LAN1": "GigabitEthernet7/0/0"
+            "WAN1": "GigabitEthernet7/0/0",
+            "WAN2": "GigabitEthernet8/0/0",
+            "WAN3": "GigabitEtherneta/0/0",
+            "LAN1": "GigabitEthernet6/0/0"
           }
         }
       }
     },
     "Topo1T4D": {
-      "Desc": "办公室工作站虚拟机测试床拓朴（支持pfsense）",
+      "Desc": "办公室工作站虚拟机测试床拓朴（支持pfsense）更新日期 20230629 更新原因 更改拓朴支持单臂模式",
       "HavePfsense": true,
       "Duts": {
         "DUT1": {
@@ -26,7 +27,9 @@
           "IfMap": {
             "WAN1": "GigabitEthernet7/0/0",
             "WAN2": "GigabitEthernet8/0/0",
-            "WAN3": "GigabitEtherneta/0/0"
+            "WAN3": "GigabitEtherneta/0/0",
+            "WAN4": "GigabitEthernetb/0/0",
+            "WAN5": "GigabitEthernetc/0/0"
           }
         },
         "DUT2": {
@@ -37,7 +40,8 @@
             "WAN1": "GigabitEthernet6/0/0",
             "WAN2": "GigabitEthernet7/0/0",
             "WAN3": "GigabitEthernet8/0/0",
-            "WAN4": "GigabitEthernet9/0/0"
+            "WAN4": "GigabitEthernet9/0/0",
+            "WAN5": "GigabitEtherneta/0/0"
           }
         },
         "DUT3": {
@@ -67,7 +71,8 @@
         "LinuxIf1": "enp6s0",
         "LinuxIf2": "enp7s0",
         "LinuxIf3": "enp8s0",
-        "LinuxIf4": "enp9s0"
+        "LinuxIf4": "enp9s0",
+        "LinuxIf5": "enp10s0"
       }
     }
   }

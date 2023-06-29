@@ -147,6 +147,16 @@ class RestDevice:
         logif_data['StaticIpAddrWithPrefix'] = ip_w_prefix
         return self.do_patch_request("LogicalInterface", logif_data)
 
+    # ip+gw同时设置
+    def set_logical_interface_static_ip_gw(self, name, ip_w_prefix, gw_ip):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['AddressingType'] = "STATIC"
+        logif_data['StaticIpAddrWithPrefix'] = ip_w_prefix
+        logif_data['StaticGWIpAddr'] = gw_ip
+        return self.do_patch_request("LogicalInterface", logif_data)
+
+
     def set_logical_interface_static_gw(self, name, gw_ip):
         logif_data = {}
         logif_data['Name'] = name
@@ -191,6 +201,12 @@ class RestDevice:
         logif_data = {}
         logif_data['Name'] = name
         logif_data['TcpListenEnable'] = tcp_listen_enable
+        return self.do_patch_request("LogicalInterface",logif_data)
+
+    def set_logical_interface_one_arm_mode_enable(self,name, enable):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data['OneArmModeEnable'] = enable
         return self.do_patch_request("LogicalInterface",logif_data)
 
     def delete_bridge(self, name):
@@ -355,11 +371,16 @@ class RestDevice:
         label_data["RouteLabel"] = route_label
         return self.do_delete_request("EdgeRouteLabelFwdEntry", label_data)
 
-    def create_edge_route(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0, tag1="", tag2=""):
+    def create_edge_route(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0, tag1="", tag2="",
+                          next_hop_ip=""):
         route_data = {}
         route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = route_protocol
+        if route_protocol == "static":
+            # 当前仅支持ip模式
+            route_data["NexthopType"] = "ip"
+            route_data["NexthopIp"] = next_hop_ip
         route_data["RouteLabel"] = route_label
         route_data["IsAcc"] = is_acc
         route_data["IsAccReverse"] = is_acc_reverse
