@@ -539,7 +539,7 @@ class RestDevice:
         return self.do_post_request("Segment", data)
 
     def update_segment(self, segment_id, acc_enable=False, int_edge_enable=False, dns_intercept_enable=False,
-                       dns_ip_collect_enable=False, route_label="0xffffffffffffffff",
+                       dns_ip_collect_enable=False,dns_ip_collect_timeout=0, route_label="0xffffffffffffffff",
                        tag1="", tag2="",
                        min_qos_level=0, max_qos_level=7):
         data = {}
@@ -548,6 +548,7 @@ class RestDevice:
         data["IntEdgeEnable"] = int_edge_enable
         data["DnsInterceptEnable"] = dns_intercept_enable
         data["DnsIpCollectEnable"] = dns_ip_collect_enable
+        data["DnsIpCollectTimeout"] = dns_ip_collect_timeout
         data["AccRouteLabel"] = route_label
         data["Tag1"] = tag1
         data["Tag2"] = tag2
