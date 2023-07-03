@@ -222,5 +222,96 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("2.2.2.2" in out)
 
+    def dns_ip_collect_timeout(self):
+        # dut1 (acc cpe) 准备
+        # 1. 开启acc
+        # 2. 设置加速ip
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        glx_assert(result.status_code == 200)
+        self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
+        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
+
+        
+        # dut4 (int edge)准备
+        # 配置回程路由　
+        # 开启int edge
+        result = self.topo.dut4.get_rest_device().update_segment(0, int_edge_enable=True)
+        glx_assert(result.status_code == 200)
+        self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+
+        out ,err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        timeout = 5
+        # 开启dns-ip-collect以及超时时间设置
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_enable=True, dns_ip_collect_timeout=timeout, acc_enable=True, route_label="0x3400010")
+        # ipset add acc table
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.1/32")
+        # 检测dut4上是否有nat session
+        self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
+        glx_assert(err == '')
+        glx_assert("1.1.1.1" in out)
+
+        time.sleep(2)
+        key = "DnsCollectedRouteContext#0#1.1.1.1/32"
+        cmd = f"redis-cli hgetall {key}"  
+        # 检测redis中是否有ip过期时间
+        fields, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            cmd)
+
+        glx_assert(err == '')
+        glx_assert("IpExpiredTime" in fields)
+
+        # 实际超时时间会比设置的时间长5秒并且因为轮询时间是30秒，所以设的稍微长点
+        offset = 5
+        time.sleep(35 + timeout + offset)
+        # self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
+        glx_assert(err == '')
+        glx_assert("" in out)
+        ip, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli keys " + key)
+        glx_assert(err == '')
+
+        # 测试修改timeout的情况
+        timeout = 10 
+        # 修改 dns-ip-collect以及超时时间设置
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_timeout=timeout, route_label="0x3400010")
+        # ipset add acc table
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.1/32")
+        # 检测dut4上是否有nat session
+        self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
+        glx_assert(err == '')
+        glx_assert("1.1.1.1" in out)
+
+        time.sleep(2)
+        key = "DnsCollectedRouteContext#0#1.1.1.1/32"
+        cmd = f"redis-cli hgetall {key}"  
+        # 检测redis中是否有ip过期时间
+        fields, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            cmd)
+
+        glx_assert(err == '')
+        glx_assert("IpExpiredTime" in fields)
+
+        # 实际超时时间会比设置的时间长5秒并且因为轮询时间是30秒，所以设的稍微长点
+        offset = 5
+        time.sleep(35 + timeout + offset)
+        # self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
+        glx_assert(err == '')
+        glx_assert("" in out)
+        ip, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli keys " + key)
+        glx_assert(err == '')
+
 if __name__ == '__main__':
     unittest.main()
