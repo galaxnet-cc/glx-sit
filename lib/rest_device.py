@@ -570,6 +570,13 @@ class RestDevice:
         data["BatchRouteFibType"] = acc_fib_type
         return self.do_post_request("SegmentAccProperties", data)
 
+    def update_segment_acc_prop_accip(self, segment_id, acc_ip1="1.1.1.1"):
+        data = {}
+        data["Segment"] = segment_id
+        data["AccIps"] = []
+        data["AccIps"].append({"Ip4Address": acc_ip1})
+        return self.do_patch_request("SegmentAccProperties", data)
+
     def delete_segment_acc_prop(self, segment_id):
         data = {}
         data["Segment"] = segment_id

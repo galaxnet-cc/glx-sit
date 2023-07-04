@@ -89,7 +89,6 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
         time.sleep(20)
 
     def test_segment_wan_dnat(self):
-        
         # 检查连接是否建立
         _, _ = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("pkill nc")
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("sh -c 'nohup ip netns exec ctrl-ns-seg-1 nc -l -v -n 169.254.101.2 7777 > /dev/null 2>&1 &'")
@@ -100,7 +99,6 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "cat /tmp/wan_dnat.txt")
         glx_assert(err == '')
         glx_assert("Connection to 192.168.12.2 7777 port [tcp/*] succeeded!" in out)
-        
 
 if __name__ == '__main__':
     unittest.main()

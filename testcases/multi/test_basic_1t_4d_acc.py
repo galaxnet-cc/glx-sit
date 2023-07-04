@@ -103,6 +103,7 @@ class TestBasic1T4DAcc(unittest.TestCase):
         self.topo.dut3.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
 
         self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="222.222.222.222/32")
+        self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="222.222.222.223/32")
         self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=False)
 
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.34.1/32")
@@ -203,6 +204,32 @@ class TestBasic1T4DAcc(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("222.222.222.222" in out)
 
+        # 230704: 增加加速ip变更的验证，以验证bugfix.
+        self.topo.dut1.get_rest_device().update_segment_acc_prop_accip(segment_id=0, acc_ip1="222.222.222.223")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show nat44 addresses")
+        glx_assert(err == '')
+        # nat所用地址需要切换掉
+        glx_assert("222.222.222.222" not in out)
+        glx_assert("222.222.222.223" in out)
+        # 增加一条回程路由
+        self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.223/32", route_label="0x1200010", is_acc_reverse=True)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.34.1 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.34.1 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # 检查dut1上存在使用加速ip的nat session
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show nat44 sessions")
+        glx_assert(err == '')
+        glx_assert("222.222.222.223" in out)
+        # 检查dut4上同样存在使用加速ip的nat session
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"vppctl show nat44 sessions")
+        glx_assert(err == '')
+        glx_assert("222.222.222.223" in out)
 
     def test_basic_traffic_using_bizpol(self):
         # 这里的测试配置，需要在teardown中无条件进行各种清理，恢复系统到初始状态。
