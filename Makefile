@@ -62,6 +62,8 @@ test-multi-qos-level:
 test-multi-onearm:
 	python3 -m unittest testcases/multi/test_basic_1t_4d_onearm.py
 
+test-multi-bizpol-qos:
+	python3 -m unittest testcases/multi/test_basic_1t_4d_bizpol_qos.py
 # 单机测试例
 
 test-single-all:
@@ -72,6 +74,8 @@ test-single-basic:
 
 test-single-glx:
 	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_glx.py
+test-single-glx-bizpol-qos:
+	python3 -m unittest testcases.single.test_rest_vpp_consistency_1d_glx.TestRestVppConsistency1DGlx.test_glx_bizpol_rate_limit
 
 test-single-dynrouting:
 	python3 -m unittest testcases/single/test_rest_vpp_consistency_1d_dynrouting.py

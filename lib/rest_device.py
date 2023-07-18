@@ -405,7 +405,8 @@ class RestDevice:
                       sched_class="",
                       tag1="", tag2="",
                       segment=0,
-                      qos_level=0):
+                      qos_level=0,
+                      rate_limit_enable=False,up_rate_limit=0,down_rate_limit=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
@@ -433,6 +434,9 @@ class RestDevice:
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         bizpol_data['QosLevel'] = qos_level
+        bizpol_data['RateLimitEnable'] = rate_limit_enable
+        bizpol_data['UpRateLimit'] = up_rate_limit
+        bizpol_data['DownRateLimit'] = down_rate_limit
         return self.do_post_request("BusinessPolicy", bizpol_data)
 
     def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
@@ -445,7 +449,8 @@ class RestDevice:
                       sched_class="",
                       tag1="", tag2="",
                       segment=0,
-                      qos_level=0):
+                      qos_level=0,
+                      rate_limit_enable=False,up_rate_limit=0,down_rate_limit=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
@@ -473,6 +478,9 @@ class RestDevice:
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         bizpol_data['QosLevel'] = qos_level
+        bizpol_data['RateLimitEnable'] = rate_limit_enable
+        bizpol_data['UpRateLimit'] = up_rate_limit
+        bizpol_data['DownRateLimit'] = down_rate_limit
         return self.do_patch_request("BusinessPolicy", bizpol_data)
 
     def delete_bizpol(self, name, segment=0):
@@ -733,3 +741,65 @@ class RestDevice:
         data["RxNormalSchedClassBandwidth"] = rx_normal_bw
         data["RxLowSchedClassBandwidth"] = rx_low_bw
         return self.do_patch_request("WanAggregateScheduler", data)
+
+    # probe
+    def create_probe(self,
+                    name="probe1",
+                    type="WAN",
+                    if_name="WAN1",
+                    mode="CMD_PING",
+                    dst_addr="1.1.1.1",
+                    dst_port=1111,
+                    interval=2,
+                    timeout=1,
+                    fail_threshold=5,
+                    ok_threshold=10,
+                    tag1="",
+                    tag2=""):
+        data = {}
+        data["Name"] = name
+        data["Type"] = type
+        data["IfName"] = if_name
+        data["Mode"] = mode
+        data["DstAddr"] = dst_addr
+        data["DstPort"] = dst_port
+        data["Interval"] = interval
+        data["Timeout"] = timeout
+        data["FailThreshold"] = fail_threshold
+        data["OkThreshold"] = ok_threshold
+        data["Tag1"] = tag1
+        data["Tag2"] = tag2
+        return self.do_post_request("Probe", data)
+
+    def update_probe(self,
+                    name="probe1",
+                    type="WAN",
+                    if_name="WAN1",
+                    mode="CMD_PING",
+                    dst_addr="1.1.1.1",
+                    dst_port=1111,
+                    interval=2,
+                    timeout=1,
+                    fail_threshold=5,
+                    ok_threshold=10,
+                    tag1="",
+                    tag2=""):
+        data = {}
+        data["Name"] = name
+        data["Type"] = type
+        data["IfName"] = if_name
+        data["Mode"] = mode
+        data["DstAddr"] = dst_addr
+        data["DstPort"] = dst_port
+        data["Interval"] = interval
+        data["Timeout"] = timeout
+        data["FailThreshold"] = fail_threshold
+        data["OkThreshold"] = ok_threshold
+        data["Tag1"] = tag1
+        data["Tag2"] = tag2
+        return self.do_patch_request("Probe", data)
+
+    def delete_probe(self, name):
+        data = {}
+        data['Name'] = name
+        return self.do_delete_request("Probe", data)
