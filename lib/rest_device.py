@@ -733,3 +733,65 @@ class RestDevice:
         data["RxNormalSchedClassBandwidth"] = rx_normal_bw
         data["RxLowSchedClassBandwidth"] = rx_low_bw
         return self.do_patch_request("WanAggregateScheduler", data)
+
+    # probe
+    def create_probe(self,
+                    name="probe1",
+                    type="WAN",
+                    if_name="WAN1",
+                    mode="CMD_PING",
+                    dst_addr="1.1.1.1",
+                    dst_port=1111,
+                    interval=2,
+                    timeout=1,
+                    fail_threshold=5,
+                    ok_threshold=10,
+                    tag1="",
+                    tag2=""):
+        data = {}
+        data["Name"] = name
+        data["Type"] = type
+        data["IfName"] = if_name
+        data["Mode"] = mode
+        data["DstAddr"] = dst_addr
+        data["DstPort"] = dst_port
+        data["Interval"] = interval
+        data["Timeout"] = timeout
+        data["FailThreshold"] = fail_threshold
+        data["OkThreshold"] = ok_threshold
+        data["Tag1"] = tag1
+        data["Tag2"] = tag2
+        return self.do_post_request("Probe", data)
+
+    def update_probe(self,
+                    name="probe1",
+                    type="WAN",
+                    if_name="WAN1",
+                    mode="CMD_PING",
+                    dst_addr="1.1.1.1",
+                    dst_port=1111,
+                    interval=2,
+                    timeout=1,
+                    fail_threshold=5,
+                    ok_threshold=10,
+                    tag1="",
+                    tag2=""):
+        data = {}
+        data["Name"] = name
+        data["Type"] = type
+        data["IfName"] = if_name
+        data["Mode"] = mode
+        data["DstAddr"] = dst_addr
+        data["DstPort"] = dst_port
+        data["Interval"] = interval
+        data["Timeout"] = timeout
+        data["FailThreshold"] = fail_threshold
+        data["OkThreshold"] = ok_threshold
+        data["Tag1"] = tag1
+        data["Tag2"] = tag2
+        return self.do_patch_request("Probe", data)
+
+    def delete_probe(self, name):
+        data = {}
+        data['Name'] = name
+        return self.do_delete_request("Probe", data)

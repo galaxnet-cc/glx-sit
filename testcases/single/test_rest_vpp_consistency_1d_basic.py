@@ -1105,3 +1105,64 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == "")
         glx_assert("src-port-group-id 1" not in out)
         self.topo.dut1.get_rest_device().delete_port_group(group_name="portgroup1")
+
+    # probe
+    def test_probe(self):
+
+        # create
+        self.topo.dut1.get_rest_device().create_probe(name="probe1",                                                             
+                                                      type="WAN",
+                                                      if_name="WAN1",
+                                                      mode="CMD_PING",
+                                                      dst_addr="1.1.1.1",
+                                                      dst_port=1111,
+                                                      interval=2,
+                                                      timeout=1,
+                                                      fail_threshold=5,
+                                                      ok_threshold=10,
+                                                      tag1="",
+                                                      tag2="")
+        # time.sleep(1)
+
+        # check
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Probe#probe1 DstAddr")
+        out = out.rstrip()
+        glx_assert(err == "")
+        # print("out: [" + out + "]")
+        glx_assert("1.1.1.1" in out)
+
+        # update
+        self.topo.dut1.get_rest_device().update_probe(name="probe1",                                                             
+                                                      type="WAN",
+                                                      if_name="WAN1",
+                                                      mode="CMD_PING",
+                                                      dst_addr="2.2.2.2",
+                                                      dst_port=1111,
+                                                      interval=2,
+                                                      timeout=1,
+                                                      fail_threshold=5,
+                                                      ok_threshold=10,
+                                                      tag1="",
+                                                      tag2="")
+        # time.sleep(1)
+
+        # check
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Probe#probe1 DstAddr")
+        out = out.rstrip()
+        glx_assert(err == "")
+        # print("out: [" + out + "]")
+        glx_assert("2.2.2.2" in out)
+
+        # delete
+        self.topo.dut1.get_rest_device().delete_probe(name="probe1")
+        # time.sleep(1)
+        
+        # check
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Probe#probe1 DstAddr")
+        out = out.rstrip()
+        glx_assert(err == "")
+        # print("out: [" + out + "]")
+        glx_assert(out == "")
