@@ -196,13 +196,10 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
 
-        # time.sleep(5000) 
         out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5 -i 0.05")
         glx_assert(err == '')
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
-
-        
 
         # 清除接口计数
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
@@ -223,10 +220,8 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
 
         # iperf正向打流
         out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s | grep -i 'sender' | awk '{{print $7}}'")
-        # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -t 10")
         glx_assert(err == '')
         out=8.0 * float(out)
-        print(f"iperf3 {src_prefix} to {dst_ip} traffic: {out}")
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0))
 
@@ -248,8 +243,6 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         print(f"iperf3 {src_prefix} to {dst_ip} reverse traffic: {out}")
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0))
-
-        # time.sleep(100000000)
 
         # 移除配置
         self.topo.dut1.get_rest_device().delete_bizpol(name=name)
@@ -326,9 +319,7 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        direct_enable=True,
                                                        rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096)
 
-
-
-        # iperf逆向打流 
+        # iperf逆向打流
         out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -R | grep -i 'sender' | awk '{{print $7}}'")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -t 10 -R")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -t 10 -R")
@@ -337,8 +328,6 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         print(f"iperf3 {src_prefix} to {dst_ip} reverse traffic: {out}")
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0))
-
-
 
         # 移除配置
         self.topo.dut1.get_rest_device().delete_bizpol(name=name)
