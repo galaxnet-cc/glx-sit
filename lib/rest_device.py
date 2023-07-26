@@ -405,7 +405,8 @@ class RestDevice:
                       sched_class="",
                       tag1="", tag2="",
                       segment=0,
-                      qos_level=0):
+                      qos_level=0,
+                      rate_limit_enable=False,up_rate_limit=0,down_rate_limit=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
@@ -433,6 +434,9 @@ class RestDevice:
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         bizpol_data['QosLevel'] = qos_level
+        bizpol_data['RateLimitEnable'] = rate_limit_enable
+        bizpol_data['UpRateLimit'] = up_rate_limit
+        bizpol_data['DownRateLimit'] = down_rate_limit
         return self.do_post_request("BusinessPolicy", bizpol_data)
 
     def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
@@ -445,7 +449,8 @@ class RestDevice:
                       sched_class="",
                       tag1="", tag2="",
                       segment=0,
-                      qos_level=0):
+                      qos_level=0,
+                      rate_limit_enable=False,up_rate_limit=0,down_rate_limit=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
@@ -473,6 +478,9 @@ class RestDevice:
         bizpol_data['Tag1'] = tag1
         bizpol_data['Tag2'] = tag2
         bizpol_data['QosLevel'] = qos_level
+        bizpol_data['RateLimitEnable'] = rate_limit_enable
+        bizpol_data['UpRateLimit'] = up_rate_limit
+        bizpol_data['DownRateLimit'] = down_rate_limit
         return self.do_patch_request("BusinessPolicy", bizpol_data)
 
     def delete_bizpol(self, name, segment=0):
