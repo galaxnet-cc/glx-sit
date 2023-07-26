@@ -188,7 +188,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart fwdmd")
         glx_assert(err == '')
         # 等待fwdmd配置
-        time.sleep(10)
+        time.sleep(20)
         # 向set中写入数据
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 1.1.1.0/24")
         glx_assert(err == '')
