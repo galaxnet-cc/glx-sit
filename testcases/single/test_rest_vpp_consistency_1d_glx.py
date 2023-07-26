@@ -429,7 +429,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(err == '')
         # verify vpp and glx.
         vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+            f"vppctl show policer name {txName} | grep index | awk '{{print $4}}' | cut -d':' -f1")
         glx_assert(err == '')
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
@@ -451,7 +451,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         txIndex = txIndex.rstrip()
         # verify vpp and glx.
         vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+            f"vppctl show policer name {txName} | grep index | awk '{{print $4}}' | cut -d':' -f1 ")
         glx_assert(err == '')
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
@@ -473,7 +473,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         txIndex = txIndex.rstrip()
         # verify vpp and glx.
         vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+            f"vppctl show policer name {txName} | grep index | awk '{{print $4}}' | cut -d':' -f1 ")
         glx_assert(err == '')
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
@@ -492,7 +492,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         rxIndex = rxIndex.rstrip()
         # verify vpp and glx.
         vppRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show policer name {rxName} | grep Template | awk '{{print $3}}'")
+            f"vppctl show policer name {rxName} | grep index | awk '{{print $4}}' | cut -d':' -f1 ")
         glx_assert(err == '')
         vppRxIndex = vppRxIndex.rstrip()
         glx_assert(vppRxIndex == rxIndex)
@@ -511,7 +511,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         txName = txName.rstrip()
         # verify vpp and glx.
         vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+            f"vppctl show policer name {txName} | grep index | awk '{{print $4}}' | cut -d':' -f1 ")
         glx_assert(err == '')
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
@@ -530,7 +530,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         rxIndex = rxIndex.rstrip()
         # verify vpp and glx.
         vppRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show policer name {rxName} | grep Template | awk '{{print $3}}'")
+            f"vppctl show policer name {rxName} | grep index | awk '{{print $4}}' | cut -d':' -f1 ")
         glx_assert(err == '')
         vppRxIndex = vppRxIndex.rstrip()
         glx_assert(vppRxIndex == rxIndex)
@@ -550,7 +550,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         txName = txName.rstrip()
         # verify vpp and glx.
         vppTxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show policer name {txName} | grep Template | awk '{{print $3}}'")
+            f"vppctl show policer name {txName} | grep index | awk '{{print $4}}' | cut -d':' -f1 ")
         glx_assert(err == '')
         vppTxIndex = vppTxIndex.rstrip()
         glx_assert(vppTxIndex == txIndex)
@@ -569,7 +569,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         rxIndex = rxIndex.rstrip()
         # verify vpp and glx.
         vppRxIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl show policer name {rxName} | grep Template | awk '{{print $3}}'")
+            f"vppctl show policer name {rxName} | grep index | awk '{{print $4}}' | cut -d':' -f1 ")
         glx_assert(err == '')
         vppRxIndex = vppRxIndex.rstrip()
         glx_assert(vppRxIndex == rxIndex)
