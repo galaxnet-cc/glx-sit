@@ -118,7 +118,7 @@ class RestDevice:
         return self.do_patch_request("FirewallRule", rule_data)
 
     def set_fire_wall_rule(self, rule_name, priority, dest_address, action, app_id=65535, segment=0,
-                           src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group=""):
+                           src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group="", protocol=0):
         rule_data = {}
         rule_data['Segment'] = segment
         rule_data['Name'] = rule_name
@@ -126,7 +126,7 @@ class RestDevice:
         rule_data['SrcAddressWithPrefix'] = "0.0.0.0/0"
         rule_data['DstAddressWithPrefix'] = dest_address
         rule_data['Action'] = action
-        rule_data['L4Protocol'] = 0
+        rule_data['L4Protocol'] = protocol
         rule_data['AppId'] = app_id
         rule_data["SrcAddrGroup"] = src_addr_group
         rule_data["DstAddrGroup"] = dst_addr_group

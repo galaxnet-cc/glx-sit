@@ -1041,7 +1041,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_test", priority=1,
                                                        src_prefix="1.1.1.0/24",
                                                        dst_prefix="0.0.0.0/0",
-                                                       protocol=0,
+                                                       protocol=1, # tcp.
                                                        dst_addr_group="addrgroup1", dst_port_group="portgroup1")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show bizpol bizpol | grep 1.1.1.0")
         glx_assert(err == "")
@@ -1051,7 +1051,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_bizpol(name="bizpol_test", priority=1,
                                                        src_prefix="0.0.0.0/0",
                                                        dst_prefix="1.1.1.0/24",
-                                                       protocol=0,
+                                                       protocol=1, # tcp.
                                                        src_addr_group="addrgroup1", src_port_group="portgroup1")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show bizpol bizpol | grep 1.1.1.0")
         glx_assert(err == "")
@@ -1083,6 +1083,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_fire_wall_rule(rule_name="firewall_test", priority=1,
                                                             dest_address="1.1.1.0/24",
                                                             action="Deny",
+                                                            protocol=1, # tcp.
                                                             dst_port_group="portgroup1")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show acl-plugin acl | grep 1.1.1.0")
         glx_assert(err == "")
@@ -1091,6 +1092,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_fire_wall_rule(rule_name="firewall_test", priority=1,
                                                                dest_address="1.1.1.0/24",
                                                                action="Deny",
+                                                               protocol=1, # tcp.
                                                                src_port_group="portgroup1")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show acl-plugin acl | grep 1.1.1.0")
         glx_assert(err == "")
