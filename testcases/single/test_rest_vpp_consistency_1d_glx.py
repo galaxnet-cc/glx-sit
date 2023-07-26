@@ -1185,6 +1185,10 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # now no interface needed due to auto steering feature support.
         glx_assert(f'[nat]' in out)
 
+        # check policy index
+        policy_index, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hget {key} PolicyIndex")
+        glx_assert(err == '')
+
         # up limit test
         out = self.topo.dut1.get_rest_device().update_bizpol(name=name,priority=1,
                                                        src_prefix="192.168.88.0/24",
@@ -1193,18 +1197,18 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        rate_limit_enable=True, up_rate_limit=up_limit, down_rate_limit=0)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx policer | grep {up_policer_name}")
         glx_assert(err == '')
-        print(out)
+        
         glx_assert(up_policer_name in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hgetall {key}")
-        print(out)
+        
         glx_assert(err == '')
         glx_assert('UpPolicerIndex' in out)
 
         # 测试index是否一致
         policer_index, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hget {key} UpPolicerIndex")
         glx_assert(err == '')
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep up-limit-index")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol index {policy_index} | grep up-limit-index | awk -F 'up-limit-index' '{{print $2}}' | awk '{{print $1}}'")
         glx_assert(policer_index in out)
 
         # glx_assert(up_limit in out)
@@ -1219,25 +1223,24 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        rate_limit_enable=True, up_rate_limit=0, down_rate_limit=down_limit)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx policer | grep {down_policer_name}")
         glx_assert(err == '')
-        print(out)
         glx_assert(down_policer_name in out)
 
 
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hgetall {key}")
-        print(out)
         glx_assert(err == '')
         glx_assert('DownPolicerIndex' in out)
 
-        # 测试index是否一致
+    
+
+        # check policer index
         policer_index, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hget {key} DownPolicerIndex")
         glx_assert(err == '')
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep down-limit-index")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol index {policy_index} | grep down-limit-index | awk -F 'down-limit-index' '{{print $2}}' | awk '{{print $1}}'")
         glx_assert(policer_index in out)
         # glx_assert(down_limit in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show policer | grep {up_policer_name}")
-        print(out)
         glx_assert(err == '')
         glx_assert(up_policer_name not in out)
 
@@ -1249,18 +1252,27 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        rate_limit_enable=True, up_rate_limit=up_limit, down_rate_limit=down_limit)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx policer | grep {up_policer_name}")
-        print(out)
         glx_assert(err == '')
         glx_assert(up_policer_name in out)
         # glx_assert(up_limit in out)
 
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx policer | grep {down_policer_name}")
-        print(out)
         glx_assert(err == '')
         glx_assert(down_policer_name in out)
         # glx_assert(down_limit in out)
 
+        # 测试index是否一致
+        policer_index, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hget {key} UpPolicerIndex")
+        glx_assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol index {policy_index} | grep up-limit-index | awk -F 'up-limit-index' '{{print $2}}' | awk '{{print $1}}'")
+        glx_assert(policer_index in out)
+
+        # check policer index
+        policer_index, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hget {key} DownPolicerIndex")
+        glx_assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol index {policy_index} | grep down-limit-index | awk -F 'down-limit-index' '{{print $2}}' | awk '{{print $1}}'")
+        glx_assert(policer_index in out)
 
 
         # disable up and down limit
@@ -1270,24 +1282,34 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        protocol= 0,
                                                        rate_limit_enable=False)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx policer | grep {up_policer_name}")
-        print(out)
         glx_assert(err == '')
         glx_assert(up_policer_name not in out)
+
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx policer | grep {down_policer_name}")
-        print(out)
         glx_assert(err == '')
         glx_assert(down_policer_name not in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show policer | grep {up_policer_name}")
-        print(out)
         glx_assert(err == '')
         glx_assert(up_policer_name not in out)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show policer | grep {down_policer_name}")
-        print(out)
         glx_assert(err == '')
         glx_assert(down_policer_name not in out)
 
+        # 测试index是否一致
+        policer_index, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hget {key} UpPolicerIndex")
+        glx_assert(err == '')
+        glx_assert(policer_index == '4294967295')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol index {policy_index} | grep up-limit-index | awk -F 'up-limit-index' '{{print $2}}' | awk '{{print $1}}'")
+        glx_assert('255' in out)
+
+        # check policer index
+        policer_index, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli hget {key} DownPolicerIndex")
+        glx_assert(err == '')
+        glx_assert(policer_index == '4294967295')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol index {policy_index} | grep down-limit-index | awk -F 'down-limit-index' '{{print $2}}' | awk '{{print $1}}'")
+        glx_assert('255' in out)
 
         # delete the bizpol.
         self.topo.dut1.get_rest_device().delete_bizpol(name=name)
