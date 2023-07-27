@@ -199,8 +199,8 @@ class TestBasic1T4DSegmentDetection(unittest.TestCase):
         glx_assert("0% packet loss" in out)
 
         # 删除edge route.
-        self.topo.dut1.get_rest_device().delete_edge_route("2.2.2.2/32")
-        self.topo.dut4.get_rest_device().delete_edge_route("1.1.1.1/32")
+        self.topo.dut1.get_rest_device().delete_edge_route("2.2.2.2/32", segment=1)
+        self.topo.dut4.get_rest_device().delete_edge_route("1.1.1.1/32", segment=1)
 
         # 删除segment properties
         self.topo.dut1.get_rest_device().delete_segment_prop(1)

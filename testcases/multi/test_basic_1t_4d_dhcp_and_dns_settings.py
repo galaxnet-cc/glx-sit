@@ -231,6 +231,11 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", True)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
 
+        # remove route
+        self.topo.dut1.get_rest_device().delete_edge_route("8.8.8.8/32", is_acc=True)
+        self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24", is_acc=True)
+        self.topo.dut4.get_rest_device().delete_edge_route("222.222.222.222/32")
+
         # dut4 also disable WAN2
         self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
 

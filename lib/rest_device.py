@@ -388,11 +388,12 @@ class RestDevice:
         route_data['Tag2'] = tag2
         return self.do_post_request("EdgeRoute", route_data)
 
-    def delete_edge_route(self, route_prefix, route_protocol="overlay", segment=0):
+    def delete_edge_route(self, route_prefix, route_protocol="overlay", segment=0, is_acc=False):
         route_data = {}
         route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
         route_data["RouteProtocol"] = route_protocol
+        route_data["IsAcc"] = is_acc
         return self.do_delete_request("EdgeRoute", route_data)
 
     def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
