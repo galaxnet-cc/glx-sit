@@ -197,6 +197,9 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # ipset add acc table
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.1/32")
 
+        # ensure get collected.
+        time.sleep(0.1)
+
         # 检测dut4上是否有nat session
         self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
         out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
@@ -205,6 +208,9 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
 
         # ipset add local table
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 2.2.2.2/32")
+        # ensure get collected.
+        time.sleep(0.1)
+
 
         # 配置业务策略强制本地nat走WAN1
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
@@ -231,7 +237,6 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
         self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
 
-        
         # dut4 (int edge)准备
         # 配置回程路由　
         # 开启int edge
@@ -253,6 +258,9 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_enable=True, dns_ip_collect_timeout=timeout, acc_enable=True, route_label="0x3400010")
         # ipset add acc table
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.1/32")
+        # ensure get collected.
+        time.sleep(0.1)
+
         # 检测dut4上是否有nat session
         self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
         out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
@@ -261,7 +269,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
 
         time.sleep(2)
         key = "DnsCollectedRouteContext#0#1.1.1.1/32"
-        cmd = f"redis-cli hgetall {key}"  
+        cmd = f"redis-cli hgetall {key}" 
         # 检测redis中是否有ip过期时间
         fields, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             cmd)
@@ -286,6 +294,9 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_timeout=timeout, route_label="0x3400010")
         # ipset add acc table
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.1/32")
+        # ensure get collected.
+        time.sleep(0.1)
+
         # 检测dut4上是否有nat session
         self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
         out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
