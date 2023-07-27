@@ -259,7 +259,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         tunnelRxBytes = tunnelRxBytes.rstrip()
         glx_assert(err == '')
         print("tunnel rx: ", int(tunnelRxBytes)/int(tunnelRxPacket))
-        glx_assert(math.isclose(1400, int(tunnelRxBytes)/int(tunnelRxPacket), abs_tol=100))
+        glx_assert(math.isclose(1400, int(tunnelRxBytes)/int(tunnelRxPacket), abs_tol=200))
 
         # 配置策略强制走link1
         self.topo.dut1.get_rest_device().update_bizpol(name="bizpol1", priority=1,

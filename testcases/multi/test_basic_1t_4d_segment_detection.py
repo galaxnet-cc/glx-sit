@@ -217,6 +217,7 @@ class TestBasic1T4DSegmentDetection(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", False)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN5", False)
         
         self.topo.dut1.get_rest_device().create_segment(1)
 
@@ -233,6 +234,7 @@ class TestBasic1T4DSegmentDetection(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", True)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN5", True)
         self.topo.dut1.get_rest_device().delete_segment(1)
 
 if __name__ == '__main__':

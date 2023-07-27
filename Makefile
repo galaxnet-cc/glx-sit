@@ -105,6 +105,6 @@ test-single-onearm:
 MTESTS := test-multi-basic test-multi-hubspoke test-multi-acc test-multi-mseg test-multi-dpi test-multi-tcp
 MTESTS += test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect
 MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dnat test-multi-object-group
-MTESTS += test-multi-sched test-multi-qos-level test-multi-probe probe test-multi-onearm test-multi-bizpol-qos
+MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"
