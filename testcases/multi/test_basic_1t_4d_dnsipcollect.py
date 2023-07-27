@@ -37,6 +37,9 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         self.topo.dut3.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.1/24")
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.2/24")
 
+        # turn off dut4 wan direct enable since it does not have address.
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
+
         # dut1 Lan 1 ip:
         self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
         # dut4 Lan 1 ip:
@@ -114,6 +117,8 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.34.1/32")
         self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
+
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
 
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.
