@@ -166,7 +166,10 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", False)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
-        
+
+        # dut4 also disable WAN2
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
+
         # dut1 (acc cpe) 准备
         # 1. 开启acc
         # 2. 设置加速ip
@@ -227,6 +230,9 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", True)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+
+        # dut4 also disable WAN2
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
 
     def test_dhcp_Configuration_distribution(self):
         # 开启dhcp能力
