@@ -179,7 +179,60 @@ class TestRestVppConsistency1DConfigureFilter(unittest.TestCase):
         glx_assert(err == '')
         tag1 = tag1.rstrip()
         glx_assert("kkkk" == tag1)
-        
+
+        # 增加一轮测试，验证tunnel bandwidth这个非tag字段可以被更新。
+        data21={}
+        data21["IgnoreNotSpecifiedTable"] = True
+        tunnelTable = {}
+        tunnelTable["Table"] = "Tunnel"
+        tunnelTable["Filters"] = "Filter[Tag1][eq]=k"
+        tunnel1 = {}
+        tunnel1["TunnelId"] = 1
+        tunnel1["SchedMode"] = ""
+        tunnel1["BandwidthLimit"] = 10
+        tunnel1["IsPassive"] = False
+        tunnel1["Tag1"] = "kkkk"
+        tunnel1["Tag2"] = "emmm"
+        tunnelTable["Items"] = []
+        tunnelTable["Items"].append(tunnel1)
+        data21["Tables"] = []
+        data21["Tables"].append(tunnelTable)
+
+        resp = self.topo.dut1.get_rest_device().update_config_action(data21)
+        glx_assert(resp.status_code == 200)
+        # 检查这个vpp不支持字段正确更新到db中
+        limit, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Tunnel#1 BandwidthLimit")
+        glx_assert(err == '')
+        limit = limit.rstrip()
+        glx_assert(limit == "10")
+
+        # 更新成默认0
+        data22={}
+        data22["IgnoreNotSpecifiedTable"] = True
+        tunnelTable = {}
+        tunnelTable["Table"] = "Tunnel"
+        tunnelTable["Filters"] = "Filter[Tag1][eq]=k"
+        tunnel1 = {}
+        tunnel1["TunnelId"] = 1
+        tunnel1["SchedMode"] = ""
+        tunnel1["BandwidthLimit"] = 0
+        tunnel1["IsPassive"] = False
+        tunnel1["Tag1"] = "kkkk"
+        tunnel1["Tag2"] = "emmm"
+        tunnelTable["Items"] = []
+        tunnelTable["Items"].append(tunnel1)
+        data22["Tables"] = []
+        data22["Tables"].append(tunnelTable)
+
+        resp = self.topo.dut1.get_rest_device().update_config_action(data22)
+        glx_assert(resp.status_code == 200)
+        # 检查这个vpp不支持字段正确更新到db中
+        limit, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Tunnel#1 BandwidthLimit")
+        glx_assert(err == '')
+        limit = limit.rstrip()
+        glx_assert(limit == "0")
 
         # 过滤条件为空，删除两条tunnel
         data3={}
