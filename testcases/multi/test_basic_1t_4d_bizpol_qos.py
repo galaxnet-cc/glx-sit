@@ -240,7 +240,6 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -t 10 -R")
         glx_assert(err == '')
         out=8.0 * float(out)
-        print(f"iperf3 {src_prefix} to {dst_ip} reverse traffic: {out}")
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0))
 
@@ -305,7 +304,6 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -t 10")
         glx_assert(err == '')
         out=8.0 * float(out)
-        print(f"iperf3 {src_prefix} to {dst_ip} traffic: {out}")
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0))
 

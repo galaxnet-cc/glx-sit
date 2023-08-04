@@ -806,17 +806,17 @@ class RestDevice:
         return self.do_delete_request("Probe", data)
     # vrrp
     def create_vrrp(self,
-                    name:str,
-                    vip:str,
                     vr_id:int,
+                    vip:str,
                     bridge:str,
                     priority:int,
                     adv_interval:int,
                     segment=0,
-                    unicast=false,
-                    peer_address=""):
+                    unicast=False,
+                    peer_address="",
+                    tag1="",
+                    tag2=""):
         data = {}
-        data["Name"] = name
         data["Segment"] = segment
         data["VRID"] = vr_id
         data["Bridge"] = bridge
@@ -829,17 +829,17 @@ class RestDevice:
         data["Tag2"] = tag2
         return self.do_post_request("VRRPSetting", data)
     def update_vrrp(self,
-                    name:str,
-                    vip:str,
                     vr_id:int,
+                    vip:str,
                     bridge:str,
                     priority:int,
                     adv_interval:int,
                     segment=0,
-                    unicast=false,
-                    peer_address=""):
+                    unicast=False,
+                    peer_address="",
+                    tag1="",
+                    tag2=""):
         data = {}
-        data["Name"] = name
         data["Segment"] = segment
         data["VRID"] = vr_id
         data["Bridge"] = bridge
@@ -851,16 +851,20 @@ class RestDevice:
         data["Tag1"] = tag1
         data["Tag2"] = tag2
         return self.do_patch_request("VRRPSetting", data)
-    def delete_vrrp(self,
-                    name:str,
-                    vip:str,
-                    vr_id:int,
-                    bridge:str,
-                    priority:int,
-                    adv_interval:int,
-                    segment=0,
-                    unicast=false,
-                    peer_address=""):
+
+    def delete_vrrp(self, vr_id:int, segment:0):
         data = {}
-        data['Name'] = name
+        data['VRID'] = vr_id
+        data['Segment'] = segment
         return self.do_delete_request("VRRPSetting", data)
+
+    def change_vrrp_priority(self,
+                    vr_id:int,
+                    segment:0,
+                    down: True):
+        data = {}
+        data['VRID'] = vr_id
+        data['Segment'] = segment
+        data['Down'] = down
+        return self.do_action_request("ChangeVRRPPriority", data)
+

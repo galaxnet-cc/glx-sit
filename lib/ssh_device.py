@@ -22,17 +22,71 @@ class SSHDevice:
         self.ssh.exec_command(f'ip link set {if_name} netns {ns_name}')
         self.ssh.exec_command(f'ip netns exec {ns_name} ip link set {if_name} up')
 
+    def add_br(self, br_name):
+        self.ssh.exec_command(f'brctl addbr {br_name}')
+
+    def add_br_to_ns(self,ns_name, br_name):
+        self.ssh.exec_command(f'ip netns exec {ns_name} brctl addbr {br_name}')
+
+    def add_br_if(self, br_name, if_name):
+        self.ssh.exec_command(f'brctl addif {br_name} {if_name}')
+
+    def add_ns_br_if(self, br_name, if_name):
+        self.ssh.exec_command(f'brctl addif {br_name} {if_name}')
+
+    def del_br(self, br_name):
+        self.ssh.exec_command(f'brctl delbr {br_name}')
+
+    def del_ns_br(self,ns_name, br_name):
+        self.ssh.exec_command(f'ip netns exec {ns_name} brctl delbr {br_name}')
+
+    def del_br_if(self, br_name):
+        self.ssh.exec_command(f'brctl delbr {br_name}')
+
+    def del_ns_br_if(self, br_name, if_name):
+        self.ssh.exec_command(f'brctl delif {br_name} {if_name}')
+
+    def add_ns_br_if(self, br_name, if_name):
+        self.ssh.exec_command(f'ip netns exec brctl addif {br_name} {if_name}')
+
+    def add_br_to_ns(self,ns_name, br_name):
+        self.ssh.exec_command(f'ip netns exec {ns_name} brctl addbr {br_name}')
+
+    def add_if_ip(self, if_name, ip_with_prefix):
+        self.ssh.exec_command(f'ip addr add {ip_with_prefix} dev  {if_name}')
+
     def add_ns_if_ip(self, ns_name, if_name, ip_with_prefix):
         self.ssh.exec_command(f'ip netns exec {ns_name} ip addr add {ip_with_prefix} dev  {if_name}')
+
+    def del_if_ip(self, if_name, ip_with_prefix):
+        self.ssh.exec_command(f'ip addr del {ip_with_prefix} dev  {if_name}')
 
     def del_ns_if_ip(self, ns_name, if_name, ip_with_prefix):
         self.ssh.exec_command(f'ip netns exec {ns_name} ip addr del {ip_with_prefix} dev  {if_name}')
 
+    def up_down_if(self, if_name:str, is_up:bool):
+        state = 'up' if is_up else 'down'
+        self.ssh.exec_command(f'ip link set dev {if_name} {state}')
+
+    def up_down_if(self, if_name:str, is_up:bool):
+        state = 'up' if is_up else 'down'
+        self.ssh.exec_command(f'ip link set dev {if_name} {state}')
+
+    def add_route(self, route_prefix, nexthop_ip):
+        self.ssh.exec_command(f'ip route add {route_prefix} via {nexthop_ip}')
+
     def add_ns_route(self, ns_name, route_prefix, nexthop_ip):
         self.ssh.exec_command(f'ip netns exec {ns_name} ip route add {route_prefix} via {nexthop_ip}')
 
+    def del_route(self, route_prefix, nexthop_ip):
+        self.ssh.exec_command(f'ip route del {route_prefix} via {nexthop_ip}')
+
     def del_ns_route(self, ns_name, route_prefix, nexthop_ip):
         self.ssh.exec_command(f'ip netns exec {ns_name} ip route del {route_prefix} via {nexthop_ip}')
+
+    def get_cmd_result(self, cmd):
+        ssh_stdin, ssh_stdout, ssh_stderr = self.ssh.exec_command(cmd)
+        return ssh_stdout.read().decode(), ssh_stderr.read().decode()
 
     def get_ns_cmd_result(self, ns_name, cmd):
         shell_cmd = f'ip netns exec {ns_name} {cmd}'
