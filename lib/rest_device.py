@@ -804,3 +804,63 @@ class RestDevice:
         data = {}
         data['Name'] = name
         return self.do_delete_request("Probe", data)
+    # vrrp
+    def create_vrrp(self,
+                    name:str,
+                    vip:str,
+                    vr_id:int,
+                    bridge:str,
+                    priority:int,
+                    adv_interval:int,
+                    segment=0,
+                    unicast=false,
+                    peer_address=""):
+        data = {}
+        data["Name"] = name
+        data["Segment"] = segment
+        data["VRID"] = vr_id
+        data["Bridge"] = bridge
+        data["Priority"] = priority
+        data["AdvInterval"] = adv_interval
+        data["VIP"] = vip
+        data["Unicast"] = unicast
+        data["PeerAddress"] = peer_address
+        data["Tag1"] = tag1
+        data["Tag2"] = tag2
+        return self.do_post_request("VRRPSetting", data)
+    def update_vrrp(self,
+                    name:str,
+                    vip:str,
+                    vr_id:int,
+                    bridge:str,
+                    priority:int,
+                    adv_interval:int,
+                    segment=0,
+                    unicast=false,
+                    peer_address=""):
+        data = {}
+        data["Name"] = name
+        data["Segment"] = segment
+        data["VRID"] = vr_id
+        data["Bridge"] = bridge
+        data["Priority"] = priority
+        data["AdvInterval"] = adv_interval
+        data["VIP"] = vip
+        data["Unicast"] = unicast
+        data["PeerAddress"] = peer_address
+        data["Tag1"] = tag1
+        data["Tag2"] = tag2
+        return self.do_patch_request("VRRPSetting", data)
+    def delete_vrrp(self,
+                    name:str,
+                    vip:str,
+                    vr_id:int,
+                    bridge:str,
+                    priority:int,
+                    adv_interval:int,
+                    segment=0,
+                    unicast=false,
+                    peer_address=""):
+        data = {}
+        data['Name'] = name
+        return self.do_delete_request("VRRPSetting", data)
