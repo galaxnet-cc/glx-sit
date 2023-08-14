@@ -1168,3 +1168,63 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == "")
         # print("out: [" + out + "]")
         glx_assert(out == "")
+
+    def test_logical_interface_addr_switch_using_update_action(self):
+        data={}
+        data["IgnoreNotSpecifiedTable"] = True
+        logIfTable = {}
+        logIfTable["Table"] = "LogicalInterface"
+        # 只处理WAN1
+        logIfTable["Filters"] = "Filter[Name][eq]=WAN1"
+        wan1 = {}
+        wan1["Name"] = "WAN1"
+        wan1["Segment"] = 0
+        wan1["AddressingType"] = "STATIC"
+        wan1["StaticIpAddrWithPrefix"] = "192.168.1.2/24"
+        logIfTable["Items"] = []
+        logIfTable["Items"].append(wan1)
+        data["Tables"] = []
+        data["Tables"].append(logIfTable)
+
+        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
+        result = self.topo.dut1.get_rest_device().update_config_action(data)
+        glx_assert(result.status_code == 200)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan1VppIf}")
+        glx_assert(err == '')
+        glx_assert("192.168.1.2/24" in out)
+        # 不能出现dhcp client.
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show dhcp client")
+        glx_assert(err == '')
+        glx_assert(wan1VppIf not in out)
+
+        data2={}
+        data2["IgnoreNotSpecifiedTable"] = True
+        logIfTable = {}
+        logIfTable["Table"] = "LogicalInterface"
+        # 只处理WAN1
+        logIfTable["Filters"] = "Filter[Name][eq]=WAN1"
+        wan1 = {}
+        wan1["Name"] = "WAN1"
+        wan1["Segment"] = 0
+        wan1["AddressingType"] = "DHCP"
+        wan1["StaticIpAddrWithPrefix"] = ""
+        logIfTable["Items"] = []
+        logIfTable["Items"].append(wan1)
+        data2["Tables"] = []
+        data2["Tables"].append(logIfTable)
+
+        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
+        result = self.topo.dut1.get_rest_device().update_config_action(data2)
+        glx_assert(result.status_code == 200)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr {wan1VppIf}")
+        glx_assert(err == '')
+        glx_assert("192.168.1.2/24" not in out)
+        # 恢复为dhcp模式
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show dhcp client")
+        glx_assert(err == '')
+        glx_assert(wan1VppIf in out)
+

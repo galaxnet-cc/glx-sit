@@ -62,7 +62,7 @@ class TestBasic1T4DObjectGroup(unittest.TestCase):
         # NC上需要显示创建双向tunnel
         self.topo.dut2.get_rest_device().create_glx_tunnel(tunnel_id=23)
         # need explitly mark as passive.
-        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23, is_passive=True)
+        #self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23, is_passive=True)
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().create_glx_link(link_id=23, wan_name="WAN3",
                                                          remote_ip="192.168.23.2", remote_port=2288,

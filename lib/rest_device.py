@@ -260,11 +260,11 @@ class RestDevice:
         link_data['LinkId'] = link_id
         return self.do_delete_request("Link", link_data)
 
-    # add passive flag.
-    def create_glx_tunnel(self, tunnel_id, is_passive=False, tag1="", tag2=""):
+    # https://github.com/galaxnet-cc/fwdmd/issues/110
+    # 移除passive参数，只能创建active的　
+    def create_glx_tunnel(self, tunnel_id, tag1="", tag2=""):
         tunnel_data = {}
         tunnel_data['TunnelId'] = tunnel_id
-        tunnel_data['IsPassive'] = is_passive
         tunnel_data['Tag1'] = tag1
         tunnel_data['Tag2'] = tag2
         return self.do_post_request("Tunnel", tunnel_data)
