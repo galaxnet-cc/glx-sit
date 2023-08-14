@@ -13,3 +13,7 @@ class VppSSHDevice:
         shell_cmd = f'{cmd}'
         ssh_stdin, ssh_stdout, ssh_stderr = self.ssh.exec_command(shell_cmd)
         return ssh_stdout.read().decode().rstrip(), ssh_stderr.read().decode().rstrip()
+    def get_ns_cmd_result(self, ns_name, cmd):
+        shell_cmd = f'ip netns exec {ns_name} {cmd}'
+        ssh_stdin, ssh_stdout, ssh_stderr = self.ssh.exec_command(shell_cmd)
+        return ssh_stdout.read().decode(), ssh_stderr.read().decode()
