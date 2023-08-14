@@ -312,6 +312,9 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(domain_ip in out)
 
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
+        glx_assert(err == '')
+
         # 停止dut1 vpp
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl stop vpp")
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl stop fwdmd")
@@ -329,11 +332,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl start fwdmd")
         time.sleep(10)
 
-
         dut1_dnsmasq_pid, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
-        glx_assert(err == '')
-
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
         glx_assert(err == '')
 
         dut4_dnsmasq_pid, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
@@ -411,6 +410,12 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(domain_ip in out)
 
+        dut1_dnsmasq_pid, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
+        glx_assert(err == '')
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
+        glx_assert(err == '')
+
         # 停止dut1 vpp
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl stop vpp")
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl stop fwdmd")
@@ -429,11 +434,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl start fwdmd")
         time.sleep(10)
 
-        dut1_dnsmasq_pid, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
-        glx_assert(err == '')
 
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
-        glx_assert(err == '')
 
         dut4_dnsmasq_pid, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
         glx_assert(err == '')
