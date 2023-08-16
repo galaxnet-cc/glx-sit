@@ -30,7 +30,8 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.2/24")
 
         # dut1 Lan 1 ip:
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.1.1/24", mtu=mtu)
 
         # 初始化tst接口
         self.topo.tst.add_ns("dut1")
@@ -79,7 +80,8 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
 
         # revert to default.
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
 
         # revert to default.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")

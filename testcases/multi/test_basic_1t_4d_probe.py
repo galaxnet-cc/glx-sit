@@ -49,10 +49,11 @@ class TestBasic1T4DProbe(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_static_gw("WAN2", "192.168.12.2")
 
         # dut1 Lan1 ip
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.1.1/24", mtu=mtu)
 
         # dut2 bvi ip:
-        self.topo.dut2.get_rest_device().set_default_bridge_ip("192.168.22.1/24")
+        self.topo.dut2.get_rest_device().set_default_bridge_ip_or_mtu("192.168.22.1/24", mtu=mtu)
     
 
         # 初始化tst接口
@@ -103,10 +104,11 @@ class TestBasic1T4DProbe(unittest.TestCase):
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN2")
 
         # dut1 Lan1 ip
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
 
         # dut2 bvi ip
-        self.topo.dut2.get_rest_device().set_default_bridge_ip("192.168.88.1/24")
+        self.topo.dut2.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.1/24", mtu=mtu)
 
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.

@@ -973,6 +973,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert("route-label 18446744073709551615" in out)
 
     def test_glx_segment_dns_intercept_enable(self):
+        mtu = 1500
         # 检查segment 0 exit-if已配置
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment segment-id 0")
         glx_assert(err == "")
@@ -996,7 +997,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert("dns-intercept" in out)
 
         # 创建获取一个新 bvi 和一个新 logical interface
-        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24")
+        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24", mtu=mtu)
         self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "routed", "default")
 
         # 检查发现已经使能

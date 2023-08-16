@@ -23,8 +23,9 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         # 2、WAN1 disable overlay
         # 3、WAN1 set static ip
         # 4、create ospf
+        mtu = 1500
         self.topo.dut1.get_rest_device().set_logical_interface_unspec("WAN1")
-        result1 = self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.88.1/24")
+        result1 = self.topo.dut1.get_rest_device().update_bridge_ip_or_mtu("default", "192.168.88.1/24", mtu=mtu)
         self.topo.dut1.get_rest_device().set_logical_interface_overlay_enable("WAN1", False)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN1", False)
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.1/24")
@@ -36,7 +37,7 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
 
         # config ospf on dut2
         self.topo.dut2.get_rest_device().set_logical_interface_unspec("WAN1")
-        result2 = self.topo.dut2.get_rest_device().update_bridge_ip("default", "192.168.89.1/24")
+        result2 = self.topo.dut2.get_rest_device().update_bridge_ip_or_mtu("default", "192.168.89.1/24", mtu=mtu)
         self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN1", False)
         self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", False)
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.1.2/24")
@@ -47,13 +48,14 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
 
         if SKIP_TEARDOWN:
             return
+        mtu = 1500
         self.topo.dut2.get_rest_device().delete_ospf_interface("WAN1", 1)
         self.topo.dut2.get_rest_device().delete_ospf_setting()
         self.topo.dut2.get_rest_device().set_logical_interface_unspec("WAN1")
         self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
         self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN1", True)
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
-        self.topo.dut2.get_rest_device().update_bridge_ip("default", "192.168.88.1/24")
+        self.topo.dut2.get_rest_device().update_bridge_ip_or_mtu("default", "192.168.88.1/24", mtu=mtu)
 
         self.topo.dut1.get_rest_device().delete_ospf_interface("WAN1", 1)
         self.topo.dut1.get_rest_device().delete_ospf_setting()
@@ -61,7 +63,7 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
         self.topo.dut1.get_rest_device().set_logical_interface_overlay_enable("WAN1", True)
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
-        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.88.1/24")
+        self.topo.dut1.get_rest_device().update_bridge_ip_or_mtu("default", "192.168.88.1/24", mtu=mtu)
 
     # testcases
     def test_dynamic_route(self):

@@ -38,9 +38,10 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.2/24")
 
         # dut1 Lan 1 ip:
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.1.1/24", mtu=mtu)
         # dut4 Lan 1 ip:
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.4.1/24")
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.4.1/24", mtu=mtu)
 
         # create dut1<>dut2 link.
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=12)
@@ -169,8 +170,9 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
 
 
         # revert to default.
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
 
         # revert to default.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
