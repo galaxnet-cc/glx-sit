@@ -102,14 +102,10 @@ class TestAccIpBinding(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
 
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="33.33.33.0/24")
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="33.33.33.33/32")
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.34.1/32")
         self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
 
         self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="11.11.11.0/24")
-        self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="11.11.11.11/32")
-        self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="11.11.11.12/32")
         self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=False)
 
         # revert acc ip binding related
@@ -331,7 +327,7 @@ class TestAccIpBinding(unittest.TestCase):
         # 2. 配置回程路由　
         result = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
         glx_assert(result.status_code == 200)
-        self.topo.dut4.get_rest_device().create_edge_route(route_prefix="11.11.11.11/32", route_label="0x1200010", is_acc_reverse=True)
+        self.topo.dut4.get_rest_device().create_edge_route(route_prefix="11.11.11.0/24", route_label="0x1200010", is_acc_reverse=True)
 
         # dut3 set probe ip, ping support is implemented with setting out ips, so create acc ip binding first
         self.topo.dut3.get_rest_device().create_acc_ip_binding(acc_ip="11.11.11.11", out_ip1="33.33.33.33")
