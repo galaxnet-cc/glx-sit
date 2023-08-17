@@ -64,7 +64,8 @@ class TestAccIpBinding(unittest.TestCase):
         # create dut2/dut3 tunnel.
         # NC上需要显示创建双向tunnel
         self.topo.dut2.get_rest_device().create_glx_tunnel(tunnel_id=23)
-        self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23)
+        # need explitly mark as passive.
+        #self.topo.dut3.get_rest_device().create_glx_tunnel(tunnel_id=23, is_passive=True)
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().create_glx_link(link_id=23, wan_name="WAN3",
                                                          remote_ip="192.168.23.2", remote_port=2288,
@@ -97,29 +98,27 @@ class TestAccIpBinding(unittest.TestCase):
         if SKIP_TEARDOWN:
             return
 
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.4.0/24")
+        # 无条件恢复加速带来的配置改动
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
+
+        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="33.33.33.0/24")
+        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="33.33.33.33/32")
+        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.34.1/32")
         self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
-
-        # 无条件恢复加速带来的配置改动
-        self.topo.dut3.get_rest_device().delete_logical_interface_additional_ips(name="WAN1")
-        self.topo.dut3.get_rest_device().delete_acc_ip_binding(acc_ip="11.11.11.11")
-
-        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
 
         self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="11.11.11.0/24")
         self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="11.11.11.11/32")
         self.topo.dut4.get_rest_device().delete_edge_route(route_prefix="11.11.11.12/32")
         self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=False)
 
+        # revert acc ip binding related
+        self.topo.dut3.get_rest_device().delete_acc_ip_binding(acc_ip="11.11.11.11")
+        self.topo.dut3.get_rest_device().delete_logical_interface_additional_ips(name="WAN1")
+
         self.topo.dut4.get_rest_device().delete_acc_ip_binding(acc_ip="11.11.11.11")
         self.topo.dut4.get_rest_device().delete_acc_ip_binding(acc_ip="11.11.11.12")
         self.topo.dut4.get_rest_device().delete_logical_interface_additional_ips(name="WAN1")
-
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="33.33.33.33/32")
-        self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.34.1/32")
-        self.topo.dut1.get_rest_device().delete_segment_acc_prop(segment_id=0)
-        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
 
         # revert nat44 session limit 65536-1024
         self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl set nat44 session limit 64512")
