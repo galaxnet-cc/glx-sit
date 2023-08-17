@@ -1228,3 +1228,120 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(wan1VppIf in out)
 
+    # AccIpBinding, all out ips should be synchronized with logical interface additional ips
+    def test_acc_ip_binding(self):
+        
+        acc_ip1 = "11.11.11.11"
+        acc_ip2 = "11.11.11.12"
+        out_ip1="111.111.111.111"
+        out_ip2="111.111.111.112"
+        out_ip3="111.111.111.113"
+        out_ip4="111.111.111.114"
+
+        # create
+        self.topo.dut1.get_rest_device().create_acc_ip_binding(acc_ip=acc_ip1, out_ip1=out_ip1, out_ip2=out_ip2)
+        self.topo.dut1.get_rest_device().set_logical_interface_additional_ips(name="WAN1", add_ip1=out_ip1, add_ip2=out_ip2)
+        time.sleep(1)
+
+        # check redis and vpp
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli get AccIpBinding#{acc_ip1}OutIps")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert(out_ip1 in out)
+        glx_assert(out_ip2 in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show nat44 acc-ip-bind acc-ip {acc_ip1}")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert(out_ip1 in out)
+        glx_assert(out_ip2 in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr")
+        glx_assert(err == '')
+        glx_assert(out_ip1 in out)
+        glx_assert(out_ip2 in out)
+
+        # update
+        self.topo.dut1.get_rest_device().update_acc_ip_binding(acc_ip=acc_ip1, out_ip1=out_ip3)
+        self.topo.dut1.get_rest_device().set_logical_interface_additional_ips(name="WAN1", add_ip1=out_ip3)
+        time.sleep(1)
+
+        # check redis and vpp
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli get AccIpBinding#{acc_ip1}OutIps")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert(out_ip1 not in out)
+        glx_assert(out_ip2 not in out)
+        glx_assert(out_ip3 in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show nat44 acc-ip-bind acc-ip {acc_ip1}")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert(out_ip1 not in out)
+        glx_assert(out_ip2 not in out)
+        glx_assert(out_ip3 in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr")
+        glx_assert(err == '')
+        glx_assert(out_ip1 not in out)
+        glx_assert(out_ip2 not in out)
+        glx_assert(out_ip3 in out)
+
+        # add another
+        self.topo.dut1.get_rest_device().create_acc_ip_binding(acc_ip=acc_ip2, out_ip1=out_ip4)
+        self.topo.dut1.get_rest_device().set_logical_interface_additional_ips(name="WAN1", add_ip1=out_ip3, add_ip2=out_ip4)
+        time.sleep(1)
+
+        # check redis and vpp
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli get AccIpBinding#{acc_ip2}OutIps")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert(out_ip4 in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show nat44 acc-ip-bind")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert(out_ip3 in out)
+        glx_assert(out_ip4 in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr")
+        glx_assert(err == '')
+        glx_assert(out_ip3 in out)
+        glx_assert(out_ip4 in out)
+
+        # delete
+        self.topo.dut1.get_rest_device().delete_acc_ip_binding(acc_ip=acc_ip1)
+        self.topo.dut1.get_rest_device().delete_acc_ip_binding(acc_ip=acc_ip2)
+        self.topo.dut1.get_rest_device().delete_logical_interface_additional_ips(name="WAN1")
+        time.sleep(1)
+
+        # check redis and vpp
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli keys *AccIpBinding*")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert("AccIpBinding" not in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show nat44 acc-ip-bind")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert(acc_ip1 not in out)
+        glx_assert(acc_ip2 not in out)
+        glx_assert(out_ip3 not in out)
+        glx_assert(out_ip4 not in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int addr")
+        glx_assert(err == '')
+        glx_assert(out_ip3 not in out)
+        glx_assert(out_ip4 not in out)

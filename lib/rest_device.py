@@ -209,6 +209,22 @@ class RestDevice:
         logif_data['OneArmModeEnable'] = enable
         return self.do_patch_request("LogicalInterface",logif_data)
 
+    def set_logical_interface_additional_ips(self, name, add_ip1="", add_ip2=""):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data["AdditionalIps"] = []
+        if add_ip1 != "":
+            logif_data["AdditionalIps"].append({"IpAddr": add_ip1})
+        if add_ip2 != "":
+            logif_data["AdditionalIps"].append({"IpAddr": add_ip2})
+        return self.do_patch_request("LogicalInterface", logif_data)
+    
+    def delete_logical_interface_additional_ips(self, name):
+        logif_data = {}
+        logif_data['Name'] = name
+        logif_data["AdditionalIps"] = []
+        return self.do_patch_request("LogicalInterface", logif_data)
+
     def delete_bridge(self, name):
         bridge_data = {}
         bridge_data['Name'] = name
@@ -868,3 +884,28 @@ class RestDevice:
         data['Down'] = down
         return self.do_action_request("ChangeVRRPPriority", data)
 
+    # AccIpBinding, all out ips should be synchronized with logical interface additional ips
+    def create_acc_ip_binding(self, acc_ip, out_ip1="", out_ip2=""):
+        data = {}
+        data['AccIp'] = acc_ip
+        data["OutIps"] = []
+        if out_ip1 != "":
+            data["OutIps"].append({"IpAddr": out_ip1})
+        if out_ip2 != "":
+            data["OutIps"].append({"IpAddr": out_ip2})
+        return self.do_post_request("AccIpBinding", data)
+
+    def update_acc_ip_binding(self, acc_ip, out_ip1="", out_ip2=""):
+        data = {}
+        data['AccIp'] = acc_ip
+        data["OutIps"] = []
+        if out_ip1 != "":
+            data["OutIps"].append({"IpAddr": out_ip1})
+        if out_ip2 != "":
+            data["OutIps"].append({"IpAddr": out_ip2})
+        return self.do_patch_request("AccIpBinding", data)
+    
+    def delete_acc_ip_binding(self, acc_ip):
+        data = {}
+        data['AccIp'] = acc_ip
+        return self.do_delete_request("AccIpBinding", data)
