@@ -38,9 +38,10 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.2/24")
 
         # dut1 Lan 1 ip:
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.1.1/24", mtu=mtu)
         # dut4 Lan 1 ip:
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.4.1/24")
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.4.1/24", mtu=mtu)
 
         # create dut1<>dut2 link.
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=12)
@@ -145,8 +146,9 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
 
 
         # revert to default.
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
 
         # revert to default.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
@@ -200,7 +202,8 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
             {"OptionCode": 3, "OptionValue": "192.168.1.1"}
         ]
         self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.1.100", 
-                                                                  ip_num=10, lease_time="12h", 
+                                                                  ip_num=10, lease_time="12h",
+                                                                  acc_dns_server1="8.8.8.8",local_dns_server1="114.114.114.114",
                                                                   acc_domain_list="a.b.c", local_domain_list="x.y.z", 
                                                                   local_dns_server_enable=True, options=options)
 

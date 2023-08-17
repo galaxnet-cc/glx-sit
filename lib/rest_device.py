@@ -63,15 +63,17 @@ class RestDevice:
         host_stack_dnsmasq_data['Name'] = name
         return self.do_delete_request("DhcpAndDnsSettings", host_stack_dnsmasq_data)
 
-    def update_host_stack_dnsmasq(self, name, start_ip, ip_num, lease_time, dns_server1="", dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
+    def update_host_stack_dnsmasq(self, name, start_ip, ip_num, lease_time, acc_dns_server1="", acc_dns_server2="", local_dns_server1="", local_dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
         host_stack_dnsmasq_data = {}
         host_stack_dnsmasq_data['Name'] = name
         host_stack_dnsmasq_data['StartIP'] = start_ip
         host_stack_dnsmasq_data['IPNum'] = ip_num
         host_stack_dnsmasq_data['NetMask'] = net_mask
         host_stack_dnsmasq_data['LeaseTIme'] = lease_time
-        host_stack_dnsmasq_data['UpstreamDnsServer1'] = dns_server1
-        host_stack_dnsmasq_data['UpstreamDnsServer2'] = dns_server2
+        host_stack_dnsmasq_data['AccUpstreamDnsServer1'] = acc_dns_server1
+        host_stack_dnsmasq_data['AccUpstreamDnsServer2'] = acc_dns_server2
+        host_stack_dnsmasq_data['LocalUpstreamDnsServer1'] = local_dns_server1
+        host_stack_dnsmasq_data['LocalUpstreamDnsServer2'] = local_dns_server2
         host_stack_dnsmasq_data['AccDomainList'] = acc_domain_list
         host_stack_dnsmasq_data['LocalDomainList'] = local_domain_list
         host_stack_dnsmasq_data['DhcpEnable'] = dhcp_enable
@@ -79,14 +81,16 @@ class RestDevice:
         host_stack_dnsmasq_data['Options'] = options
         return self.do_patch_request("DhcpAndDnsSettings", host_stack_dnsmasq_data)
 
-    def set_host_stack_dnsmasq(self, name, start_ip, ip_num, lease_time, dns_server1="", dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
+    def set_host_stack_dnsmasq(self, name, start_ip, ip_num, lease_time, acc_dns_server1="", acc_dns_server2="", local_dns_server1="", local_dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
         host_stack_dnsmasq_data = {}
         host_stack_dnsmasq_data['Name'] = name
         host_stack_dnsmasq_data['StartIP'] = start_ip
         host_stack_dnsmasq_data['IPNum'] = ip_num
         host_stack_dnsmasq_data['LeaseTIme'] = lease_time
-        host_stack_dnsmasq_data['UpstreamDnsServer1'] = dns_server1
-        host_stack_dnsmasq_data['UpstreamDnsServer2'] = dns_server2
+        host_stack_dnsmasq_data['AccUpstreamDnsServer1'] = acc_dns_server1
+        host_stack_dnsmasq_data['AccUpstreamDnsServer2'] = acc_dns_server2
+        host_stack_dnsmasq_data['LocalUpstreamDnsServer1'] = local_dns_server1
+        host_stack_dnsmasq_data['LocalUpstreamDnsServer2'] = local_dns_server2
         host_stack_dnsmasq_data['AccDomainList'] = acc_domain_list
         host_stack_dnsmasq_data['LocalDomainList'] = local_domain_list
         host_stack_dnsmasq_data['DhcpEnable'] = dhcp_enable
@@ -230,24 +234,27 @@ class RestDevice:
         bridge_data['Name'] = name
         return self.do_delete_request("Bridge", bridge_data)
 
-    def update_bridge_ip(self, name, bvi_ip_w_prefix):
+    def update_bridge_ip_or_mtu(self, name, bvi_ip_w_prefix, mtu=1500):
         bridge_data = {}
         bridge_data['Name'] = name
         bridge_data['BviEnable'] = True
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
+        bridge_data['Mtu'] = mtu
         return self.do_patch_request("Bridge", bridge_data)
 
-    def create_bridge(self, name, bvi_ip_w_prefix):
+    def create_bridge(self, name, bvi_ip_w_prefix, mtu=1500):
         bridge_data = {}
         bridge_data['Name'] = name
         bridge_data['BviEnable'] = True
+        bridge_data['Mtu'] = mtu
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
         return self.do_post_request("Bridge", bridge_data)
 
-    def set_default_bridge_ip(self, bvi_ip_w_prefix):
+    def set_default_bridge_ip_or_mtu(self, bvi_ip_w_prefix, mtu=1500):
         bridge_data = {}
         bridge_data['Name'] = "default"
         bridge_data['BviEnable'] = True
+        bridge_data['Mtu'] = mtu
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
         return self.do_patch_request("Bridge", bridge_data)
 
@@ -423,7 +430,7 @@ class RestDevice:
                       tag1="", tag2="",
                       segment=0,
                       qos_level=0,
-                      rate_limit_enable=False,up_rate_limit=0,down_rate_limit=0):
+                      rate_limit_enable=False,up_rate_limit=0,down_rate_limit=0, rate_burst=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
@@ -454,6 +461,7 @@ class RestDevice:
         bizpol_data['RateLimitEnable'] = rate_limit_enable
         bizpol_data['UpRateLimit'] = up_rate_limit
         bizpol_data['DownRateLimit'] = down_rate_limit
+        bizpol_data['RateBurst'] = rate_burst
         return self.do_post_request("BusinessPolicy", bizpol_data)
 
     def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
@@ -467,7 +475,7 @@ class RestDevice:
                       tag1="", tag2="",
                       segment=0,
                       qos_level=0,
-                      rate_limit_enable=False,up_rate_limit=0,down_rate_limit=0):
+                      rate_limit_enable=False,up_rate_limit=0,down_rate_limit=0, rate_burst=0):
         bizpol_data = {}
         bizpol_data["Segment"] = segment
         bizpol_data["Name"] = name
@@ -498,6 +506,7 @@ class RestDevice:
         bizpol_data['RateLimitEnable'] = rate_limit_enable
         bizpol_data['UpRateLimit'] = up_rate_limit
         bizpol_data['DownRateLimit'] = down_rate_limit
+        bizpol_data['RateBurst'] = rate_burst
         return self.do_patch_request("BusinessPolicy", bizpol_data)
 
     def delete_bizpol(self, name, segment=0):

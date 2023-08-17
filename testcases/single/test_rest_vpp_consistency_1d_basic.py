@@ -15,7 +15,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         pass
 
     def test_multi_bridge(self):
-        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24", mtu=mtu)
         bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget BridgeContext#test BviSwIfIndex")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -29,7 +30,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("192.168.89.1/24" in out)
         # update bridge
-        self.topo.dut1.get_rest_device().update_bridge_ip("test", "192.168.90.1/24")
+        self.topo.dut1.get_rest_device().update_bridge_ip_or_mtu("test", "192.168.90.1/24", mtu=mtu)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {bviSwIfIndex}")
         glx_assert(err == '')
@@ -54,6 +55,37 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             f"ip netns exec ctrl-ns ip link")
         glx_assert(err == '')
         glx_assert("br-test" not in out)
+    def test_bridge_mtu(self):
+        mtu = 2000
+        brname = "test"
+        lcpname = "br-" + brname
+        ip = "192.168.89.1/24"
+        ns = "ctrl-ns"
+        # create bridge with mtu
+        self.topo.dut1.get_rest_device().create_bridge(brname, ip, mtu=mtu)
+        bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget BridgeContext#test BviSwIfIndex")
+        glx_assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {bviSwIfIndex} | awk '{{print $4}}'")
+        glx_assert(err == '')
+        glx_assert(str(mtu) in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result(ns, f"ip link show {lcpname}")
+        glx_assert(err == '')
+        glx_assert(f"mtu {mtu}" in out)
+
+        # update bridge with mtu
+        mtu = 3000
+        self.topo.dut1.get_rest_device().update_bridge_ip_or_mtu(brname, ip, mtu=mtu)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {bviSwIfIndex} | awk '{{print $4}}'")
+        glx_assert(err == '')
+        glx_assert(str(mtu) in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result(ns, f"ip link show {lcpname}")
+        glx_assert(err == '')
+        glx_assert(f"mtu {mtu}" in out)
+
+        self.topo.dut1.get_rest_device().delete_bridge(brname)
+
+
 
     def get_bd_id(self, ssh_device, bridge_name):
         out, err = ssh_device.get_cmd_result(f"redis-cli hget BridgeIdContext#{bridge_name} BdId")
@@ -64,9 +96,10 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
     def test_physical_interface(self):
         # 验证mtu属性更新(routed only)
+        mtu = 1500
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
-        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24")
-        self.topo.dut1.get_rest_device().create_bridge("test23", "192.168.90.1/24")
+        self.topo.dut1.get_rest_device().create_bridge("test", "192.168.89.1/24", mtu=mtu)
+        self.topo.dut1.get_rest_device().create_bridge("test23", "192.168.90.1/24", mtu=mtu)
         self.topo.dut1.get_rest_device().update_physical_interface("WAN2", 1600, "routed", "")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int {wan2VppIf}")
@@ -681,7 +714,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             {"OptionCode": 3, "OptionValue": "192.168.88"}
         ]
         result=self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.88.50", 
-                                                                  ip_num=101, lease_time="12h", dns_server1="8.8.8.8", 
+                                                                  ip_num=101, lease_time="12h", acc_dns_server1="8.8.8.8", local_dns_server1="114.114.114.114",
                                                                   acc_domain_list="a.b.c", local_domain_list="x.y.z", 
                                                                   dhcp_enable=True, options=options)
         glx_assert(result.status_code == 500)
@@ -690,7 +723,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             {"OptionCode": 3, "OptionValue": "192.168.88.1"}, {"OptionCode": 6, "OptionValue": "8.8.8.8"}
         ]
         result=self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.88.50", 
-                                                                  ip_num=101, lease_time="12h", dns_server1="8.8.8.8", 
+                                                                  ip_num=101, lease_time="12h", acc_dns_server1="8.8.8.8", local_dns_server1="114.114.114.114",
                                                                   acc_domain_list="a.b.c", local_domain_list="x.y.z", 
                                                                   dhcp_enable=True, options=options)
         glx_assert(result.status_code == 201)
@@ -783,7 +816,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
     def test_bridge(self):
         # Add new ip address
-        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.1.1/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().update_bridge_ip_or_mtu("default", "192.168.1.1/24", mtu=mtu)
         bviSwIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget BridgeContext#test BviSwIfIndex")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -795,7 +829,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("192.168.1.1/24" in out)
         # update and verify
-        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.1.2/24")
+        self.topo.dut1.get_rest_device().update_bridge_ip_or_mtu("default", "192.168.1.2/24", mtu=mtu)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {bviSwIfIndex}")
         glx_assert(err == '')
@@ -808,7 +842,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert("192.168.1.1/24" not in out)
 
         # recovery ip address to 88.1
-        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.88.1/24")
+        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.88.1/24", mtu=mtu)
 
     # the interface is very generic so we only
     # test it works by some table.

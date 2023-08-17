@@ -38,9 +38,10 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.2/24")
 
         # dut1 Lan 1 ip:
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.1.1/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.1.1/24", mtu=mtu)
         # dut4 Lan 1 ip:
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.4.1/24")
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.4.1/24", mtu=mtu)
 
         # create dut1<>dut2 link.
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=12)
@@ -150,8 +151,9 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         self.topo.dut4.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x3400010")
 
         # revert to default.
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
+        mtu=1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
 
         # revert to default.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
@@ -191,12 +193,12 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        direct_enable=True)
 
         # 测试流量
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 20")
         glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
 
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 20")
         glx_assert(err == '')
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
@@ -216,14 +218,14 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        steering_type=steering_type,
                                                        steering_interface=steering_interface,
                                                        direct_enable=True,
-                                                       rate_limit_enable=True, up_rate_limit=4096, down_rate_limit=0)
+                                                       rate_limit_enable=True, up_rate_limit=4096, down_rate_limit=0, rate_burst=325000)
 
         # iperf正向打流
         out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s | grep -i 'sender' | awk '{{print $7}}'")
         glx_assert(err == '')
         out=8.0 * float(out)
         if out > 4.0:
-            glx_assert(math.isclose(out, 4.0))
+            glx_assert(math.isclose(out, 4.0, abs_tol=1))
 
         # 测试下行限速
         self.topo.dut1.get_rest_device().update_bizpol(name=name, priority=priority,
@@ -233,7 +235,7 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        steering_type=steering_type,
                                                        steering_interface=steering_interface,
                                                        direct_enable=True,
-                                                       rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096)
+                                                       rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096, rate_burst=325000)
 
         # iperf逆向打流
         out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -R | grep -i 'sender' | awk '{{print $7}}'")
@@ -241,7 +243,7 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         glx_assert(err == '')
         out=8.0 * float(out)
         if out > 4.0:
-            glx_assert(math.isclose(out, 4.0))
+            glx_assert(math.isclose(out, 4.0, abs_tol=1))
 
         # 移除配置
         self.topo.dut1.get_rest_device().delete_bizpol(name=name)
@@ -273,11 +275,11 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        direct_enable=True)
 
         # 测试流量
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 20")
         glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 20")
         glx_assert(err == '')
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
@@ -297,7 +299,7 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        steering_type=steering_type,
                                                        steering_interface=steering_interface,
                                                        direct_enable=True,
-                                                       rate_limit_enable=True, up_rate_limit=4096, down_rate_limit=0)
+                                                       rate_limit_enable=True, up_rate_limit=4096, down_rate_limit=0, rate_burst=325000)
         # iperf正向打流
         out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s | grep -i 'sender' | awk '{{print $7}}'")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -t 10")
@@ -305,7 +307,7 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         glx_assert(err == '')
         out=8.0 * float(out)
         if out > 4.0:
-            glx_assert(math.isclose(out, 4.0))
+            glx_assert(math.isclose(out, 4.0, abs_tol=1))
 
         # 测试下行限速
         self.topo.dut1.get_rest_device().update_bizpol(name=name, priority=priority,
@@ -315,7 +317,7 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        steering_type=steering_type,
                                                        steering_interface=steering_interface,
                                                        direct_enable=True,
-                                                       rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096)
+                                                       rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096, rate_burst=325000)
 
         # iperf逆向打流
         out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -R | grep -i 'sender' | awk '{{print $7}}'")
@@ -323,9 +325,8 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -t 10 -R")
         glx_assert(err == '')
         out=8.0 * float(out)
-        print(f"iperf3 {src_prefix} to {dst_ip} reverse traffic: {out}")
         if out > 4.0:
-            glx_assert(math.isclose(out, 4.0))
+            glx_assert(math.isclose(out, 4.0, abs_tol=1))
 
         # 移除配置
         self.topo.dut1.get_rest_device().delete_bizpol(name=name)

@@ -27,9 +27,10 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.2/24")
 
         # dut1 Lan 1 ip:
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.2/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.2/24", mtu=mtu)
         # dut4 Lan 1 ip:
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.88.3/24")
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.3/24", mtu=mtu)
 
         # create dut1<>dut2 link.
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=12)
@@ -129,11 +130,14 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.up_down_if("br_dut1_dut4", False)
         self.topo.tst.del_br("br_dut1_dut4")
+        # make sure to delete it.
+        self.topo.tst.del_if("br_dut1_dut4")
 
 
         # revert to default.
-        self.topo.dut1.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
-        self.topo.dut4.get_rest_device().set_default_bridge_ip("192.168.88.0/24")
+        mtu = 1500
+        self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
 
         # revert to default.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
@@ -272,9 +276,9 @@ class Testbasic1T4DVRRP(unittest.TestCase):
 
 
         # 开启dut1 dns服务器
-        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, dns_server1=upstream_dns_server)
+        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
         # 开启dut4 dns服务器
-        self.topo.dut4.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, dns_server1=upstream_dns_server)
+        self.topo.dut4.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
 
 
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'address=/{domain}/{domain_ip}' >> {dnsmasq_dns_conf}")
@@ -379,9 +383,9 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         glx_assert(201 == resp.status_code)
 
         # 开启dut1 dns服务器
-        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, dns_server1=upstream_dns_server)
+        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
         # 开启dut4 dns服务器
-        self.topo.dut4.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, dns_server1=upstream_dns_server)
+        self.topo.dut4.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
 
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'address=/{domain}/{domain_ip}' >> {dnsmasq_dns_conf}")
         self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"echo 'address=/{domain}/{domain_ip}' >> {dnsmasq_dns_conf}")
