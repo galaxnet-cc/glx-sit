@@ -69,6 +69,9 @@ test-multi-probe:
 
 test-multi-bizpol-qos:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_bizpol_qos.py
+
+test-multi-acc-ip-binding:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_acc_ip_binding.py
 # 单机测试例
 
 test-single-all:
@@ -112,6 +115,6 @@ MTESTS := test-multi-basic test-multi-hubspoke test-multi-acc test-multi-mseg te
 MTESTS += test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect
 MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dnat test-multi-object-group
 MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
-MTESTS += test-multi-sched test-multi-vrrp
+MTESTS += test-multi-sched test-multi-vrrp test-multi-acc test-multi-acc-ip-binding
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"
