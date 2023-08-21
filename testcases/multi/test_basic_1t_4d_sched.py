@@ -142,6 +142,7 @@ class TestBasic1T4DSched(unittest.TestCase):
         self.topo.dut4.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x3400010")
 
         # revert to default.
+        mtu = 1500
         self.topo.dut1.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
         self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.88.0/24", mtu=mtu)
 

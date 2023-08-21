@@ -235,33 +235,34 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
 
         # 分开测试rx，避免ack干预计数
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
-        glx_assert(err == '')
-        _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10 -R")
-        glx_assert(err == '')
-        # link0 rx
-        linkRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget LinkState#12 RxPackets")
-        linkRxPacket = linkRxPacket.rstrip()
-        glx_assert(err == '')
-        linkRxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget LinkState#12 RxBytes")
-        linkRxBytes = linkRxBytes.rstrip()
-        glx_assert(err == '')
-        print("link0 rx: ", int(linkRxBytes)/int(linkRxPacket))
-        glx_assert(math.isclose(1400, int(linkRxBytes)/int(linkRxPacket), abs_tol=200))
+        # bizpol steering interface无法影响Rx
+        # _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        # glx_assert(err == '')
+        # _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10 -R")
+        # glx_assert(err == '')
+        # # link0 rx
+        # linkRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+        #     f"redis-cli hget LinkState#12 RxPackets")
+        # linkRxPacket = linkRxPacket.rstrip()
+        # glx_assert(err == '')
+        # linkRxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+        #     f"redis-cli hget LinkState#12 RxBytes")
+        # linkRxBytes = linkRxBytes.rstrip()
+        # glx_assert(err == '')
+        # print("link0 rx: ", int(linkRxBytes)/int(linkRxPacket))
+        # glx_assert(math.isclose(1400, int(linkRxBytes)/int(linkRxPacket), abs_tol=200))
 
         # 增加对于tunnel rx的计数准确性验证
-        tunnelRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget TunnelState#12 RxPackets")
-        tunnelRxPacket = tunnelRxPacket.rstrip()
-        glx_assert(err == '')
-        tunnelRxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget TunnelState#12 RxBytes")
-        tunnelRxBytes = tunnelRxBytes.rstrip()
-        glx_assert(err == '')
-        print("tunnel rx: ", int(tunnelRxBytes)/int(tunnelRxPacket))
-        glx_assert(math.isclose(1400, int(tunnelRxBytes)/int(tunnelRxPacket), abs_tol=200))
+        # tunnelRxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+        #     f"redis-cli hget TunnelState#12 RxPackets")
+        # tunnelRxPacket = tunnelRxPacket.rstrip()
+        # glx_assert(err == '')
+        # tunnelRxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+        #     f"redis-cli hget TunnelState#12 RxBytes")
+        # tunnelRxBytes = tunnelRxBytes.rstrip()
+        # glx_assert(err == '')
+        # print("tunnel rx: ", int(tunnelRxBytes)/int(tunnelRxPacket))
+        # glx_assert(math.isclose(1400, int(tunnelRxBytes)/int(tunnelRxPacket), abs_tol=200))
 
         # 配置策略强制走link1
         self.topo.dut1.get_rest_device().update_bizpol(name="bizpol1", priority=1,

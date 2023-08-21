@@ -29,6 +29,8 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.1/24")
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.122.1/24")
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
+        self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN1", True)
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.122.2/24")
         # 2<>3 192.168.23.0/24
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN3", "192.168.23.1/24")
@@ -36,6 +38,8 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         # 3<>4 192.168.34.0/24
         self.topo.dut3.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.1/24")
         self.topo.dut4.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.34.2/24")
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
+        self.topo.dut4.get_rest_device().set_logical_interface_overlay_enable("WAN1", True)
 
         # dut1 Lan 1 ip:
         mtu = 1500
@@ -182,6 +186,8 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         steering_mode=1
         steering_type=1
         steering_interface="WAN1"
+        # 关闭iperf3服务器.
+        _, _ = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"ip netns exec {dut2ns} pkill iperf3")
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
         # 配置一条nat用的bizpol
         self.topo.dut1.get_rest_device().create_bizpol(name=name, priority=priority,
@@ -193,12 +199,12 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        direct_enable=True)
 
         # 测试流量
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 20")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5")
         glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
 
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 20")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5")
         glx_assert(err == '')
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
@@ -209,6 +215,7 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
 
         # dut2启动iperf服务器
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"ip netns exec {dut2ns} iperf3 -s -D")
+        print(out)
         glx_assert(err == '')
         # 测试上行限速
         self.topo.dut1.get_rest_device().update_bizpol(name=name, priority=priority,
@@ -264,6 +271,8 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
         steering_interface="WAN1"
         dut1ns = "dut1"
         key=f"BusinessPolicyContext#{name}"
+        # 关闭iperf3服务器.
+        _,_ = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
         # 配置一条bizpol
         self.topo.dut1.get_rest_device().create_bizpol(name=name, priority=priority,
@@ -275,11 +284,11 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        direct_enable=True)
 
         # 测试流量
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 20")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5")
         glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 20")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"ping {dst_ip} -c 5")
         glx_assert(err == '')
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)

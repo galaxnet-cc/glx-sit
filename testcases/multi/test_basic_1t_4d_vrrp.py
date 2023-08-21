@@ -59,6 +59,15 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         self.topo.dut3.get_rest_device().create_glx_route_label_fwd(route_label="0x1200000", tunnel_id1=23)
 
 
+        # 判断下if1是不是在dut1上和if2是不是在dut4上
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", f"ip link show {self.topo.tst.if1}")
+        if err == '':
+            self.topo.tst.add_ns_if_to_default_ns("dut1", self.topo.tst.if1)
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", f"ip link show {self.topo.tst.if2}")
+        if err == '':
+            self.topo.tst.add_ns_if_to_default_ns("dut4", self.topo.tst.if2)
+        
+
         # 创建tst网桥
         br_name = "br_dut1_dut4"
         self.topo.tst.add_br(br_name)
@@ -302,6 +311,9 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         out, err = self.topo.dut4.get_vpp_ssh_device().get_ns_cmd_result(ns, f"dnsmasq -C {dnsmasq_conf}")
         glx_assert(err == '')
 
+        dut1_dnsmasq_pid, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
+        glx_assert(err == '')
+
         # master
         resp = self.topo.dut1.get_rest_device().create_vrrp(vip=vip_with_prefix, vr_id=vr_id, bridge=br_name, priority=master_priority, adv_interval=adv_interval)
         glx_assert(201 == resp.status_code)
@@ -316,7 +328,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(domain_ip in out)
 
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
         glx_assert(err == '')
 
         # 停止dut1 vpp
@@ -336,14 +348,12 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl start fwdmd")
         time.sleep(10)
 
-        dut1_dnsmasq_pid, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
-        glx_assert(err == '')
-
         dut4_dnsmasq_pid, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
         glx_assert(err == '')
 
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut4_dnsmasq_pid}")
+        _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut4_dnsmasq_pid}")
         glx_assert(err == '')
+
         self.topo.dut1.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
         self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq(name=dns_setting_name)
         self.topo.dut4.get_rest_device().delete_host_stack_dnsmasq(name=dns_setting_name)
@@ -417,7 +427,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         dut1_dnsmasq_pid, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
         glx_assert(err == '')
 
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
         glx_assert(err == '')
 
         # 停止dut1 vpp
@@ -428,23 +438,22 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         master_down_int = int(3*adv_interval + (((256 - default_priority) * adv_interval) / 256)+ 1)
         # 测试dut4是否升主
         time.sleep(master_down_int)
-        glx_assert(domain_ip in out)
 
         out, err = self.topo.tst.get_cmd_result(f"dig @{vip} {domain} +tries=5 +timeout=1")
         glx_assert(err == '')
+        glx_assert(domain_ip in out)
 
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl start vpp")
         time.sleep(5)
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl start fwdmd")
         time.sleep(10)
 
-
-
         dut4_dnsmasq_pid, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"cat {dnsmasq_pid_file}")
         glx_assert(err == '')
 
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut4_dnsmasq_pid}")
+        _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut4_dnsmasq_pid}")
         glx_assert(err == '')
+
         self.topo.dut1.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
         self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq(name=dns_setting_name)
         self.topo.dut4.get_rest_device().delete_host_stack_dnsmasq(name=dns_setting_name)

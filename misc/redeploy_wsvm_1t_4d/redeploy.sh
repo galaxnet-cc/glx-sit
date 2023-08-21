@@ -29,6 +29,11 @@ Reset()
     scp testDevice_dut2.json root@$dut2ip:/var/lib/fwdmd/params/devices/testDevice.json
     scp testDevice_dut3.json root@$dut3ip:/var/lib/fwdmd/params/devices/testDevice.json
     scp testDevice_dut4.json root@$dut4ip:/var/lib/fwdmd/params/devices/testDevice.json
+    scp chnroute.txt root@$dut1ip:/opt/chnroute.txt
+    scp chnroute.txt root@$dut2ip:/opt/chnroute.txt
+    scp chnroute.txt root@$dut3ip:/opt/chnroute.txt
+    scp chnroute.txt root@$dut4ip:/opt/chnroute.txt
+
 
     for dip in $dutip_list
     do
@@ -83,6 +88,7 @@ do
     ssh root@$dip mkdir -p /tmp/sdwandebs
     ssh root@$dip rm /tmp/sdwandebs/*
     scp debs/*.deb root@$dip:/tmp/sdwandebs/
+    scp chnroute.txt root@$dip:/opt/chnroute.txt
 
     # install prerequisite pkgs.
     ssh root@$dip apt-get -y install redis-server bridge-utils dnsmasq
@@ -124,6 +130,10 @@ scp testDevice_dut1.json root@$dut1ip:/var/lib/fwdmd/params/devices/testDevice.j
 scp testDevice_dut2.json root@$dut2ip:/var/lib/fwdmd/params/devices/testDevice.json
 scp testDevice_dut3.json root@$dut3ip:/var/lib/fwdmd/params/devices/testDevice.json
 scp testDevice_dut4.json root@$dut4ip:/var/lib/fwdmd/params/devices/testDevice.json
+scp chnroute.txt root@$dut1ip:/opt/chnroute.txt
+scp chnroute.txt root@$dut2ip:/opt/chnroute.txt
+scp chnroute.txt root@$dut3ip:/opt/chnroute.txt
+scp chnroute.txt root@$dut4ip:/opt/chnroute.txt
 
 # prepare all device to be running in dpdk mode.
 for dip in $dutip_list

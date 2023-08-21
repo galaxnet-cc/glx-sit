@@ -74,7 +74,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
 
     def test_glx_segment_delivery_batch_route(self):
         # 获取chnroute.txt中的路由数目
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
+        # self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wc -l /opt/chnroute.txt")
         glx_assert(err == "")
         outlist = out.split(' ')
@@ -284,7 +284,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
 
     def test_glx_segment_delivery_batch_route_when_fwdmd_restart(self):
         # 获取chnroute.txt中的路由数目
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
+        # self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wc -l /opt/chnroute.txt")
         glx_assert(err == "")
         outlist = out.split(' ')
@@ -325,7 +325,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
 
     def test_glx_segment_delivery_batch_route_when_vpp_restart(self):
         # 获取chnroute.txt中的路由数目
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
+        # self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wc -l /opt/chnroute.txt")
         glx_assert(err == "")
         outlist = out.split(' ')
@@ -364,7 +364,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
 
     def test_glx_segment_delivery_batch_route_when_routelabel_change(self):
         # 获取chnroute.txt中的路由数目
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
+        # self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wc -l /opt/chnroute.txt")
         glx_assert(err == "")
         outlist = out.split(' ')
@@ -406,7 +406,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
 
     def test_glx_segment_delivery_batch_route_fib_src(self):
         # 获取chnroute.txt中的路由数目
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
+        # self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wc -l /opt/chnroute.txt")
         glx_assert(err == "")
         outlist = out.split(' ')

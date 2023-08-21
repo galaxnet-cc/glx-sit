@@ -842,7 +842,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert("192.168.1.1/24" not in out)
 
         # recovery ip address to 88.1
-        self.topo.dut1.get_rest_device().update_bridge_ip("default", "192.168.88.1/24", mtu=mtu)
+        self.topo.dut1.get_rest_device().update_bridge_ip_or_mtu("default", "192.168.88.1/24", mtu=mtu)
 
     # the interface is very generic so we only
     # test it works by some table.
@@ -1264,7 +1264,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
     # AccIpBinding, all out ips should be synchronized with logical interface additional ips
     def test_acc_ip_binding(self):
-        
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.1/24") 
         acc_ip1 = "11.11.11.11"
         acc_ip2 = "11.11.11.12"
         out_ip1="111.111.111.111"
@@ -1379,3 +1379,4 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(out_ip3 not in out)
         glx_assert(out_ip4 not in out)
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1") 

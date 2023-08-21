@@ -21,9 +21,29 @@ class SSHDevice:
     def add_if_to_ns(self, if_name, ns_name):
         self.ssh.exec_command(f'ip link set {if_name} netns {ns_name}')
         self.ssh.exec_command(f'ip netns exec {ns_name} ip link set {if_name} up')
+        # lqk
+        # Flush the bvi's old mac address which was cached in ARP cache, because when we have done a factory init request,
+        # we will regenerate a new mac address to bvi.
+        self.ssh.exec_command(f'ip netns exec {ns_name} ip neigh flush dev {if_name}')
+
+    def add_ns_if_to_ns(self, src_ns, if_name, dst_ns):
+        self.get_ns_cmd_result(src_ns, f"ip link set {if_name} netns {dst_ns}")
+        self.get_ns_cmd_result(dst_ns, f"ip link set {if_name} up")
+        # lqk
+        # Flush the bvi's old mac address which was cached in ARP cache, because when we have done a factory init request,
+        # we will regenerate a new mac address to bvi.
+        self.get_ns_cmd_result(dst_ns, f"ip neigh flush dev {if_name}")
+
+    def add_ns_if_to_default_ns(self, src_ns, if_name):
+        self.get_ns_cmd_result(src_ns, f"ip link set {if_name} netns 1")
+        self.get_cmd_result(f"ip link set {if_name} up")
+        # lqk
+        # Flush the bvi's old mac address which was cached in ARP cache, because when we have done a factory init request,
+        # we will regenerate a new mac address to bvi.
+        self.get_cmd_result(f"ip neigh flush dev {if_name}")
 
     def del_if(self, name):
-        self.ssh.exec_command(f'ip link del {br_name}')
+        self.ssh.exec_command(f'ip link del {name}')
 
     def add_br(self, br_name):
         self.ssh.exec_command(f'brctl addbr {br_name}')
@@ -76,10 +96,10 @@ class SSHDevice:
         self.ssh.exec_command(f'ip link set dev {if_name} {state}')
 
     def add_route(self, route_prefix, nexthop_ip):
-        self.ssh.exec_command(f'ip route add {route_prefix} via {nexthop_ip}')
+        self.ssh.exec_command(f'ip route replace {route_prefix} via {nexthop_ip}')
 
     def add_ns_route(self, ns_name, route_prefix, nexthop_ip):
-        self.ssh.exec_command(f'ip netns exec {ns_name} ip route add {route_prefix} via {nexthop_ip}')
+        self.ssh.exec_command(f'ip netns exec {ns_name} ip route replace {route_prefix} via {nexthop_ip}')
 
     def del_route(self, route_prefix, nexthop_ip):
         self.ssh.exec_command(f'ip route del {route_prefix} via {nexthop_ip}')

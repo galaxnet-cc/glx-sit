@@ -80,6 +80,8 @@ class TestBasic1T4DProbe(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN5", True)
 
         # dut2 WAN1 WAN2 enable overlay and nat direct
+        self.topo.dut2.get_rest_device().set_logical_interface_unspec("WAN1")
+        self.topo.dut2.get_rest_device().set_logical_interface_unspec("WAN2")
         self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN1", True)
         self.topo.dut2.get_rest_device().set_logical_interface_overlay_enable("WAN2", True)
         self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", True)

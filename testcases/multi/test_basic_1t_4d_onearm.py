@@ -40,7 +40,7 @@ class TestBasic1T4DOneArm(unittest.TestCase):
 
         # dut4 Lan 1 ip:
         mtu = 1500
-        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.4.1/24", mtu=1500)
+        self.topo.dut4.get_rest_device().set_default_bridge_ip_or_mtu("192.168.4.1/24", mtu=mtu)
 
         # create dut3<>dut4 link.
         self.topo.dut4.get_rest_device().create_glx_tunnel(tunnel_id=34)
