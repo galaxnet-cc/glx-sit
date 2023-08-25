@@ -877,7 +877,7 @@ class RestDevice:
         data["Tag2"] = tag2
         return self.do_patch_request("VRRPSetting", data)
 
-    def delete_vrrp(self, vr_id:int, segment:0):
+    def delete_vrrp(self, vr_id:int, segment=0):
         data = {}
         data['VRID'] = vr_id
         data['Segment'] = segment
@@ -885,8 +885,8 @@ class RestDevice:
 
     def change_vrrp_priority(self,
                     vr_id:int,
-                    segment:0,
-                    down: True):
+                    segment=0,
+                    down=True):
         data = {}
         data['VRID'] = vr_id
         data['Segment'] = segment

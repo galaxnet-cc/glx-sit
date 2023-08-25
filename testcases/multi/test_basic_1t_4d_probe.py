@@ -116,6 +116,9 @@ class TestBasic1T4DProbe(unittest.TestCase):
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
 
+        # delete netem 
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns-wan-WAN1 tc qdisc del dev WAN1 root netem")
 
         # delete probe
         self.topo.dut1.get_rest_device().delete_probe(name="probe1")
@@ -130,6 +133,60 @@ class TestBasic1T4DProbe(unittest.TestCase):
 
         # wait for all passive link to be aged.
         time.sleep(20)
+
+    # check probe result
+    def test_probe_result(self):
+        # set netem
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns-wan-WAN1 tc qdisc del dev WAN1 root netem")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns-wan-WAN1 tc qdisc add dev WAN1 root netem loss 20%")
+
+        # create probe
+        self.topo.dut1.get_rest_device().create_probe(name="probe1",                                                             
+                                                      type="WAN",
+                                                      if_name="WAN1",
+                                                      mode="CMD_PING",
+                                                      dst_addr="192.168.11.2",
+                                                      dst_port=1111,
+                                                      interval=1,
+                                                      timeout=1,
+                                                      fail_threshold=2,
+                                                      ok_threshold=2,
+                                                      tag1="",
+                                                      tag2="")
+        time.sleep(70)
+
+        # check probe result
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget ProbeState#probe1 State")
+        out = out.rstrip()
+        glx_assert(err == "")
+        glx_assert(out == "0" or out == "1")
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget ProbeState#probe1 Rtt")
+        out = float(out.rstrip())
+        glx_assert(err == "")
+        glx_assert(out > -2 and out < 2) # -1 means fail, else rtt should be in [0, 2] ms
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget ProbeState#probe1 AvgRtt")
+        out = float(out.rstrip())
+        glx_assert(err == "")
+        glx_assert(out > 0 and out < 2) # 0 < avg rtt < 2
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget ProbeState#probe1 Jitter")
+        out = float(out.rstrip())
+        glx_assert(err == "")
+        glx_assert(out > 0 and out < 2) # 0 < jitter < 2
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget ProbeState#probe1 Loss")
+        out = float(out.rstrip())
+        glx_assert(err == "")
+        glx_assert(out > 0.1 and out < 0.3) # loss rate is set 20%, so 0.1 < loss < 0.3
 
     # mandatory wan1, mainly for auto switch
     def test_probe_with_mandatory_bizpol(self):
@@ -164,7 +221,7 @@ class TestBasic1T4DProbe(unittest.TestCase):
         glx_assert(err == "")
         glx_assert("192.168.11.2" in out)
 
-        # wan names
+       # wan names
         dut1wan1 = self.topo.dut1.get_if_map()["WAN1"]
         dut1wan2 = self.topo.dut1.get_if_map()["WAN2"]
         dut2wan1 = self.topo.dut2.get_if_map()["WAN1"]

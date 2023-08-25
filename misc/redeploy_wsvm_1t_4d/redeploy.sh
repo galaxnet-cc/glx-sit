@@ -53,6 +53,10 @@ Reset()
         scp ./facinit.sh root@$dip:/tmp/
         ssh root@$dip nohup sh /tmp/facinit.sh
 
+        ssh root@$dip pkill dnsmasq
+        ssh root@$dip pkill iperf3
+        ssh root@$dip pkill nc
+
         echo -e "$RED[ reset $dip done]$NC"
     done
 }
@@ -165,5 +169,9 @@ do
         ssh root@$dip redis-cli flushall
         scp ./facinit.sh root@$dip:/tmp/
         ssh root@$dip nohup sh /tmp/facinit.sh
+
+        ssh root@$dip pkill dnsmasq
+        ssh root@$dip pkill iperf3
+        ssh root@$dip pkill nc
     fi
 done

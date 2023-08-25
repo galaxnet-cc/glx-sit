@@ -919,6 +919,12 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 static mappings | grep 'TCP local 169.254.100.2:7777'")
         glx_assert(err == '')
         glx_assert("7777 vrf 0" in out)
+
+        # check multi wans mapping to the same ip and port
+        resp = self.topo.dut1.get_rest_device().create_port_mapping(logic_if="WAN2")
+        glx_assert(resp.status_code == 201)
+        self.topo.dut1.get_rest_device().delete_port_mapping(logic_if="WAN2")
+
         self.topo.dut1.get_rest_device().create_segment(1)
         self.topo.dut1.get_rest_device().update_port_mapping(logic_if="WAN1", segment=1, internal_addr="169.254.101.2")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 static mappings | grep 'TCP local 169.254.100.2:7777'")
@@ -1168,11 +1174,34 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # print("out: [" + out + "]")
         glx_assert("1.1.1.1" in out)
 
-        # update
+        # update to icmp ping
         self.topo.dut1.get_rest_device().update_probe(name="probe1",                                                             
                                                       type="WAN",
                                                       if_name="WAN1",
-                                                      mode="CMD_PING",
+                                                      mode="ICMP_PING",
+                                                      dst_addr="2.2.2.2",
+                                                      dst_port=1111,
+                                                      interval=2,
+                                                      timeout=1,
+                                                      fail_threshold=5,
+                                                      ok_threshold=10,
+                                                      tag1="",
+                                                      tag2="")
+        # time.sleep(1)
+
+        # check
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Probe#probe1 DstAddr")
+        out = out.rstrip()
+        glx_assert(err == "")
+        # print("out: [" + out + "]")
+        glx_assert("2.2.2.2" in out)
+
+        # update to dig dns
+        self.topo.dut1.get_rest_device().update_probe(name="probe1",                                                             
+                                                      type="WAN",
+                                                      if_name="WAN1",
+                                                      mode="DIG_DNS",
                                                       dst_addr="2.2.2.2",
                                                       dst_port=1111,
                                                       interval=2,

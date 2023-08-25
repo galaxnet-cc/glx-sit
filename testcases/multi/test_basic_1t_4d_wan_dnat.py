@@ -27,7 +27,9 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
 
         # 1<>2 192.168.12.0/24
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.1/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.21.1/24")
         self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN1", "192.168.12.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.21.2/24")
 
         # dut1 Lan 1 ip:
         mtu = 1500
@@ -42,8 +44,8 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
 
         # 添加路由
         self.topo.tst.add_ns_route("dut1", "192.168.12.0/24", "192.168.1.1")
+        self.topo.tst.add_ns_route("dut1", "192.168.21.0/24", "192.168.1.1")
         # dut1 turn off other WAN NAT
-        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", False)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
@@ -54,9 +56,16 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
                                                        steering_interface="WAN1",
                                                        protocol=0,
                                                        direct_enable=True)
-        # 创建端口映射
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol2", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.21.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN2",
+                                                       protocol=0,
+                                                       direct_enable=True)
+        # 创建segment
         self.topo.dut2.get_rest_device().create_segment(1)
-        self.topo.dut2.get_rest_device().create_port_mapping(logic_if="WAN1", segment=1, internal_addr="169.254.101.2")
 
         # 等待link up
         # 端口注册时间2s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
@@ -66,12 +75,15 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
         if SKIP_TEARDOWN:
             return
 
+        self.topo.tst.get_cmd_result("pkill nc")
         self.topo.dut2.get_vpp_ssh_device().get_cmd_result("pkill nc")
+
         # delete
         self.topo.dut2.get_rest_device().delete_port_mapping(logic_if="WAN1")
+        self.topo.dut2.get_rest_device().delete_port_mapping(logic_if="WAN2")
         self.topo.dut2.get_rest_device().delete_segment(1)
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
-        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol2")
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", True)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
 
@@ -85,12 +97,17 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
 
         # revert to default.
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN2")
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN2")
 
         # wait for all passive link to be aged.
         time.sleep(20)
 
     def test_segment_wan_dnat(self):
+        # create port wan1 mapping
+        self.topo.dut2.get_rest_device().create_port_mapping(logic_if="WAN1", segment=1, internal_addr="169.254.101.2")
+
         # 检查连接是否建立
         _, _ = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("pkill nc")
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("sh -c 'nohup ip netns exec ctrl-ns-seg-1 nc -l -v -n 169.254.101.2 7777 > /dev/null 2>&1 &'")
@@ -101,6 +118,41 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "cat /tmp/wan_dnat.txt")
         glx_assert(err == '')
         glx_assert("Connection to 192.168.12.2 7777 port [tcp/*] succeeded!" in out)
+
+    # check multi wans mapping to the same ip and port
+    def test_multi_wan_dnat(self):
+        resp = self.topo.dut2.get_rest_device().create_port_mapping(logic_if="WAN1")
+        glx_assert(resp.status_code == 201)
+        resp = self.topo.dut2.get_rest_device().create_port_mapping(logic_if="WAN2")
+        glx_assert(resp.status_code == 201)
+
+        # check wan1
+        self.topo.tst.get_cmd_result("pkill nc")
+        self.topo.dut2.get_vpp_ssh_device().get_cmd_result("pkill nc")
+        self.topo.dut2.get_vpp_ssh_device().get_cmd_result("rm /tmp/wan_dnat*")
+        _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("sh -c 'nohup ip netns exec ctrl-ns nc -l -v -n 169.254.100.2 7777 > /dev/null 2>&1 &'")
+        glx_assert(err == '')
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "sh -c 'nohup nc -w 3 -v 192.168.12.2 7777 > /tmp/wan_dnat1.txt 2>&1 &'")
+        glx_assert(err == '')
+        time.sleep(3)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "cat /tmp/wan_dnat1.txt")
+        glx_assert(err == '')
+        glx_assert("Connection to 192.168.12.2 7777 port [tcp/*] succeeded!" in out)
+
+        # check wan2
+        self.topo.tst.get_cmd_result("pkill nc")
+        self.topo.dut2.get_vpp_ssh_device().get_cmd_result("pkill nc")
+        self.topo.dut2.get_vpp_ssh_device().get_cmd_result("rm /tmp/wan_dnat*")
+        _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("sh -c 'nohup ip netns exec ctrl-ns nc -l -v -n 169.254.100.2 7777 > /dev/null 2>&1 &'")
+        glx_assert(err == '')
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "sh -c 'nohup nc -w 3 -v 192.168.21.2 7777 > /tmp/wan_dnat2.txt 2>&1 &'")
+        glx_assert(err == '')
+        time.sleep(3)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "cat /tmp/wan_dnat2.txt")
+        glx_assert(err == '')
+        glx_assert("Connection to 192.168.21.2 7777 port [tcp/*] succeeded!" in out)
 
 if __name__ == '__main__':
     unittest.main()
