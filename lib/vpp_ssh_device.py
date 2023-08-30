@@ -7,6 +7,7 @@ class VppSSHDevice:
     def __init__(self, server, user, password):
         self.ssh = paramiko.SSHClient()
         self.ssh.load_host_keys(os.path.expanduser('~/.ssh/known_hosts'))
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect(server, username=user, password=password)
 
     def get_cmd_result(self, cmd):

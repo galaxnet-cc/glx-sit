@@ -4,4 +4,6 @@ from lib.util import glx_assert
 
 class TestAssert(unittest.TestCase):
     def test_assert(self):
-        glx_assert("1" in "123")
+        exp = "1"
+        data = "23"
+        glx_assert(exp in data)

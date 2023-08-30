@@ -278,6 +278,18 @@ class RestDevice:
         link_data['QosLevel'] = qos_level
         return self.do_patch_request("Link", link_data)
 
+    def update_glx_link_wan(self, link_id, wan_name="WAN1"):
+        link_data = {}
+        link_data['LinkId'] = link_id
+        link_data['LocalWanName'] = wan_name
+        return self.do_patch_request("Link", link_data)
+
+    def update_glx_link_remote_ip(self, link_id, remote_ip="127.0.0.1"):
+        link_data = {}
+        link_data['LinkId'] = link_id
+        link_data['RemoteIp'] = remote_ip
+        return self.do_patch_request("Link", link_data)
+
     def delete_glx_link(self, link_id):
         link_data = {}
         link_data['LinkId'] = link_id

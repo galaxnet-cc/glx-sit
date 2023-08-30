@@ -2,6 +2,7 @@
 
  OS: ubuntu 20.04
  Python: python 3.6+
+ PythonLibs: paramiko （可使用pip3 install -r requirements.txt安装)
 
 ## 办公室环境包重部署
 

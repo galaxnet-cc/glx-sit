@@ -149,6 +149,9 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
 
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN2")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN2")
+
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN3")
         self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN3")
 
@@ -317,6 +320,30 @@ class TestBasic1T4D(unittest.TestCase):
         # 移除配置
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
         # 无需移除路由，依赖setup.
+
+    def test_link_transport_update(self):
+        # 增加wan2一路配置。
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.122.1/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.122.2/24")
+
+        # 更新link参数
+        self.topo.dut1.get_rest_device().update_glx_link_wan(link_id=12, wan_name="WAN2")
+        self.topo.dut1.get_rest_device().update_glx_link_remote_ip(link_id=12, remote_ip="192.168.122.2")
+
+        # 等待10s
+        time.sleep(10)
+
+        # 测试更新后流量可以通达
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # WAN口配置在teardown中恢复之
 
 if __name__ == '__main__':
     unittest.main()

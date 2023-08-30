@@ -78,6 +78,32 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # cleanup
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
 
+    def test_glx_link_transport_modify(self):
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        glx_assert(err == '')
+        glx_assert(f"link-id 1" in out)
+        # 更新wan接口
+        self.topo.dut1.get_rest_device().update_glx_link_wan(link_id=1, wan_name="WAN2")
+        wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
+        ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {wan2VppIf} | grep {wan2VppIf} | awk '{{print $2}}'")
+        # remove the possible extra newline.
+        ifindex = ifindex.rstrip()
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        glx_assert(err == '')
+
+        glx_assert(f"wan-sw-if-index {ifindex}" in out)
+        # 更新remote ip
+        self.topo.dut1.get_rest_device().update_glx_link_remote_ip(link_id=1, remote_ip="192.168.44.1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        glx_assert(err == '')
+        glx_assert(f"remote-ip 192.168.44.1" in out)
+
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
+        glx_assert(err == '')
+        glx_assert(f"link-id 1" not in out)
+
     def test_glx_tunnel_config(self):
         self.topo.dut1.get_rest_device().create_glx_link(link_id=1, tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
@@ -272,6 +298,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
 
+    @unittest.skip("20230820: type 1 tunnel will be installed in vpp automatically, api is ignored...")
     def test_glx_route_label_policy_type_tunnel_config(self):
         # prepare the tunnel
         self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1)
