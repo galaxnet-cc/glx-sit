@@ -79,8 +79,14 @@ class SSHDevice:
     def add_if_ip(self, if_name, ip_with_prefix):
         self.ssh.exec_command(f'ip addr add {ip_with_prefix} dev  {if_name}')
 
+    def add_if_ip6(self, if_name, ip_with_prefix):
+        self.ssh.exec_command(f'ip -6 addr add {ip_with_prefix} dev  {if_name}')
+
     def add_ns_if_ip(self, ns_name, if_name, ip_with_prefix):
-        self.ssh.exec_command(f'ip netns exec {ns_name} ip addr add {ip_with_prefix} dev  {if_name}')
+        self.ssh.exec_command(f'ip netns exec {ns_name} ip addr add {ip_with_prefix} dev {if_name}')
+
+    def add_ns_if_ip6(self, ns_name, if_name, ip_with_prefix):
+        self.get_ns_cmd_result(ns_name, f"ip addr add {ip_with_prefix} dev {if_name}")
 
     def del_if_ip(self, if_name, ip_with_prefix):
         self.ssh.exec_command(f'ip addr del {ip_with_prefix} dev  {if_name}')
@@ -92,18 +98,30 @@ class SSHDevice:
         state = 'up' if is_up else 'down'
         self.ssh.exec_command(f'ip link set dev {if_name} {state}')
 
-    def up_down_if(self, if_name:str, is_up:bool):
+    def ns_up_down_if(self, ns_name, if_name:str, is_up:bool):
         state = 'up' if is_up else 'down'
-        self.ssh.exec_command(f'ip link set dev {if_name} {state}')
+        self.get_ns_cmd_result(ns_name, f"ip link set dev {if_name} {state}")
 
     def add_route(self, route_prefix, nexthop_ip):
         self.ssh.exec_command(f'ip route replace {route_prefix} via {nexthop_ip}')
+
+    def add_ip6_route(self, route_prefix, nexthop_ip):
+        self.ssh.exec_command(f'ip -6 route replace {route_prefix} via {nexthop_ip}')
+
+    def add_ns_ip6_route(self, ns_name, route_prefix, nexthop_ip):
+        self.ssh.exec_command(f'ip netns exec {ns_name} ip -6 route replace {route_prefix} via {nexthop_ip}')
 
     def add_ns_route(self, ns_name, route_prefix, nexthop_ip):
         self.ssh.exec_command(f'ip netns exec {ns_name} ip route replace {route_prefix} via {nexthop_ip}')
 
     def del_route(self, route_prefix, nexthop_ip):
         self.ssh.exec_command(f'ip route del {route_prefix} via {nexthop_ip}')
+
+    def del_ip6_route(self, route_prefix, nexthop_ip):
+        self.ssh.exec_command(f'ip -6 route del {route_prefix} via {nexthop_ip}')
+
+    def del_ns_ip6_route(self, ns_name, route_prefix, nexthop_ip):
+        self.ssh.exec_command(f'ip netns exec {ns_name} ip -6 route del {route_prefix} via {nexthop_ip}')
 
     def del_ns_route(self, ns_name, route_prefix, nexthop_ip):
         self.ssh.exec_command(f'ip netns exec {ns_name} ip route del {route_prefix} via {nexthop_ip}')
