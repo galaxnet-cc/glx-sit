@@ -195,6 +195,40 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert('WAN2' in out)
 
+    # the states update every 1 minute, so maybe there is nothing in redis,
+    # but usually we run this test more than 1 minute after fwdmd starts
+    def test_physical_interface_state(self):
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli keys PhysicalInterfaceState#*")
+        glx_assert(err == "")
+        lines = out.strip().split('\n')
+        phyIfs = [line.strip().lstrip("PhysicalInterfaceState#") for line in lines if "PhysicalInterfaceState#" in line]
+        glx_assert(phyIfs)
+
+        # check each physical interface info
+        for phyIf in phyIfs:
+            out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+                f"redis-cli hget PhysicalInterfaceState#{phyIf} Name")
+            glx_assert(err == "")
+            glx_assert(phyIf == out.strip())
+
+            out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+                f"redis-cli hget PhysicalInterfaceState#{phyIf} Speed")
+            glx_assert(err == "")
+            speed = int(out.strip())  
+            glx_assert(speed >= 0)
+
+            out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+                f"redis-cli hget PhysicalInterfaceState#{phyIf} Duplex")
+            glx_assert(err == "")
+            duplex = int(out.strip())  
+            glx_assert(duplex >= 0 and duplex <= 2)
+
+            out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+                f"redis-cli hget PhysicalInterfaceState#{phyIf} Flags")
+            glx_assert(err == "")
+            flags = int(out.strip())  
+            glx_assert(flags >= 0 and flags <= 3)
 
     def test_static_property_update(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
