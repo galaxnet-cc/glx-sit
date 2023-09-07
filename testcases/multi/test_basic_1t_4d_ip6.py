@@ -103,6 +103,15 @@ class TestBasic1T4D(unittest.TestCase):
         if SKIP_TEARDOWN:
             return
 
+        self.topo.tst.get_ns_cmd_result("dut1", f"ip -6 addr flush dev {self.topo.tst.if1}")
+        self.topo.tst.get_ns_cmd_result("dut4", f"ip -6 addr flush dev {self.topo.tst.if2}")
+        # important!
+        # Link local Address will be flushed so that we should restart the interface
+        self.topo.tst.ns_up_down_if("dut1", self.topo.tst.if1, False)
+        self.topo.tst.ns_up_down_if("dut1", self.topo.tst.if1, True)
+        self.topo.tst.ns_up_down_if("dut4", self.topo.tst.if2, False)
+        self.topo.tst.ns_up_down_if("dut4", self.topo.tst.if2, True)
+
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
@@ -161,194 +170,139 @@ class TestBasic1T4D(unittest.TestCase):
         # wait for all passive link to be aged.
         time.sleep(20)
 
-    #  测试icmp/udp/tcp流量
-    def test_basic_traffic(self):
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+    def test_ra(self):
+        prefix = "/80"
+
+        dut1_lan_ip4 = "192.168.1.1/24"
+        dut1_route_label = "0x1200010"
+        dut1_lan_ip6_net = "2001:db8"
+        dut1_lan_ip6 = dut1_lan_ip6_net + "::1"
+        dut1_lan_ip6_with_prefix = dut1_lan_ip6 + prefix
+        dut1_ns = "dut1"
+
+        dut4_lan_ip4 = "192.168.4.1/24"
+        dut4_route_label = "0x3400010"
+        dut4_lan_ip6_net = "2001:db9"
+        dut4_lan_ip6 = dut4_lan_ip6_net + "::1"
+        dut4_lan_ip6_with_prefix = dut4_lan_ip6 + prefix
+        dut4_ns = "dut4"
+
+        # setup
+        #  dut1
+        self.topo.dut1.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut1_lan_ip4, bvi_ip6_w_prefix=dut1_lan_ip6_with_prefix)
+        self.topo.dut1.rest_device.create_edge_route(route_prefix=dut4_lan_ip6_with_prefix, route_label=dut4_route_label)
+        #  dut4
+        self.topo.dut4.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut4_lan_ip4, bvi_ip6_w_prefix=dut4_lan_ip6_with_prefix)
+        self.topo.dut4.rest_device.create_edge_route(route_prefix=dut1_lan_ip6_with_prefix, route_label=dut1_route_label)
+
+        #  wait for RA
+        time.sleep(3)
+
+
+        tst_if1_addr = dut1_lan_ip6_net + "::2" 
+        tst_if1_addr_with_prefix =  tst_if1_addr + prefix
+        self.topo.tst.add_ns_if_ip6(dut4_ns, self.topo.tst.if1, tst_if1_addr_with_prefix)
+        #  ping gateway
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {dut1_lan_ip6} -c 5 -i 0.05")
         glx_assert(err == '')
-        # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {dut1_lan_ip6} -c 5 -i 0.05")
         glx_assert(err == '')
-        # 此时不应当再丢包
-        glx_assert("0% packet loss" in out)
-        # 测试ping bvi
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.1 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
 
-        # 添加firewall rule阻断
-        self.topo.dut1.get_rest_device().set_fire_wall_rule(
-            "block_tst_traffic", 1, "192.168.4.2/32", "Deny")
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        # ping dut4
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {dut4_lan_ip6} -c 5 -i 0.05")
         glx_assert(err == '')
-        # 此时应当不通
-        glx_assert("100% packet loss" in out)
-        # 删除firewall rule
-        self.topo.dut1.get_rest_device().delete_fire_wall_rule("block_tst_traffic")
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 此时应当恢复
         glx_assert("0% packet loss" in out)
 
-    # 测试tunnel bfd联动机制以及fwdmd
-    def test_tunnel_bfd(self):
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        # ping if2
+        tst_if2_addr = dut4_lan_ip6_net + "::2" 
+        tst_if2_addr_with_prefix =  tst_if2_addr + prefix
+        self.topo.tst.add_ns_if_ip6(dut4_ns, self.topo.tst.if2, tst_if2_addr_with_prefix)
+
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {tst_if2_addr} -c 5 -i 0.05")
         glx_assert(err == '')
-        # 首包会因为arp而丢失，不为０即可
+        glx_assert("0% packet loss" in out)
+
+        # tear down
+        #  dut4
+        self.topo.dut4.rest_device.delete_edge_route(dut1_lan_ip6)
+        self.topo.dut4.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut4_lan_ip4, bvi_ip6_w_prefix="")
+        #  dut1
+        self.topo.dut1.rest_device.delete_edge_route(dut4_lan_ip6)
+        self.topo.dut1.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut1_lan_ip4, bvi_ip6_w_prefix="")
+
+    def test_slaac(self):
+        # it should be 64
+        prefix = "/64"
+
+        dut1_lan_ip4 = "192.168.1.1/24"
+        dut1_route_label = "0x1200010"
+        dut1_lan_ip6_net = "2001:db8"
+        dut1_lan_ip6 = dut1_lan_ip6_net + "::1"
+        dut1_lan_ip6_with_prefix = dut1_lan_ip6 + prefix
+        dut1_ns = "dut1"
+
+        dut4_lan_ip4 = "192.168.4.1/24"
+        dut4_route_label = "0x3400010"
+        dut4_lan_ip6_net = "2001:db9"
+        dut4_lan_ip6 = dut4_lan_ip6_net + "::1"
+        dut4_lan_ip6_with_prefix = dut4_lan_ip6 + prefix
+        dut4_ns = "dut4"
+
+        # setup
+        #  dut1
+        self.topo.dut1.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut1_lan_ip4, bvi_ip6_w_prefix=dut1_lan_ip6_with_prefix)
+        self.topo.dut1.rest_device.create_edge_route(route_prefix=dut4_lan_ip6_with_prefix, route_label=dut4_route_label)
+        #  dut4
+        self.topo.dut4.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut4_lan_ip4, bvi_ip6_w_prefix=dut4_lan_ip6_with_prefix)
+        self.topo.dut4.rest_device.create_edge_route(route_prefix=dut1_lan_ip6_with_prefix, route_label=dut1_route_label)
+
+        #  wait for RA
+        time.sleep(3)
+
+        #  ping gateway
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {dut1_lan_ip6} -c 5 -i 0.05")
+        glx_assert(err == '')
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {dut1_lan_ip6} -c 5 -i 0.05")
         glx_assert(err == '')
-        # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
 
-        # 清除事件队列
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli del /glx/eventqueue/TunnelStateEvent")
+        # ping dut4
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {dut4_lan_ip6} -c 5 -i 0.05")
         glx_assert(err == '')
-        # 将WAN1接口设置为down状态
-        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl set interface state {wan1VppIf} down")
-        glx_assert(err == '')
-        # 5s is enough for event being handled and event generated.
-        # tunnel bfd is 3*1 interval.
-        time.sleep(5)
-        # 读取事件队列
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        glx_assert(err == '')
-        glx_assert("TunnelId\":12" in out)
-        glx_assert("IsUp\":false" in out)
+        glx_assert("0% packet loss" in out)
 
-        # 将WAN1接口设置为up状态
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl set interface state {wan1VppIf} up")
+        # get slaac ip address
+        if1_addr_with_prefix, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ip -6 addr show dev {self.topo.tst.if1} | grep '{dut1_lan_ip6_net}' | awk '{{print $2}}'")
         glx_assert(err == '')
+        glx_assert(if1_addr_with_prefix != '')
+        if1_addr = if1_addr_with_prefix.replace('\n', '').replace(prefix, '')
 
-        # 10s足够link & bfd恢复了
-        time.sleep(10)
-        # 读取事件队列
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
+        if2_addr_with_prefix, err = self.topo.tst.get_ns_cmd_result(dut4_ns, f"ip -6 addr show dev {self.topo.tst.if2} | grep '{dut4_lan_ip6_net}' | awk '{{print $2}}'")
         glx_assert(err == '')
-        glx_assert("TunnelId\":12" in out)
-        glx_assert("IsUp\":true" in out)
+        glx_assert(if2_addr_with_prefix != '')
+        if2_addr = if2_addr_with_prefix.replace('\n', '').replace(prefix, '')
 
-        # 暂停fwdmd，模拟fwdmd重启过程中消息丢失场景
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"systemctl stop fwdmd")
+        # ping 
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {if2_addr} -c 5 -i 0.05")
         glx_assert(err == '')
+        glx_assert("0% packet loss" in out)
 
-        # 将WAN1接口设置为down状态
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl set interface state {wan1VppIf} down")
+        # big packet
+        out, err = self.topo.tst.get_ns_cmd_result(dut1_ns, f"ping {if2_addr} -M dont -s 3000 -c 5")
         glx_assert(err == '')
-        # 确保bfd down掉
-        time.sleep(5)
-
-        # 重启fwdmd，确保fwdm启动后重新拉取到bfd down消息。
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"systemctl start fwdmd")
-        glx_assert(err == '')
-        # 确保fwdmd重启ok
-        time.sleep(10)
-        # 读取事件队列
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        glx_assert(err == '')
-        glx_assert("TunnelId\":12" in out)
-        glx_assert("IsUp\":false" in out)
-
-        # 将WAN1接口设置为up状态
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"vppctl set interface state {wan1VppIf} up")
-        glx_assert(err == '')
-        # 确保bfd up
-        # 因为前面一共down掉了(5+10)，passive link被老化，对端ikev2 sa被移除。
-        # 30s足够应该足够恢复（ikev2 sa keepalive detect time为3 * 5s）
-        time.sleep(30)
-
-        # 读取事件队列
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        glx_assert(err == '')
-        glx_assert("TunnelId\":12" in out)
-        glx_assert("IsUp\":true" in out)
-
-        # 模拟vpp重启
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"systemctl restart vpp")
-        glx_assert(err == '')
-        # 等待fwdmd检测vpp重启，并重新下发所有状态。
-        # 20s足够了
-        time.sleep(30)
-
-        # 读取事件队列（此时需要控制平面支持处理重复up上报）
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
-        glx_assert(err == '')
-        glx_assert("TunnelId\":12" in out)
-        glx_assert("IsUp\":true" in out)
-
-        # 检测经过这些场景验证，业务仍能恢复。
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 首包会因为arp而丢失，不为０即可
+        glx_assert("Packet too big" in out)
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 此时不应当再丢包
-        glx_assert("0% packet loss" in out)
 
-    def test_bizpol_overlay_enable(self):
-        # remove route.
-        self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24")
-        # use bizpol to steering the traffic.
-        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
-                                                       src_prefix="192.168.1.0/24",
-                                                       dst_prefix="192.168.4.0/24",
-                                                       protocol=0,
-                                                       overlay_enable=True,
-                                                       route_label="0x3400010")
+        # tear down
+        #  dut4
+        self.topo.dut4.rest_device.delete_edge_route(dut1_lan_ip6)
+        self.topo.dut4.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut4_lan_ip4, bvi_ip6_w_prefix="")
+        #  dut1
+        self.topo.dut1.rest_device.delete_edge_route(dut4_lan_ip6)
+        self.topo.dut1.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut1_lan_ip4, bvi_ip6_w_prefix="")
 
-        # 测试流量
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 首包会因为arp而丢失，不为０即可
-        glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 此时不应当再丢包
-        glx_assert("0% packet loss" in out)
 
-        # 移除配置
-        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
-        # 无需移除路由，依赖setup.
 
-    def test_link_transport_update(self):
-        # 增加wan2一路配置。
-        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.122.1/24")
-        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.122.2/24")
-
-        # 更新link参数
-        self.topo.dut1.get_rest_device().update_glx_link_wan(link_id=12, wan_name="WAN2")
-        self.topo.dut1.get_rest_device().update_glx_link_remote_ip(link_id=12, remote_ip="192.168.122.2")
-
-        # 等待10s
-        time.sleep(10)
-
-        # 测试更新后流量可以通达
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 首包会因为arp而丢失，不为０即可
-        glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 此时不应当再丢包
-        glx_assert("0% packet loss" in out)
-
-        # WAN口配置在teardown中恢复之
-
-if __name__ == '__main__':
-    unittest.main()

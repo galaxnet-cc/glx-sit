@@ -234,28 +234,31 @@ class RestDevice:
         bridge_data['Name'] = name
         return self.do_delete_request("Bridge", bridge_data)
 
-    def update_bridge_ip_or_mtu(self, name, bvi_ip_w_prefix, mtu=1500):
+    def update_bridge_ip_or_mtu(self, name, bvi_ip_w_prefix, mtu=1500, bvi_ip6_w_prefix=""):
         bridge_data = {}
         bridge_data['Name'] = name
         bridge_data['BviEnable'] = True
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
         bridge_data['Mtu'] = mtu
+        bridge_data['BviIp6AddrWithPrefix'] = bvi_ip6_w_prefix
         return self.do_patch_request("Bridge", bridge_data)
 
-    def create_bridge(self, name, bvi_ip_w_prefix, mtu=1500):
+    def create_bridge(self, name, bvi_ip_w_prefix, mtu=1500, bvi_ip6_w_prefix=""):
         bridge_data = {}
         bridge_data['Name'] = name
         bridge_data['BviEnable'] = True
         bridge_data['Mtu'] = mtu
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
+        bridge_data['BviIp6AddrWithPrefix'] = bvi_ip6_w_prefix
         return self.do_post_request("Bridge", bridge_data)
 
-    def set_default_bridge_ip_or_mtu(self, bvi_ip_w_prefix, mtu=1500):
+    def set_default_bridge_ip_or_mtu(self, bvi_ip_w_prefix, mtu=1500, bvi_ip6_w_prefix=""):
         bridge_data = {}
         bridge_data['Name'] = "default"
         bridge_data['BviEnable'] = True
         bridge_data['Mtu'] = mtu
         bridge_data['BviIpAddrWithPrefix'] = bvi_ip_w_prefix
+        bridge_data['BviIp6AddrWithPrefix'] = bvi_ip6_w_prefix
         return self.do_patch_request("Bridge", bridge_data)
 
     def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff", is_tcp=False, no_encryption=False, tag1="", tag2=""):

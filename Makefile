@@ -72,8 +72,11 @@ test-multi-bizpol-qos:
 
 test-multi-acc-ip-binding:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_acc_ip_binding.py
-# 单机测试例
 
+test-multi-ip6:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_ip6.py
+
+# 单机测试例
 test-single-all:
 	python3 -m unittest -v testcases/single/test*.py
 
@@ -107,6 +110,9 @@ test-single-onearm:
 test-single-vrrp:
 	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_vrrp.py
 
+test-single-ip6:
+	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_ip6.py
+
 
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
@@ -115,6 +121,6 @@ MTESTS := test-multi-basic test-multi-hubspoke test-multi-acc test-multi-mseg te
 MTESTS += test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect
 MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dnat test-multi-object-group
 MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
-MTESTS += test-multi-vrrp test-multi-acc-ip-binding
+MTESTS += test-multi-vrrp test-multi-acc-ip-binding test-multi-ip6
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"
