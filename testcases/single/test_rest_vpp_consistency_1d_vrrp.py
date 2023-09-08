@@ -93,7 +93,7 @@ class TestRestVppConsistency1DVRRP(unittest.TestCase):
        glx_assert("1" in out)
 
 
-       ctx_key = ctx_key_prefix + f"{vr_id}#0"
+       ctx_key = ctx_key_prefix + f"0#{vr_id}"
        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"redis-cli exists {ctx_key}")
        glx_assert(err == '')
        glx_assert("1" in out)
@@ -111,6 +111,7 @@ class TestRestVppConsistency1DVRRP(unittest.TestCase):
 
        # wait for Backup turn into Master
        time.sleep(5)
+
 
        # check vrrp in vpp
        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show vrrp vr {bridge}")
@@ -132,6 +133,11 @@ class TestRestVppConsistency1DVRRP(unittest.TestCase):
        # check state Master
        glx_assert("state Master" in out)
 
+       # get runtime state
+       resp = self.topo.dut1.get_rest_device().get_vrrp_state(vr_id=vr_id, segment=segment)
+       glx_assert(200 == resp.status_code)
+       glx_assert("MASTER" in str(resp.content))
+
        # check macvlan
        out, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result(ns, f"ip addr show dev {brname}.{vr_id}")
        glx_assert(err == '')
@@ -139,7 +145,7 @@ class TestRestVppConsistency1DVRRP(unittest.TestCase):
        glx_assert("state UP" in out)
 
        # down master. but it's just a single test, we can't make sure it will be Backup state
-       resp = self.topo.dut1.get_rest_device().change_vrrp_priority(vr_id=vr_id, segment=segment, down=True)
+       resp = self.topo.dut1.get_rest_device().change_vrrp_priority(vr_id=vr_id, segment=segment, priority=1)
        glx_assert(200 == resp.status_code)
 
        # check vrrp in vpp
@@ -150,7 +156,7 @@ class TestRestVppConsistency1DVRRP(unittest.TestCase):
        glx_assert("priority: configured 1" in out)
 
        # up master. but it's just a single test, we can't make sure it will be Backup state
-       resp = self.topo.dut1.get_rest_device().change_vrrp_priority(vr_id=vr_id, segment=segment, down=False)
+       resp = self.topo.dut1.get_rest_device().change_vrrp_priority(vr_id=vr_id, segment=segment, priority=254)
        glx_assert(200 == resp.status_code)
 
        # wait for changing state
@@ -165,6 +171,8 @@ class TestRestVppConsistency1DVRRP(unittest.TestCase):
 
        # wait for changing state
        time.sleep(5)
+
+
 
        # check parameters
        # check ip in out

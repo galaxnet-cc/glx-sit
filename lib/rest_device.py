@@ -50,6 +50,11 @@ class RestDevice:
         response = requests.get(url, headers=REQUEST_HEADER_CTYPE)
         return response
 
+    def do_get_state_request(self, obj_name, obj_data):
+        url = f'http://{self.api_ip}:{self.api_port}/public/v1/state/{obj_name}'
+        response = requests.request(method='get', url=url, data=json.dumps(obj_data), headers=REQUEST_HEADER_CTYPE)
+        return response
+
     def update_physical_interface(self, name, mtu, mode, bridgeName):
         physical_interface_data = {}
         physical_interface_data["Name"] = name
@@ -901,12 +906,20 @@ class RestDevice:
     def change_vrrp_priority(self,
                     vr_id:int,
                     segment=0,
-                    down=True):
+                    priority=254):
         data = {}
         data['VRID'] = vr_id
         data['Segment'] = segment
-        data['Down'] = down
+        data['Priority'] = priority
         return self.do_action_request("ChangeVRRPPriority", data)
+
+    def get_vrrp_state(self,
+                    vr_id:int,
+                    segment=0):
+        data = {}
+        data['VRID'] = vr_id
+        data['Segment'] = segment
+        return self.do_get_state_request("VRRP", data)
 
     # AccIpBinding, all out ips should be synchronized with logical interface additional ips
     def create_acc_ip_binding(self, acc_ip, out_ip1="", out_ip2=""):
