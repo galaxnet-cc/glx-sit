@@ -76,6 +76,9 @@ test-multi-acc-ip-binding:
 test-multi-ip6:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_ip6.py
 
+test-multi-p2p:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_p2p.py
+
 # 单机测试例
 test-single-all:
 	python3 -m unittest -v testcases/single/test*.py
@@ -113,7 +116,6 @@ test-single-vrrp:
 test-single-ip6:
 	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_ip6.py
 
-
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。
@@ -121,6 +123,6 @@ MTESTS := test-multi-basic test-multi-hubspoke test-multi-acc test-multi-mseg te
 MTESTS += test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-multi-dnsipcollect test-multi-stats-collect
 MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dnat test-multi-object-group
 MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
-MTESTS += test-multi-vrrp test-multi-acc-ip-binding test-multi-ip6
+MTESTS += test-multi-vrrp test-multi-acc-ip-binding test-multi-ip6 test-multi-p2p
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"

@@ -1442,4 +1442,46 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(out_ip3 not in out)
         glx_assert(out_ip4 not in out)
-        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1") 
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+
+    def test_global_arp_timeout(self):
+        default_timeout="600"
+        new_timeout="100"
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip neighbor-config | grep -C 1 ip4")
+        glx_assert(err == '')
+        # ipv4 default is 600s.
+        glx_assert(default_timeout in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip neighbor-config | grep -C 1 ip6")
+        glx_assert(err == '')
+        # ipv6 nd default is 600s.
+        glx_assert(default_timeout in out)
+
+        # update to 100s.
+        self.topo.dut1.get_rest_device().set_global_cfg(arp_timeout=100)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip neighbor-config | grep -C 1 ip4")
+        glx_assert(err == '')
+        glx_assert(new_timeout in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip neighbor-config | grep -C 1 ip6")
+        glx_assert(err == '')
+        glx_assert(new_timeout in out)
+
+        # revert to default.
+        self.topo.dut1.get_rest_device().set_global_cfg(arp_timeout=0)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip neighbor-config | grep -C 1 ip4")
+        glx_assert(err == '')
+        # ipv4 default is 600s.
+        glx_assert(default_timeout in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show ip neighbor-config | grep -C 1 ip6")
+        glx_assert(err == '')
+        # ipv6 nd default is 600s.
+        glx_assert(default_timeout in out)
