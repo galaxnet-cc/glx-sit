@@ -228,9 +228,9 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        rate_limit_enable=True, up_rate_limit=4096, down_rate_limit=0, rate_burst=325000)
 
         # iperf正向打流
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s | grep -i 'sender' | awk '{{print $7}}'")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m | grep -i 'sender' | awk '{{print $7}}'")
         glx_assert(err == '')
-        out=8.0 * float(out)
+        out = float(out)
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0, abs_tol=1))
 
@@ -245,10 +245,10 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096, rate_burst=325000)
 
         # iperf逆向打流
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -R | grep -i 'sender' | awk '{{print $7}}'")
-        # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -t 10 -R")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -R | grep -i 'sender' | awk '{{print $7}}'")
+        # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 10 -R")
         glx_assert(err == '')
-        out=8.0 * float(out)
+        out = float(out)
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0, abs_tol=1))
 
@@ -310,11 +310,11 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        direct_enable=True,
                                                        rate_limit_enable=True, up_rate_limit=4096, down_rate_limit=0, rate_burst=325000)
         # iperf正向打流
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s | grep -i 'sender' | awk '{{print $7}}'")
-        # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -t 10")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m | grep -i 'sender' | awk '{{print $7}}'")
+        # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 10")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -t 10")
         glx_assert(err == '')
-        out=8.0 * float(out)
+        out=float(out)
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0, abs_tol=1))
 
@@ -329,11 +329,11 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096, rate_burst=325000)
 
         # iperf逆向打流
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -R | grep -i 'sender' | awk '{{print $7}}'")
-        # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f Mbit/s -t 10 -R")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -R | grep -i 'sender' | awk '{{print $7}}'")
+        # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 10 -R")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -t 10 -R")
         glx_assert(err == '')
-        out=8.0 * float(out)
+        out=float(out)
         if out > 4.0:
             glx_assert(math.isclose(out, 4.0, abs_tol=1))
 

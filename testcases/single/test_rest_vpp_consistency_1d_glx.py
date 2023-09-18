@@ -974,12 +974,13 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(err == "")
         glx_assert("appid 100" not in out)
 
-    def test_glx_segment_routelabel_update(self):
+    @unittest.skip("2023.09.15 segment route label is deprecated.")
+    def duplicated_test_glx_segment_routelabel_update(self):
         # 检查segment routelabel 初始值为全f
         #self.topo.dut1.get_rest_device().create_segment(segment_id = 0)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
         glx_assert(err == "")
-        glx_assert("route-label 18446744073709551615" in out)
+        glx_assert("route-label 1099511627775" in out)
 
         # 更新segment
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, route_label="123")
@@ -997,7 +998,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, route_label="0xffffffffffffffff")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx segment")
         glx_assert(err == "")
-        glx_assert("route-label 18446744073709551615" in out)
+        glx_assert("route-label 1099511627775" in out)
 
     def test_glx_segment_dns_intercept_enable(self):
         mtu = 1500

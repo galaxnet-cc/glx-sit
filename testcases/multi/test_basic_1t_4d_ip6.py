@@ -226,10 +226,10 @@ class TestBasic1T4D(unittest.TestCase):
 
         # tear down
         #  dut4
-        self.topo.dut4.rest_device.delete_edge_route(dut1_lan_ip6)
+        self.topo.dut4.rest_device.delete_edge_route(dut1_lan_ip6_with_prefix)
         self.topo.dut4.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut4_lan_ip4, bvi_ip6_w_prefix="")
         #  dut1
-        self.topo.dut1.rest_device.delete_edge_route(dut4_lan_ip6)
+        self.topo.dut1.rest_device.delete_edge_route(dut4_lan_ip6_with_prefix)
         self.topo.dut1.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut1_lan_ip4, bvi_ip6_w_prefix="")
 
     def test_slaac(self):
@@ -298,10 +298,10 @@ class TestBasic1T4D(unittest.TestCase):
 
         # tear down
         #  dut4
-        self.topo.dut4.rest_device.delete_edge_route(dut1_lan_ip6)
+        self.topo.dut4.rest_device.delete_edge_route(dut1_lan_ip6_with_prefix)
         self.topo.dut4.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut4_lan_ip4, bvi_ip6_w_prefix="")
         #  dut1
-        self.topo.dut1.rest_device.delete_edge_route(dut4_lan_ip6)
+        self.topo.dut1.rest_device.delete_edge_route(dut4_lan_ip6_with_prefix)
         self.topo.dut1.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut1_lan_ip4, bvi_ip6_w_prefix="")
 
 

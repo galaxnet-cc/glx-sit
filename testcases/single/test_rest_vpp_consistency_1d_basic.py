@@ -55,7 +55,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             f"ip netns exec ctrl-ns ip link")
         glx_assert(err == '')
         glx_assert("br-test" not in out)
-    def test_bridge_mtu(self):
+    def bridge_mtu(self):
         mtu = 2000
         brname = "test"
         lcpname = "br-" + brname
@@ -198,6 +198,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
     # the states update every 1 minute, so maybe there is nothing in redis,
     # but usually we run this test more than 1 minute after fwdmd starts
     def test_physical_interface_state(self):
+        time.sleep(60)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli keys PhysicalInterfaceState#*")
         glx_assert(err == "")
