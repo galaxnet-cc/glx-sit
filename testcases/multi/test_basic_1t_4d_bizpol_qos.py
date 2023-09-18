@@ -225,14 +225,14 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        steering_type=steering_type,
                                                        steering_interface=steering_interface,
                                                        direct_enable=True,
-                                                       rate_limit_enable=True, up_rate_limit=4096, down_rate_limit=0, rate_burst=325000)
+                                                       rate_limit_enable=True, up_rate_limit=10000, down_rate_limit=0, rate_burst=2560000)
 
         # iperf正向打流
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m | grep -i 'sender' | awk '{{print $7}}'")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 20 | grep -i 'sender' | awk '{{print $7}}'")
         glx_assert(err == '')
         out = float(out)
-        if out > 4.0:
-            glx_assert(math.isclose(out, 4.0, abs_tol=1))
+        if out > 10.0:
+            glx_assert(math.isclose(out, 10.0, abs_tol=2))
 
         # 测试下行限速
         self.topo.dut1.get_rest_device().update_bizpol(name=name, priority=priority,
@@ -242,15 +242,15 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        steering_type=steering_type,
                                                        steering_interface=steering_interface,
                                                        direct_enable=True,
-                                                       rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096, rate_burst=325000)
+                                                       rate_limit_enable=True, up_rate_limit=0, down_rate_limit=10000, rate_burst=2560000)
 
         # iperf逆向打流
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -R | grep -i 'sender' | awk '{{print $7}}'")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 20 -R | grep -i 'sender' | awk '{{print $7}}'")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 10 -R")
         glx_assert(err == '')
         out = float(out)
-        if out > 4.0:
-            glx_assert(math.isclose(out, 4.0, abs_tol=1))
+        if out > 10.0:
+            glx_assert(math.isclose(out, 10.0, abs_tol=2))
 
         # 移除配置
         self.topo.dut1.get_rest_device().delete_bizpol(name=name)
@@ -308,16 +308,15 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        steering_type=steering_type,
                                                        steering_interface=steering_interface,
                                                        direct_enable=True,
-                                                       rate_limit_enable=True, up_rate_limit=4096, down_rate_limit=0, rate_burst=325000)
+                                                       rate_limit_enable=True, up_rate_limit=10000, down_rate_limit=0, rate_burst=2560000)
         # iperf正向打流
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m | grep -i 'sender' | awk '{{print $7}}'")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 20 | grep -i 'sender' | awk '{{print $7}}'")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 10")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -t 10")
         glx_assert(err == '')
         out=float(out)
-        if out > 4.0:
-            glx_assert(math.isclose(out, 4.0, abs_tol=1))
-
+        if out > 10.0:
+            glx_assert(math.isclose(out, 10.0, abs_tol=2))
         # 测试下行限速
         self.topo.dut1.get_rest_device().update_bizpol(name=name, priority=priority,
                                                        src_prefix=src_prefix,dst_prefix=dst_prefix,
@@ -326,16 +325,16 @@ class TestBasic1T4DBizpolRateLimit(unittest.TestCase):
                                                        steering_type=steering_type,
                                                        steering_interface=steering_interface,
                                                        direct_enable=True,
-                                                       rate_limit_enable=True, up_rate_limit=0, down_rate_limit=4096, rate_burst=325000)
+                                                       rate_limit_enable=True, up_rate_limit=0, down_rate_limit=10000, rate_burst=2560000)
 
         # iperf逆向打流
-        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -R | grep -i 'sender' | awk '{{print $7}}'")
+        out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 20 -R | grep -i 'sender' | awk '{{print $7}}'")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -f m -t 10 -R")
         # out, err = self.topo.tst.get_ns_cmd_result(dut1ns, f"iperf3 -c {dst_ip} -t 10 -R")
         glx_assert(err == '')
         out=float(out)
-        if out > 4.0:
-            glx_assert(math.isclose(out, 4.0, abs_tol=1))
+        if out > 10.0:
+            glx_assert(math.isclose(out, 10.0, abs_tol=2))
 
         # 移除配置
         self.topo.dut1.get_rest_device().delete_bizpol(name=name)
