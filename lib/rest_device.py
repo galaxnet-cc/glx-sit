@@ -664,10 +664,11 @@ class RestDevice:
         data["E2EIps"].append({"Ip4Address": ip1})
         return self.do_patch_request("SegmentProperties", data)
 
-    def update_dpi_setting(self, dpi_enable=False):
+    def update_dpi_setting(self, dpi_enable=False, dpi_standalone=False):
         data = {}
         data["Name"] = "default"
         data["DpiEnable"] = dpi_enable
+        data["DpiStandaloneMode"] = dpi_standalone
         return self.do_patch_request("DpiSetting", data)
 
     def create_l3subif(self, physical_interface, sub_id, vlan_id):
