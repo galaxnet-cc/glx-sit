@@ -94,8 +94,6 @@ class TestBasic1T4DDpi(unittest.TestCase):
         self.topo.tst.add_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
         self.topo.tst.add_ns_route("dut4", "192.168.1.0/24", "192.168.4.1")
 
-        # dut1上打开dpi
-        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True)
 
         # 等待link up
         # 端口注册时间2s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
@@ -157,8 +155,7 @@ class TestBasic1T4DDpi(unittest.TestCase):
         self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut4.get_rest_device().set_logical_interface_dhcp("WAN1")
 
-        # dut1上关闭dpi
-        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=False)
+
 
         # 无论失败成功，都删除dns block rule
         self.topo.dut1.get_rest_device().delete_fire_wall_rule("block_app_dns")
@@ -171,7 +168,9 @@ class TestBasic1T4DDpi(unittest.TestCase):
         time.sleep(20)
 
     # 测试dig工具被firewall拦截
-    def test_dpi_block_app_dns(self):
+    def dpi_block_app_dns(self):
+        # dut1上打开dpi
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True)
         # 清掉node计数，因为我们要通过计数来确定报文是否被firwall放行。
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl clear node counters")
         glx_assert(err == '')
@@ -203,6 +202,59 @@ class TestBasic1T4DDpi(unittest.TestCase):
         # 221213: 不能检查esp了，因为tunnel bfd follow同样的路径，也会加密送到对方，以便验证加密通路可用。
         #glx_assert("esp4-encrypt" not in out)
         glx_assert("ACL deny packets" in out)
+        # dut1上关闭dpi
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=False)
+
+    def test_dpi_standalone_mode(self):
+        # dut1上打开dpi
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True, dpi_standalone=True)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.1.1 www.baidu.com +tries=5 +timeout=1")
+        glx_assert(err == '')
+        # 检查是否有dns的fast-tuple生成
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx dpi fast-tuple4")
+        glx_assert(err == '')
+        glx_assert("app_port 53 app_id 5" in out)
+        # dut1上关闭dpi
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=False, dpi_standalone=False)
+
+    # 测试dig工具被firewall拦截
+    def test_dpi_standalone_mode_block_app_dns(self):
+        # dut1上打开dpi
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True, dpi_standalone=True)
+        # 清掉node计数，因为我们要通过计数来确定报文是否被firwall放行。
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl clear node counters")
+        glx_assert(err == '')
+        # dut4上ip上并不存在dns服务，只是采用此方式触发dns查询以及dpi能力
+        # 多试几次避免arp查询丢失情况
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.2 www.baidu.com +tries=5 +timeout=1")
+        glx_assert(err == '')
+        # 首次应当需要识别并生成fast-tuple，所以会有流量被加密
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show node counters")
+        glx_assert(err == '')
+        glx_assert("ACL deny packets" not in out)
+        # 221213: 不能检查esp了，因为tunnel bfd follow同样的路径，也会加密送到对方，以便验证加密通路可用。
+        #glx_assert("esp4-encrypt" in out)
+        # 检查是否有dns的fast-tuple生成
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx dpi fast-tuple4")
+        glx_assert(err == '')
+        glx_assert("app_port 53 app_id 5" in out)
+        # 清掉node计数，因为我们要通过计数来确定报文是否被firwall放行。
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl clear node counters")
+        glx_assert(err == '')
+        # 添加firewall rule阻断dns报文（app id 5）
+        self.topo.dut1.get_rest_device().set_fire_wall_rule(
+            "block_app_dns", 1, "0.0.0.0/0", action="Deny", app_id=5)
+        # 此时fast-tuple还在，此时应当发不出dns报文了
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.2 www.baidu.com +tries=2 +timeout=1")
+        glx_assert(err == '')
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show node counters")
+        glx_assert(err == '')
+        # 221213: 不能检查esp了，因为tunnel bfd follow同样的路径，也会加密送到对方，以便验证加密通路可用。
+        #glx_assert("esp4-encrypt" not in out)
+        glx_assert("ACL deny packets" in out)
+        # dut1上关闭dpi
+        self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=False, dpi_standalone=False)
+
 
 if __name__ == '__main__':
     unittest.main()

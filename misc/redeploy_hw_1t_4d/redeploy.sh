@@ -70,8 +70,8 @@ do
 
     # reinstall vpp
     echo -e "$RED[reinstall vpp for ip $dip]$NC"
-    ssh root@$dip dpkg -r libvppinfra vpp vpp-plugin-core vpp-plugin-dpdk
-    ssh root@$dip dpkg -i /tmp/sdwandebs/libvppinfra*.deb /tmp/sdwandebs/vpp*.deb /tmp/sdwandebs/vpp-plugin-core*.deb /tmp/sdwandebs/vpp-plugin-dpdk*.deb
+    ssh root@$dip dpkg -r libvppinfra vpp vpp-plugin-core vpp-plugin-dpdk dpi-vpp
+    ssh root@$dip dpkg -i /tmp/sdwandebs/libvppinfra*.deb /tmp/sdwandebs/vpp*.deb /tmp/sdwandebs/vpp-plugin-core*.deb /tmp/sdwandebs/vpp-plugin-dpdk*.deb /tmp/sdwandebs/dpi-vpp*.deb
 
     # install frr
     ssh root@$dip 'curl -s https://deb.frrouting.org/frr/keys.asc | apt-key add -'

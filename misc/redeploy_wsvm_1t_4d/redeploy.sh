@@ -103,8 +103,8 @@ do
 
     # reinstall vpp
     echo -e "$RED[reinstall vpp for ip $dip]$NC"
-    ssh root@$dip dpkg -r libvppinfra vpp vpp-plugin-core vpp-plugin-dpdk libvppinfra-dev vpp-dbg vpp-dev vpp-plugin-devtools
-    ssh root@$dip dpkg -i /tmp/sdwandebs/libvppinfra*.deb /tmp/sdwandebs/vpp*.deb /tmp/sdwandebs/vpp-plugin-core*.deb /tmp/sdwandebs/vpp-plugin-dpdk*.deb
+    ssh root@$dip dpkg -r libvppinfra vpp vpp-plugin-core vpp-plugin-dpdk libvppinfra-dev vpp-dbg vpp-dev vpp-plugin-devtools dpi-vpp
+    ssh root@$dip dpkg -i /tmp/sdwandebs/libvppinfra*.deb /tmp/sdwandebs/vpp*.deb /tmp/sdwandebs/vpp-plugin-core*.deb /tmp/sdwandebs/vpp-plugin-dpdk*.deb /tmp/sdwandebs/dpi-vpp*.deb
 
     # copy vpp config
     echo -e "$RED[copy vpp config for ip $dip]$NC"
