@@ -15,6 +15,11 @@ class TestRestVppConsistency1DDynRouting(unittest.TestCase):
         pass
 
     def test_ospf(self):
+        # check fib source is created
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show fib source")
+        glx_assert(err == '')
+        glx_assert("fpm-route" in out)
+
         # set LAN1 to routed mode.
         self.topo.dut1.get_rest_device().update_physical_interface(
             "LAN1", 1500, "routed", "")

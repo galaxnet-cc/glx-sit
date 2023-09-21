@@ -46,6 +46,9 @@ class SSHDevice:
     def del_if(self, name):
         self.ssh.exec_command(f'ip link del {name}')
 
+    def del_if(self, name):
+        self.ssh.exec_command(f'ip link del {br_name}')
+
     def add_br(self, br_name):
         self.ssh.exec_command(f'brctl addbr {br_name}')
 
