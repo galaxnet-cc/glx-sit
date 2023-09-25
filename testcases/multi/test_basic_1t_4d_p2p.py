@@ -199,5 +199,65 @@ class TestBasic1T4DP2P(unittest.TestCase):
         result = self.topo.dut2.get_rest_device().set_global_cfg(role_is_edge=False)
         glx_assert(result.status_code == 200)
 
+    # 将dut2配置为edge role，并在link上指定route label，从而触发dut2自动下发route label fwd表项
+    # 并验证link级别的load balance是否生效
+    def test_p2p_auto_erlfe_link_loadbalance(self):
+        # 将dut2指定为edge角色，并打开link lb
+        self.topo.dut2.get_rest_device().set_global_cfg(role_is_edge=True, link_lb=True)
+        # 创建双link（指定route-label.）
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN1",
+                                                         remote_ip="192.168.12.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=122, wan_name="WAN2",
+                                                         remote_ip="192.168.122.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+        # 等待link up
+        # 端口注册时间2s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
+        time.sleep(10)
+
+        # 向dut2的ctrl-ns进行正向打流，验证流量分担到两个link上。
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns iperf3 -s -D")
+        glx_assert(err == '')
+
+        # iperf打流，并发16条流以便hash分布均匀
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.2.1 -t 10 -P 16")
+        glx_assert(err == '')
+
+        # link12 tx
+        linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 TxPackets")
+        linkTxPacket = linkTxPacket.rstrip()
+        glx_assert(err == '')
+        linkTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#12 TxBytes")
+        linkTxBytes = linkTxBytes.rstrip()
+        glx_assert(err == '')
+        print("link12 tx: ", int(linkTxBytes)/int(linkTxPacket))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
+
+        # link122 tx
+        linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#122 TxPackets")
+        linkTxPacket = linkTxPacket.rstrip()
+        glx_assert(err == '')
+        linkTxBytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#122 TxBytes")
+        linkTxBytes = linkTxBytes.rstrip()
+        glx_assert(err == '')
+        print("link122 tx: ", int(linkTxBytes)/int(linkTxPacket))
+        glx_assert(math.isclose(1400, int(linkTxBytes)/int(linkTxPacket), abs_tol=200))
+
+        # 清除配置
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("pkill iperf3")
+        glx_assert(err == '')
+        self.topo.dut1.get_rest_device().delete_glx_link(122)
+        self.topo.dut1.get_rest_device().delete_glx_link(12)
+        time.sleep(20)
+        result = self.topo.dut2.get_rest_device().set_global_cfg(role_is_edge=False, link_lb=False)
+        glx_assert(result.status_code == 200)
+
 if __name__ == '__main__':
     unittest.main()
