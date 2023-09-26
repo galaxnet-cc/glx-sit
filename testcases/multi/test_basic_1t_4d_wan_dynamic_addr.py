@@ -396,9 +396,12 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                          tunnel_id=12,
                                                          route_label="0x1200010")
 
-        time.sleep(15)
+        # 确保pppoe ready.
+        time.sleep(20)
 
         # bizpol牵引流量至WAN3
+        # 清空nat session.
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl nat44 del session all")
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
                                                        src_prefix="169.254.100.2",
                                                        dst_prefix="0.0.0.0/0",
@@ -408,7 +411,8 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                        route_label="0x1200010",
                                                        direct_enable=True,
                                                        protocol=0)
-        time.sleep(5)
+        # icmp报文不再建立bizpol session以便实时生效，这里无需sleep.
+        #time.sleep(5)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
         glx_assert(err == '')
         glx_assert("100% packet loss" in out)
@@ -419,10 +423,24 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
         glx_assert(err == '')
         glx_assert("0% packet loss" in out)
+        # 检查nat session走WAN3出去
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions | grep 30.30.30.2")
+        glx_assert(err == '')
+        # pppoe主接口在10.10.10网段
+        glx_assert("10.10.10" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions | grep 20.20.20.2")
+        glx_assert(err == '')
+        glx_assert("10.10.10" in out)
+        # 检查没有bizpol session生成
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show bizpol session  | grep active | awk '{print $9}'")
+        glx_assert(err == '')
+        num = out.rstrip()
+        glx_assert(num == "0")
 
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
 
         # bizpol牵引流量至WAN1
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl nat44 del session all")
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
                                                        src_prefix="169.254.100.2",
                                                        dst_prefix="0.0.0.0/0",
@@ -432,7 +450,8 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                        route_label="0x1200010",
                                                        direct_enable=True,
                                                        protocol=0)
-        time.sleep(5)
+        # icmp报文不再建立bizpol session以便实时生效，这里无需sleep.
+        #time.sleep(5)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
         glx_assert(err == '')
         glx_assert("100% packet loss" in out)
@@ -443,6 +462,19 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
         glx_assert(err == '')
         glx_assert("0% packet loss" in out)
+        # 检查nat session走WAN1出去
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions | grep 20.20.20.2")
+        glx_assert(err == '')
+        glx_assert("30.30.30.1" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions | grep 30.30.30.2")
+        glx_assert(err == '')
+        glx_assert("30.30.30.1" in out)
+        # 检查没有bizpol session生成
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show bizpol session  | grep active | awk '{print $9}'")
+        glx_assert(err == '')
+        num = out.rstrip()
+        glx_assert(num == "0")
+
 
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
 
