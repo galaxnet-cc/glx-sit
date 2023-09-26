@@ -95,7 +95,8 @@ do
     scp chnroute.txt root@$dip:/opt/chnroute.txt
 
     # install prerequisite pkgs.
-    ssh root@$dip apt-get -y install redis-server bridge-utils dnsmasq
+    # add iperf3.
+    ssh root@$dip apt-get -y install redis-server bridge-utils dnsmasq iperf3
     # install frr
     ssh root@$dip 'curl -s https://deb.frrouting.org/frr/keys.asc | apt-key add -'
     # pin to frr-8
