@@ -206,6 +206,7 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
                                                                   acc_dns_server1="8.8.8.8",local_dns_server1="114.114.114.114",
                                                                   acc_domain_list="a.b.c", local_domain_list="x.y.z", 
                                                                   local_dns_server_enable=True, options=options)
+        time.sleep(3)
 
         # dig检测是否正确分流
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.1.1 a.b.c +tries=5 +timeout=1")
@@ -224,11 +225,12 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
 
         # 清除dns配置
         self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq("default")
+        time.sleep(3)
+        
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
         glx_assert(err == '')
         glx_assert("/var/run/glx_dnsmasq_base_default.conf" not in out)
-
         # dut1 turn on WAN NAT
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", True)
@@ -250,6 +252,7 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.1.100", 
                                                                   ip_num=10, lease_time="1h", 
                                                                   dhcp_enable=True, options=options)
+        time.sleep(3)
 
         # 检查配置是否下发
         self.topo.tst.get_ns_cmd_result("dut1", "dhcpcd --test enp6s0 > test_dhcp")
@@ -270,6 +273,7 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_host_stack_dnsmasq(name="default", start_ip="192.168.1.200",
                                                                    ip_num=10, lease_time="2h", 
                                                                    dhcp_enable=True, options=options)
+        time.sleep(3)
 
         # 检查配置是否下发
         self.topo.tst.get_ns_cmd_result("dut1", "dhcpcd --test enp6s0 > test_dhcp")
@@ -285,6 +289,7 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         
         # 清除dhcp配置
         self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq("default")
+        time.sleep(3)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
         glx_assert(err == '')

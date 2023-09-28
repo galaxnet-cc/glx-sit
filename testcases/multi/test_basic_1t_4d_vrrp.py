@@ -288,6 +288,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
         # 开启dut4 dns服务器
         self.topo.dut4.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
+        time.sleep(3)
 
 
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'address=/{domain}/{domain_ip}' >> {dnsmasq_dns_conf}")
@@ -396,7 +397,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
         # 开启dut4 dns服务器
         self.topo.dut4.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
-
+        time.sleep(3)
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'address=/{domain}/{domain_ip}' >> {dnsmasq_dns_conf}")
         self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"echo 'address=/{domain}/{domain_ip}' >> {dnsmasq_dns_conf}")
 

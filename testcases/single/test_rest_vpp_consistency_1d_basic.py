@@ -55,7 +55,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             f"ip netns exec ctrl-ns ip link")
         glx_assert(err == '')
         glx_assert("br-test" not in out)
-    def bridge_mtu(self):
+    def test_bridge_mtu(self):
         mtu = 2000
         brname = "test"
         lcpname = "br-" + brname
@@ -105,6 +105,10 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             f"vppctl show int {wan2VppIf}")
         glx_assert(err == '')
         glx_assert("1600/0/0/0" in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ip addr show WAN2")
+        glx_assert(err == '')
+        glx_assert("1600" in out)
 
         # change mode to switched
         self.topo.dut1.get_rest_device().update_physical_interface(
@@ -762,6 +766,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
                                                                   acc_domain_list="a.b.c", local_domain_list="x.y.z", 
                                                                   dhcp_enable=True, options=options)
         glx_assert(result.status_code == 201)
+        time.sleep(3)
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"ip netns exec ctrl-ns ls /var/run")
         glx_assert(err == '')
@@ -800,6 +805,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         result = self.topo.dut1.get_rest_device().update_host_stack_dnsmasq(name="default", start_ip="192.168.88.100",
                                                                    ip_num=101, lease_time="12h", 
                                                                    local_dns_server_enable=True, options=options)
+        time.sleep(3)
         glx_assert(result.status_code == 200)
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"ip netns exec ctrl-ns ls /var/run")
@@ -837,6 +843,41 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
         # delete and verify
         self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq("default")
+        time.sleep(3)
+        out, err = self.topo.dut1.get_vpp_ssh_device(
+        ).get_cmd_result(f"ip netns exec ctrl-ns ls /var/run")
+        glx_assert(err == '')
+        glx_assert("glx_dnsmasq_default.pid" not in out)
+        glx_assert("glx_dnsmasq_base_default.conf" not in out)
+        glx_assert("glx_dnsmasq_dhcp_default.conf" not in out)
+        glx_assert("glx_dnsmasq_dns_default.conf" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
+        glx_assert(err == '')
+        glx_assert("/var/run/glx_dnsmasq_base_default.conf" not in out)
+    # 之前存在fwdmd做配置恢复的时候创建了多个dnsmasq进程，现在添加该测试避免该情况
+    def test_host_stack_dnsmasq_unique(self):
+        options=[
+            {"OptionCode": 3, "OptionValue": "192.168.88.1"}, {"OptionCode": 6, "OptionValue": "8.8.8.8"}
+        ]
+        result=self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.88.50", 
+                                                                  ip_num=101, lease_time="12h", acc_dns_server1="8.8.8.8", local_dns_server1="114.114.114.114",
+                                                                  acc_domain_list="a.b.c", local_domain_list="x.y.z", 
+                                                                  dhcp_enable=True, options=options)
+        glx_assert(result.status_code == 201)
+        time.sleep(3)
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl restart vpp")
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl restart fwdmd")
+        time.sleep(10)
+
+        cnt, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ps aux | grep 'dnsmasq -C /var/run/glx_dnsmasq_base_default.conf' | grep -v 'grep' | wc -l")
+        glx_assert(err == '')
+        cnt = int(cnt)
+        glx_assert(cnt == 1)
+
+        # delete and verify
+        self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq("default")
+        time.sleep(3)
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"ip netns exec ctrl-ns ls /var/run")
         glx_assert(err == '')

@@ -129,6 +129,11 @@ class TestRestVppConsistency1DDPI(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(out != '')
         glx_assert('up' in out)
+        # memif interrupt rx-mode check
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl -s {sock} show interface rx-placement")
+        glx_assert(err == '')
+        glx_assert(out != '')
+        glx_assert('interrupt' in out)
         # dpi-vpp ip check
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl -s {sock} show int addr {memif_name}")
         glx_assert(err == '')

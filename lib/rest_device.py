@@ -725,11 +725,23 @@ class RestDevice:
         data['AddrGroupMembers'].append({"IpAddrWithPrefix": addr_with_prefix1})
         return self.do_post_request("AddrGroup", data)
 
+    def create_addr_group_multi(self, group_name, addr_with_prefixs: []):
+        data = {}
+        data['AddrGroupName'] = group_name
+        data['AddrGroupMembers'] = list(map(lambda addr_with_preifx: {"IpAddrWithPrefix": addr_with_preifx}, addr_with_prefixs))
+        return self.do_post_request("AddrGroup", data)
+
     def update_addr_group(self, group_name, addr_with_prefix1):
         data = {}
         data['AddrGroupName'] = group_name
         data['AddrGroupMembers'] = []
         data['AddrGroupMembers'].append({"IpAddrWithPrefix": addr_with_prefix1})
+        return self.do_patch_request("AddrGroup", data)
+
+    def update_addr_group_multi(self, group_name, addr_with_prefixs: []):
+        data = {}
+        data['AddrGroupName'] = group_name
+        data['AddrGroupMembers'] = list(map(lambda addr_with_preifx: {"IpAddrWithPrefix": addr_with_preifx}, addr_with_prefixs))
         return self.do_patch_request("AddrGroup", data)
 
     def delete_addr_group(self, group_name):
@@ -745,12 +757,29 @@ class RestDevice:
                                          "PortList": port_list1})
         return self.do_post_request("PortGroup", data)
 
+    # 该参数为元组数组，元组仅存放两个元素，第一个元素为protocol，类型为string，第二个元素为端口号列表，格式如下：单个端口填入"端口号",范围填入"端口号~端口号"，逗号分隔
+    # 例子：8080,9090~9099
+    def create_port_group_multi(self, group_name, port_protocols:[()]):
+        data = {}
+        data['PortGroupName'] = group_name
+        data['PortGroupMembers'] = list(map(lambda port_protocol:  {"ProtocolType": port_protocol[0],"PortList": port_protocol[1]}, port_protocols))
+        return self.do_post_request("PortGroup", data)
+
+
     def update_port_group(self, group_name, protocol1, port_list1):
         data = {}
         data['PortGroupName'] = group_name
         data['PortGroupMembers'] = []
         data['PortGroupMembers'].append({"ProtocolType": protocol1,
                                          "PortList": port_list1})
+        return self.do_patch_request("PortGroup", data)
+
+    # 该参数为元组数组，元组仅存放两个元素，第一个元素为protocol，类型为string，第二个元素为端口号列表，格式如下：单个端口填入"端口号",范围填入"端口号~端口号"，逗号分隔
+    # 例子：8080,9090~9099
+    def update_port_group_multi(self, group_name, port_protocols:[()]):
+        data = {}
+        data['PortGroupName'] = group_name
+        data['PortGroupMembers'] = list(map(lambda port_protocol:  {"ProtocolType": port_protocol[0],"PortList": port_protocol[1]}, port_protocols))
         return self.do_patch_request("PortGroup", data)
 
     def delete_port_group(self, group_name):

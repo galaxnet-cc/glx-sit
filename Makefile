@@ -119,6 +119,9 @@ test-single-ip6:
 test-single-dpi:
 	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_dpi.py
 
+test-single-objgroup:
+	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_object_group.py
+
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。

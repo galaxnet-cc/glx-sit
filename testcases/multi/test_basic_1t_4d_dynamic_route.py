@@ -18,7 +18,6 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         # ospf setting on dut1
         # setup ospf interface on dut1
         # setup logical interface on  dut1
-        # TODO:
         # 1、WAN1 change to UNSPEC
         # 2、WAN1 disable overlay
         # 3、WAN1 set static ip
@@ -113,6 +112,8 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         )
         glx_assert (err == '')
         glx_assert ('8.8.8.8' in out)
+        glx_assert ('fpm-route' in out)
+        glx_assert('API' not in out)
         # delete route
         _, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(
             f'vtysh -N ctrl-ns -c "config" -c "router ospf" -c "redistribute static" -c "no ip route 8.8.8.8/32 Null0"'
@@ -195,6 +196,7 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         dst = dst.rstrip()
         glx_assert (err == '')
         glx_assert (dst == '8.8.8.9/32')
+
         gw, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hget "ZebraRouteContext#0#8.8.8.9/32" "Gw" '
         )
@@ -211,11 +213,12 @@ class TestBasic1T4DDynamicRoute(unittest.TestCase):
         )
         glx_assert (err == '')
         glx_assert ('8.8.8.9' in out)
-
+        glx_assert ('fpm-route' in out)
+        glx_assert('API' not in out)
         # when the ospf is disabled,flush the ospf routes in redis and vpp
         _,err = self.topo.dut2.get_rest_device().delete_ospf_interface("WAN1",1)
         _,err = self.topo.dut2.get_rest_device().delete_ospf_setting()
-        time.sleep(10)
+        time.sleep(60)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f'redis-cli hgetall "ZebraRouteContext#0#8.8.8.9/32"'
         )
