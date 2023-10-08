@@ -18,15 +18,17 @@ class TestRestVppConsistency1DObjGroup(unittest.TestCase):
         vpp_group_table_id_start = 9217
         # Create
         #       1. CIDR validation
-        #       2. CIDR covered
+        #       2. CIDR duplicated
         #       3. Group member's validation.The member should be less or equal than 255.
         #       4. Success.
-        #       5. Multi group CIDR covered
         invalid_ip_prefix = "192.168."
         resp = self.topo.dut1.get_rest_device().create_addr_group(group_name, invalid_ip_prefix)
         glx_assert(resp.status_code == 500)
+        ip_prefix_zero = "192.168.1.0/0"
+        resp = self.topo.dut1.get_rest_device().create_addr_group(group_name, ip_prefix_zero)
+        glx_assert(resp.status_code == 500)
 
-        covered = ["192.168.1.0/24", "192.168.1.1/32"]
+        covered = ["192.168.1.0/24", "192.168.1.0/24"]
         resp = self.topo.dut1.get_rest_device().create_addr_group_multi(group_name, covered)
         glx_assert(resp.status_code == 500)
 
@@ -48,13 +50,9 @@ class TestRestVppConsistency1DObjGroup(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("192.168.1.0/24" in out)
 
-        resp = self.topo.dut1.get_rest_device().create_addr_group("covered_addr_test", "192.168.1.1/32")
-        glx_assert(resp.status_code == 500)
 
         # Update
-        #       1. Group member's validation.
-        #       2. Success.
-        # 考虑到需要删除旧数据，所以需要减掉1,因为同步到vpp侧是修改项最多达到255，后面为了测试
+        #       Success.
         group_members = [f"192.168.{i}.0/24" for i in range(2, 254)]
         resp = self.topo.dut1.get_rest_device().update_addr_group_multi(group_name, group_members)
         glx_assert(resp.status_code == 200)
@@ -83,6 +81,7 @@ class TestRestVppConsistency1DObjGroup(unittest.TestCase):
             glx_assert(group_member in out)
 
         # Create another
+        #    1. Success.
         resp = self.topo.dut1.get_rest_device().create_addr_group("addr_test2", "172.17.0.1/16")
         glx_assert(resp.status_code == 201)
 
