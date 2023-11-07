@@ -229,6 +229,7 @@ class TestBasic1T4DP2P(unittest.TestCase):
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.2.1 -t 10 -P 16")
         glx_assert(err == '')
 
+
         # link12 tx
         linkTxPacket, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli hget LinkState#12 TxPackets")

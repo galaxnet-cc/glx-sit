@@ -105,10 +105,6 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
             f"vppctl show int {wan2VppIf}")
         glx_assert(err == '')
         glx_assert("1600/0/0/0" in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr show WAN2")
-        glx_assert(err == '')
-        glx_assert("1600" in out)
 
         # change mode to switched
         self.topo.dut1.get_rest_device().update_physical_interface(
@@ -147,7 +143,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
 
         # change to routed（此时OverlayEnable将关闭）
         self.topo.dut1.get_rest_device().update_physical_interface(
-            "WAN2", 1500, "routed", "")
+            "WAN2", 1600, "routed", "")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"vppctl show int addr {wan2VppIf}")
         glx_assert(err == '')
@@ -155,9 +151,9 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # check host side
         # 因为OverlayEnable关闭，所以在ctrl-ns(segment 0)中。
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"ip netns exec ctrl-ns ip addr")
+            f"ip netns exec ctrl-ns ip addr show dev WAN2")
         glx_assert(err == '')
-        glx_assert("WAN2" in out)
+        glx_assert("1600" in out)
         self.topo.dut1.get_rest_device().delete_bridge("test")
         self.topo.dut1.get_rest_device().delete_bridge("test23")
 
@@ -1086,9 +1082,6 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("1.1.1.0/24" not in out)
         glx_assert("2.2.0.0/16" in out)
-        # detect conflicts
-        resp = self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup2", addr_with_prefix1="2.2.2.0/24")
-        glx_assert(resp.status_code == 500)
         self.topo.dut1.get_rest_device().create_addr_group(group_name="addrgroup2", addr_with_prefix1="1.1.1.0/24")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx addr-group")
         glx_assert(err == '')

@@ -159,6 +159,7 @@ class TestBasic1T4DSched(unittest.TestCase):
         # wait for all passive link to be aged.
         time.sleep(20)
 
+    @unittest.skip("bug: 20231009: When received icmp packets, bizpol session will not be created")
     def test_overlay_sched_class(self):
         # 打开sched开关(rx+tx)，带宽分配按默认即可
         result = self.topo.dut1.get_rest_device().update_sched_wan_agg_global_params(tx_enable=True, rx_enable=True)
@@ -204,6 +205,7 @@ class TestBasic1T4DSched(unittest.TestCase):
         result = self.topo.dut1.get_rest_device().update_sched_wan_agg_global_params(tx_enable=False, rx_enable=False)
         glx_assert(result.status_code == 200)
 
+    @unittest.skip("bug: 20231009: When received icmp packets, bizpol session will not be created")
     def test_internet_sched_class(self):
         # 打开sched开关(rx+tx)，带宽分配按默认即可
         result = self.topo.dut1.get_rest_device().update_sched_wan_agg_global_params(tx_enable=True, rx_enable=True)

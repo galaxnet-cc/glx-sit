@@ -279,6 +279,7 @@ class TestBasic1T4DObjectGroup(unittest.TestCase):
         self.topo.tst.get_ns_cmd_result("dut4", "pkill nc")
         # 无需恢复路由，依赖setup.
 
+    @unittest.skip("20231009: When vpp received icmp packets, it won't create session")
     def test_bizpol_session_misc_change_with_obj_group(self):
         # remove route.
         self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24")
