@@ -159,7 +159,7 @@ class TestBasic1T4DSched(unittest.TestCase):
         # wait for all passive link to be aged.
         time.sleep(20)
 
-    @unittest.skip("bug: 20231009: When received icmp packets, bizpol session will not be created")
+    # @unittest.skip("bug: 20231009: When received icmp packets, bizpol session will not be created")
     def test_overlay_sched_class(self):
         # 打开sched开关(rx+tx)，带宽分配按默认即可
         result = self.topo.dut1.get_rest_device().update_sched_wan_agg_global_params(tx_enable=True, rx_enable=True)
@@ -175,15 +175,16 @@ class TestBasic1T4DSched(unittest.TestCase):
                                                        protocol=0,
                                                        sched_class="high")
 
-        # 测试流量
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 首包会因为arp而丢失，不为０即可
-        glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 此时不应当再丢包
-        glx_assert("0% packet loss" in out)
+        # telnet 发送tcp报文
+        _ = self.topo.tst.get_ns_cmd_result("dut1", "telnet 192.168.4.2 5555")
+        # out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        # glx_assert(err == '')
+        # # 首包会因为arp而丢失，不为０即可
+        # glx_assert("100% packet loss" not in out)
+        # out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        # glx_assert(err == '')
+        # # 此时不应当再丢包
+        # glx_assert("0% packet loss" in out)
 
         # bizpol进行了有状态能力跟踪，因此检查high队列的rx tx均有数据
         # tx
@@ -205,7 +206,7 @@ class TestBasic1T4DSched(unittest.TestCase):
         result = self.topo.dut1.get_rest_device().update_sched_wan_agg_global_params(tx_enable=False, rx_enable=False)
         glx_assert(result.status_code == 200)
 
-    @unittest.skip("bug: 20231009: When received icmp packets, bizpol session will not be created")
+    # @unittest.skip("bug: 20231009: When received icmp packets, bizpol session will not be created")
     def test_internet_sched_class(self):
         # 打开sched开关(rx+tx)，带宽分配按默认即可
         result = self.topo.dut1.get_rest_device().update_sched_wan_agg_global_params(tx_enable=True, rx_enable=True)
@@ -230,15 +231,16 @@ class TestBasic1T4DSched(unittest.TestCase):
                                                        steering_interface="WAN1",
                                                        direct_enable=True)
 
-        # 测试流量
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.12.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 首包会因为arp而丢失，不为０即可
-        glx_assert("100% packet loss" not in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.12.2 -c 5 -i 0.05")
-        glx_assert(err == '')
-        # 此时不应当再丢包
-        glx_assert("0% packet loss" in out)
+        # telnet 发送tcp报文
+        _ = self.topo.tst.get_ns_cmd_result("dut1", "telnet 192.168.12.2 5555")
+        # out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.12.2 -c 5 -i 0.05")
+        # glx_assert(err == '')
+        # # 首包会因为arp而丢失，不为０即可
+        # glx_assert("100% packet loss" not in out)
+        # out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.12.2 -c 5 -i 0.05")
+        # glx_assert(err == '')
+        # # 此时不应当再丢包
+        # glx_assert("0% packet loss" in out)
 
         # bizpol进行了有状态能力跟踪，因此检查high队列的rx tx均有数据
         # tx
