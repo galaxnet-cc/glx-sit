@@ -174,7 +174,7 @@ class Testbasic1T4DTunnelConfigSync(unittest.TestCase):
         tunnel_id = 12
         resp = self.topo.dut1.get_rest_device().update_glx_tunnel(tunnel_id, passive_mld_enable=True)
         glx_assert(resp.status_code == 200)
-        time.sleep(1)
+        time.sleep(5)
         # check active side
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
         glx_assert(err == '')
@@ -192,7 +192,7 @@ class Testbasic1T4DTunnelConfigSync(unittest.TestCase):
         tunnel_id = 12
         resp = self.topo.dut1.get_rest_device().update_glx_tunnel(tunnel_id, passive_mld_enable=False, passive_fec_enable=True);
         glx_assert(resp.status_code == 200)
-        time.sleep(1)
+        time.sleep(5)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
         glx_assert(err == '')
         glx_assert("cfg-state: config_synced" in out)
