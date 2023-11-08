@@ -305,12 +305,27 @@ class RestDevice:
 
     # https://github.com/galaxnet-cc/fwdmd/issues/110
     # 移除passive参数，只能创建active的　
-    def create_glx_tunnel(self, tunnel_id, tag1="", tag2=""):
+    def create_glx_tunnel(self, tunnel_id, mld_enable=False, fec_enable=False, passive_mld_enable=False, passive_fec_enable=False, tag1="", tag2=""):
         tunnel_data = {}
         tunnel_data['TunnelId'] = tunnel_id
+        tunnel_data['MldEnable'] = mld_enable
+        tunnel_data['FecEnable'] = fec_enable
+        tunnel_data['PassiveMldEnable'] = passive_mld_enable
+        tunnel_data['PassiveFecEnable'] = passive_fec_enable
         tunnel_data['Tag1'] = tag1
         tunnel_data['Tag2'] = tag2
         return self.do_post_request("Tunnel", tunnel_data)
+
+    def update_glx_tunnel(self, tunnel_id, mld_enable=False, fec_enable=False, passive_mld_enable=False, passive_fec_enable=False, tag1="", tag2=""):
+        tunnel_data = {}
+        tunnel_data['TunnelId'] = tunnel_id
+        tunnel_data['MldEnable'] = mld_enable
+        tunnel_data['FecEnable'] = fec_enable
+        tunnel_data['PassiveMldEnable'] = passive_mld_enable
+        tunnel_data['PassiveFecEnable'] = passive_fec_enable
+        tunnel_data['Tag1'] = tag1
+        tunnel_data['Tag2'] = tag2
+        return self.do_patch_request("Tunnel", tunnel_data)
 
     def delete_glx_tunnel(self, tunnel_id):
         tunnel_data = {}

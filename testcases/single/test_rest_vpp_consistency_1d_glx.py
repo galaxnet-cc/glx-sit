@@ -128,6 +128,31 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(f"tunnel-id 1(0x00000001) members 0" not in out)
 
+        # verify mld enable and fec enable
+        resp = self.topo.dut1.get_rest_device().create_glx_tunnel(tunnel_id=1, mld_enable=True, fec_enable=True)
+        glx_assert(resp.status_code == 201)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        glx_assert(err == '')
+        glx_assert("state: init" in out)
+        glx_assert("mld-enable: 1" in out)
+        glx_assert("cfg-ver: 1" in out)
+        glx_assert("fec-enable: 1" in out)
+        # check configuration version
+        # verify passive mld enable
+        resp = self.topo.dut1.get_rest_device().update_glx_tunnel(tunnel_id=1, mld_enable=True, fec_enable=True, passive_mld_enable=True, passive_fec_enable=True)
+        glx_assert(resp.status_code == 200)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel")
+        glx_assert(err == '')
+        glx_assert("passive-fec-enable: 1" in out)
+        glx_assert("passive-mld-enable: 1" in out)
+        # check configuration version
+        glx_assert("cfg-ver: 2" in out)
+        
+        resp = self.topo.dut1.get_rest_device().delete_glx_tunnel(tunnel_id=1)
+        glx_assert(resp.status_code == 410)
+
+
+
     def test_glx_tunnel_multi_link_config(self):
         self.topo.dut1.get_rest_device().create_glx_link(link_id=1, tunnel_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
