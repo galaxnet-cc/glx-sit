@@ -1,4 +1,5 @@
 from cgi import test
+import random
 import unittest
 import time
 
@@ -1520,3 +1521,14 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         # ipv6 nd default is 600s.
         glx_assert(default_timeout in out)
+    def test_global_node_id(self):
+        high = random.getrandbits(32)
+        low = random.getrandbits(32)
+        node_id = (high << 32) | low
+        resp = self.topo.dut1.get_rest_device().set_global_cfg(node_id=node_id)
+        glx_assert(resp.status_code == 200)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx trace")
+        glx_assert(err == '')
+        glx_assert(f"Node id {node_id}" in out)
+
+

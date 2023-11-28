@@ -28,6 +28,8 @@ test-multi-vrrp:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_vrrp.py
 test-multi-tunnel-config-sync:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_tunnel_config_sync.py
+test-multi-glx-trace:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_glx_trace.py
 	
 
 # sjs
@@ -133,5 +135,6 @@ MTESTS += test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-mul
 MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dnat test-multi-object-group
 MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
 MTESTS += test-multi-vrrp test-multi-acc-ip-binding test-multi-ip6 test-multi-p2p test-multi-tunnel-config-sync
+MTESTS += test-multi-glx-trace
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"
