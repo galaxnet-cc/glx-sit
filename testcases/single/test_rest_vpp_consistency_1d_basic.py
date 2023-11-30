@@ -1551,4 +1551,26 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(f"Node id {node_id}" in out)
 
+    def test_get_segment_state(self):
+        resp = self.topo.dut1.get_rest_device().get_segment_state()
+        glx_assert(200 == resp.status_code)
+        glx_assert("ctrl-ns" in str(resp.content))
+        resp = self.topo.dut1.get_rest_device().create_segment(1)
+        glx_assert(201 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().get_segment_state(id=1)
+        glx_assert(200 == resp.status_code)
+        glx_assert("ctrl-ns-seg-1" in str(resp.content))
+        resp = self.topo.dut1.get_rest_device().delete_segment(1)
+        glx_assert(410 == resp.status_code)
 
+    def test_get_bridge_state(self):
+        resp = self.topo.dut1.get_rest_device().get_bridge_state()
+        glx_assert(200 == resp.status_code)
+        glx_assert("br-default" in str(resp.content))
+        resp = self.topo.dut1.get_rest_device().create_bridge(name="test" ,bvi_ip_w_prefix="192.168.89.1/24")
+        glx_assert(201 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().get_bridge_state(name="test")
+        glx_assert(200 == resp.status_code)
+        glx_assert("br-test" in str(resp.content))
+        resp = self.topo.dut1.get_rest_device().delete_bridge(name="test")
+        glx_assert(410 == resp.status_code)
