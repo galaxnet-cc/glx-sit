@@ -992,10 +992,11 @@ class RestDevice:
         data['AccIp'] = acc_ip
         return self.do_delete_request("AccIpBinding", data)
 
-    def set_global_cfg(self, role_is_edge=False, arp_timeout=0, link_lb=False):
+    def set_global_cfg(self, role_is_edge=False, arp_timeout=0, link_lb=False, node_id=1):
         data = {}
         data['Name'] = "default"
         data['RoleIsEdge'] = role_is_edge
         data['ArpTimeout'] = arp_timeout
         data['LinkLoadbalance'] = link_lb
+        data['NodeId'] = node_id
         return self.do_patch_request("GlobalCfg", data)
