@@ -1000,3 +1000,13 @@ class RestDevice:
         data['LinkLoadbalance'] = link_lb
         data['NodeId'] = node_id
         return self.do_patch_request("GlobalCfg", data)
+
+    def get_segment_state(self, id=0):
+        data = {}
+        data['Id'] = id
+        return self.do_get_state_request("Segment", data)
+
+    def get_bridge_state(self, name="default"):
+        data = {}
+        data['Name'] = name
+        return self.do_get_state_request("Bridge", data)
