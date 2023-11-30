@@ -986,6 +986,26 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         # check back to switched interface.
         self.topo.dut1.get_rest_device().update_physical_interface("LAN1", 1500, "switched", "default")
 
+    def test_segment_validation(self):
+        # 未启用acc不能启用dns ip collect
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_enable=True)
+        glx_assert(resp.status_code == 500)
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        # 启用acc不能启用int-edge
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, int_edge_enable=True)
+        glx_assert(resp.status_code == 500)
+        # 启用检验非法的route label
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, route_label="xxxxx")
+        glx_assert(resp.status_code == 500)
+
+        # 打开acc并打开dns_ip_collect_enable
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, route_label="0x1", dns_ip_collect_enable=True)
+        glx_assert(resp.status_code == 200)
+
+        # 恢复到原来的状态
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
+        glx_assert(resp.status_code == 200)
+
     def test_port_mapping(self):
         self.topo.dut1.get_rest_device().create_port_mapping(logic_if="WAN1")
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 static mappings | grep 'TCP local 169.254.100.2:7777'")

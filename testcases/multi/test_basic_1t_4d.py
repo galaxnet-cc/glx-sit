@@ -326,6 +326,36 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
         # 无需移除路由，依赖setup.
 
+    def test_bizpol_order(self):
+        for name in self.topo.dut1.get_if_map():
+            if name != "WAN1":
+                self.topo.dut1.get_rest_device().set_logical_interface_nat_direct(name, False)
+        # 随意配置一条无效的全加速规则
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=100,
+                                                       src_prefix="0.0.0.0/0",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       overlay_enable=True,
+                                                       acc_enable=True,
+                                                       route_label="0x1")
+
+        # 确认默认的策略生效, ping dut2 wan
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "ping 192.168.12.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "ping 192.168.12.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # 移除配置
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+        # 无需移除路由，依赖setup.
+        for name in self.topo.dut1.get_if_map():
+            if name != "WAN1":
+                self.topo.dut1.get_rest_device().set_logical_interface_nat_direct(name, True)
+
     def test_link_transport_update(self):
         # 增加wan2一路配置。
         self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN2", "192.168.122.1/24")

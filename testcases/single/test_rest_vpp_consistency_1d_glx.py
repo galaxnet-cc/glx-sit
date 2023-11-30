@@ -379,6 +379,20 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(f'[nat]' in out)
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
 
+    def test_glx_bizpol_order(self):
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_sit", priority=100,
+                                                       src_prefix="0.0.0.0/0",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       overlay_enable=True,
+                                                       acc_enable=True,
+                                                       route_label="0x1")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol interface")
+        glx_assert(err == '')
+        glx_assert('input bizpol(s): 0, 1' in out)
+
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
+
     def test_glx_bizpol_nat_config_w_steering(self):
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_sit", priority=1,
                                                        src_prefix="192.168.89.0/24",
