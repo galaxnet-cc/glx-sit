@@ -90,7 +90,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         acc_route_num_before = int(out)
         # 创建SegmentAccProperties，添加BatchRouteFilePath
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", acc_fib_type="local")
-        time.sleep(10)
+        time.sleep(15)
         # 获取local table中的路由数目
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
@@ -99,7 +99,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert((local_route_num_after - local_route_num_before - 1) == chnroute_num)
         # 更改SegmentAccProperties IsAcc属性
         self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", acc_fib_type="acc")
-        time.sleep(10)
+        time.sleep(15)
         # 获取acc table与local table中的路由数目
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
@@ -112,7 +112,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(local_route_num_after == local_route_num_before + 1)
         # 删除SegmentAccProperties BatchRouteFilePath属性
         self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="")
-        time.sleep(5)
+        time.sleep(15)
         # 获取acc table中的路由数目
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0 | grep unicast-ip4-chain | wc -l")
         glx_assert(err == "")
@@ -266,6 +266,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         # 更新 segment AccRouteLabel
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True, route_label="20000")
         # 向set中写入数据
+        time.sleep(1)
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
         glx_assert(err == '')
         # 等待路由更新

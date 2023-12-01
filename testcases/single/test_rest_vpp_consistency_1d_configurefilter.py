@@ -645,7 +645,7 @@ class TestRestVppConsistency1DConfigureFilter(unittest.TestCase):
         segment1["IntEdgeEnable"] = False
         segment1["DnsInterceptEnable"] = False
         segment1["DnsIpCollectEnable"] = False
-        segment1["AccRouteLabel"] = "0x7777"
+        segment1["MinQosLevel"] = 2
         segment1["Tag1"] = "kkkk"
         segment1["Tag2"] = "emmm"
         segmentTable["Items"] = []
@@ -667,11 +667,10 @@ class TestRestVppConsistency1DConfigureFilter(unittest.TestCase):
         glx_assert(err == '')
         tag1 = tag1.rstrip()
         glx_assert("kkkk" == tag1)
-        accRouteLabel, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
-            f"redis-cli hget Segment#1 AccRouteLabel")
+        min_qos_level, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget Segment#1 MinQosLevel")
         glx_assert(err == '')
-        accRouteLabel = accRouteLabel.rstrip()
-        glx_assert("0x7777" == accRouteLabel)
+        glx_assert("2" in min_qos_level)
         
 
         # 过滤条件为空，删除segment

@@ -1547,9 +1547,9 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         node_id = (high << 32) | low
         resp = self.topo.dut1.get_rest_device().set_global_cfg(node_id=node_id)
         glx_assert(resp.status_code == 200)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx trace")
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx global")
         glx_assert(err == '')
-        glx_assert(f"Node id {node_id}" in out)
+        glx_assert(f"node_id {node_id}" in out)
 
     def test_get_segment_state(self):
         resp = self.topo.dut1.get_rest_device().get_segment_state()
