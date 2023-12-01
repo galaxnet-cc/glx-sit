@@ -170,7 +170,7 @@ class TestBasic1T4D(unittest.TestCase):
         # wait for all passive link to be aged.
         time.sleep(20)
 
-    def test_ra(self):
+    def test_02_ra(self):
         prefix = "/80"
 
         dut1_lan_ip4 = "192.168.1.1/24"
@@ -232,7 +232,7 @@ class TestBasic1T4D(unittest.TestCase):
         self.topo.dut1.rest_device.delete_edge_route(dut4_lan_ip6_with_prefix)
         self.topo.dut1.rest_device.set_default_bridge_ip_or_mtu(bvi_ip_w_prefix=dut1_lan_ip4, bvi_ip6_w_prefix="")
 
-    def test_slaac(self):
+    def test_01_slaac(self):
         # it should be 64
         prefix = "/64"
 

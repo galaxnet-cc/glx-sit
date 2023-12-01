@@ -118,7 +118,6 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
         self.topo.dut1.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x1200010")
 
-        self.topo.dut2.get_vpp_ssh_device().get_cmd_result("pkill nc")
         self.topo.dut2.get_rest_device().delete_port_mapping(logic_if="WAN1")
         # self.topo.dut2.get_rest_device().delete_segment(1)
         self.topo.dut2.get_rest_device().delete_glx_route_label_fwd(route_label="0x3400000")
@@ -156,7 +155,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
 
         # wait for all passive link to be aged.
         time.sleep(20)
-    def test_startup(self):
+    def test_01_startup(self):
         vr_id = 51
         vip = "192.168.88.100"
         vmac = "00:00:5e:00:01:33"
@@ -199,7 +198,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         glx_assert("100% packet loss" in out)
         self.topo.dut1.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
         self.topo.dut4.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
-    def test_master_down(self):
+    def test_02_master_down(self):
         vr_id = 51
         vip = "192.168.88.100"
         vip_with_prefix = vip + "/32"
@@ -260,7 +259,7 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         time.sleep(10)
         self.topo.dut1.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
         self.topo.dut4.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
-    def test_dns(self):
+    def test_03_dns(self):
         vr_id = 51
         vip = "192.168.88.100"
         vip_with_prefix = vip + "/32"

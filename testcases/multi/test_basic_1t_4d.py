@@ -214,7 +214,6 @@ class TestBasic1T4D(unittest.TestCase):
         # 5s is enough for event being handled and event generated.
         # tunnel bfd is 3*1 interval.
         time.sleep(5)
-        # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
         glx_assert(err == '')
@@ -228,7 +227,6 @@ class TestBasic1T4D(unittest.TestCase):
 
         # 10s足够link & bfd恢复了
         time.sleep(10)
-        # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
         glx_assert(err == '')
@@ -253,7 +251,6 @@ class TestBasic1T4D(unittest.TestCase):
         glx_assert(err == '')
         # 确保fwdmd重启ok
         time.sleep(10)
-        # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
         glx_assert(err == '')
@@ -269,7 +266,6 @@ class TestBasic1T4D(unittest.TestCase):
         # 30s足够应该足够恢复（ikev2 sa keepalive detect time为3 * 5s）
         time.sleep(30)
 
-        # 读取事件队列
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
         glx_assert(err == '')
@@ -284,7 +280,6 @@ class TestBasic1T4D(unittest.TestCase):
         # 20s足够了
         time.sleep(30)
 
-        # 读取事件队列（此时需要控制平面支持处理重复up上报）
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"redis-cli lpop /glx/eventqueue/TunnelStateEvent")
         glx_assert(err == '')

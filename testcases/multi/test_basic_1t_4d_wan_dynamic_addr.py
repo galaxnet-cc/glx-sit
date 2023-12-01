@@ -397,13 +397,13 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                          route_label="0x1200010")
 
         # 确保pppoe ready.
-        time.sleep(20)
+        time.sleep(30)
 
         # bizpol牵引流量至WAN3
         # 清空nat session.
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl nat44 del session all")
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
-                                                       src_prefix="169.254.100.2",
+                                                       src_prefix="192.168.1.0/24",
                                                        dst_prefix="0.0.0.0/0",
                                                        steering_type=1,
                                                        steering_mode=1,
@@ -411,16 +411,16 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                        route_label="0x1200010",
                                                        direct_enable=True,
                                                        protocol=0)
-        # icmp报文不再建立bizpol session以便实时生效，这里无需sleep.
-        #time.sleep(5)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        self.topo.tst.add_ns_route("dut1", "30.30.30.0/24", "192.168.1.1")
+        self.topo.tst.add_ns_route("dut1", "20.20.20.0/24", "192.168.1.1")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 30.30.30.2 -c 5")
         glx_assert(err == '')
         glx_assert("100% packet loss" in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 20.20.20.2 -c 5")
         glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 20.20.20.2 -c 5")
         glx_assert(err == '')
         glx_assert("0% packet loss" in out)
         # 检查nat session走WAN3出去
@@ -442,7 +442,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         # bizpol牵引流量至WAN1
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl nat44 del session all")
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
-                                                       src_prefix="169.254.100.2",
+                                                       src_prefix="192.168.1.0/24",
                                                        dst_prefix="0.0.0.0/0",
                                                        steering_type=1,
                                                        steering_mode=1,
@@ -452,14 +452,17 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                        protocol=0)
         # icmp报文不再建立bizpol session以便实时生效，这里无需sleep.
         #time.sleep(5)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        # out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 20.20.20.2 -c 5")
         glx_assert(err == '')
         glx_assert("100% packet loss" in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        # out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 30.30.30.2 -c 5")
         glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        # out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 30.30.30.2 -c 5")
         glx_assert(err == '')
         glx_assert("0% packet loss" in out)
         # 检查nat session走WAN1出去
@@ -494,11 +497,14 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+        # 删除路由
+        self.topo.tst.del_ns_route("dut1", "30.30.30.0/24", "192.168.1.1")
+        self.topo.tst.del_ns_route("dut1", "20.20.20.0/24", "192.168.1.1")
 
     def test_nat_bizpol_with_pppoe_create_after(self):
         # bizpol牵引流量至WAN3
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
-                                                       src_prefix="169.254.100.2",
+                                                       src_prefix="192.168.1.0/24",
                                                        dst_prefix="0.0.0.0/0",
                                                        steering_type=1,
                                                        steering_mode=1,
@@ -535,16 +541,18 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                          tunnel_id=12,
                                                          route_label="0x1200010")
 
-        time.sleep(15)
+        time.sleep(30)
 
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        self.topo.tst.add_ns_route("dut1", "30.30.30.0/24", "192.168.1.1")
+        self.topo.tst.add_ns_route("dut1", "20.20.20.0/24", "192.168.1.1")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 30.30.30.2 -c 5")
         glx_assert(err == '')
         glx_assert("100% packet loss" in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 20.20.20.2 -c 5")
         glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 20.20.20.2 -c 5")
         glx_assert(err == '')
         glx_assert("0% packet loss" in out)
 
@@ -552,7 +560,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
 
         # bizpol牵引流量至WAN1
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
-                                                       src_prefix="169.254.100.2",
+                                                       src_prefix="192.168.1.0/24",
                                                        dst_prefix="0.0.0.0/0",
                                                        steering_type=1,
                                                        steering_mode=1,
@@ -561,14 +569,17 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                        direct_enable=True,
                                                        protocol=0)
         time.sleep(5)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        # out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 20.20.20.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 20.20.20.2 -c 5 -i 0.05")
         glx_assert(err == '')
         glx_assert("100% packet loss" in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        # out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 30.30.30.2 -c 5 -i 0.05")
         glx_assert(err == '')
         # 首包会因为arp而丢失，不为０即可
         glx_assert("100% packet loss" not in out)
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        # out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns ping 30.30.30.2 -c 5 -i 0.05")
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", f"ping 30.30.30.2 -c 5 -i 0.05")
         glx_assert(err == '')
         glx_assert("0% packet loss" in out)
 
@@ -590,6 +601,9 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
         self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+
+        self.topo.tst.del_ns_route("dut1", "30.30.30.0/24", "192.168.1.1")
+        self.topo.tst.del_ns_route("dut1", "20.20.20.0/24", "192.168.1.1")
 
     def test_traffic_bizpol_with_pppoe_create_first(self):
         # dut1网络配置
