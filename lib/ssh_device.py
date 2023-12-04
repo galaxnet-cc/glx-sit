@@ -89,7 +89,7 @@ class SSHDevice:
         self.ssh.exec_command(f'ip netns exec {ns_name} ip addr add {ip_with_prefix} dev {if_name}')
 
     def add_ns_if_ip6(self, ns_name, if_name, ip_with_prefix):
-        self.get_ns_cmd_result(ns_name, f"ip addr add {ip_with_prefix} dev {if_name}")
+        self.get_ns_cmd_result(ns_name, f"ip -6 addr add {ip_with_prefix} dev {if_name}")
 
     def del_if_ip(self, if_name, ip_with_prefix):
         self.ssh.exec_command(f'ip addr del {ip_with_prefix} dev  {if_name}')
