@@ -68,7 +68,7 @@ class RestDevice:
         host_stack_dnsmasq_data['Name'] = name
         return self.do_delete_request("DhcpAndDnsSettings", host_stack_dnsmasq_data)
 
-    def update_host_stack_dnsmasq(self, name, start_ip, ip_num, lease_time, acc_dns_server1="", acc_dns_server2="", local_dns_server1="", local_dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
+    def update_host_stack_dnsmasq(self, name, start_ip="", ip_num=0, lease_time="", acc_dns_server1="", acc_dns_server2="", local_dns_server1="", local_dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
         host_stack_dnsmasq_data = {}
         host_stack_dnsmasq_data['Name'] = name
         host_stack_dnsmasq_data['StartIP'] = start_ip
@@ -86,12 +86,13 @@ class RestDevice:
         host_stack_dnsmasq_data['Options'] = options
         return self.do_patch_request("DhcpAndDnsSettings", host_stack_dnsmasq_data)
 
-    def set_host_stack_dnsmasq(self, name, start_ip, ip_num, lease_time, acc_dns_server1="", acc_dns_server2="", local_dns_server1="", local_dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
+    def set_host_stack_dnsmasq(self, name, start_ip="", ip_num="", lease_time="", acc_dns_server1="", acc_dns_server2="", local_dns_server1="", local_dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
         host_stack_dnsmasq_data = {}
         host_stack_dnsmasq_data['Name'] = name
         host_stack_dnsmasq_data['StartIP'] = start_ip
         host_stack_dnsmasq_data['IPNum'] = ip_num
         host_stack_dnsmasq_data['LeaseTIme'] = lease_time
+        host_stack_dnsmasq_data['NetMask'] = net_mask
         host_stack_dnsmasq_data['AccUpstreamDnsServer1'] = acc_dns_server1
         host_stack_dnsmasq_data['AccUpstreamDnsServer2'] = acc_dns_server2
         host_stack_dnsmasq_data['LocalUpstreamDnsServer1'] = local_dns_server1
@@ -1010,3 +1011,46 @@ class RestDevice:
         data = {}
         data['Name'] = name
         return self.do_get_state_request("Bridge", data)
+
+    def create_custom_acc_region(self, name, acc_route_label, segment=0):
+        data = {}
+        data['Segment'] = segment
+        data['Name'] = name
+        data['AccRouteLabel'] = acc_route_label
+        return self.do_post_request("CustomAccRegion", data)
+
+    def update_custom_acc_region(self, name, acc_route_label, segment=0):
+        data = {}
+        data['Segment'] = segment
+        data['Name'] = name
+        data['AccRouteLabel'] = acc_route_label
+        return self.do_patch_request("CustomAccRegion", data)
+
+    def delete_custom_acc_region(self, name, segment=0):
+        data = {}
+        data['Segment'] = segment
+        data['Name'] = name
+        return self.do_delete_request("CustomAccRegion", data)
+
+    def create_custom_dns_acc_region(self, name, region, acc_domain_list, acc_upstream_server1="", acc_upstream_server2=""):
+        data = {}
+        data['Name'] = name
+        data['CustomRegion'] = region
+        data['AccDomainList'] = acc_domain_list
+        data['AccUpstreamDnsServer1'] = acc_upstream_server1
+        data['AccUpstreamDnsServer2'] = acc_upstream_server2
+        return self.do_post_request("CustomDnsAccRegion", data)
+
+    def update_custom_dns_acc_region(self, name, region, acc_domain_list, acc_upstream_server1="", acc_upstream_server2=""):
+        data = {}
+        data['Name'] = name
+        data['Region'] = region
+        data['AccDomainList'] = acc_domain_list
+        data['AccUpstreamDnsServer1'] = acc_upstream_server1
+        data['AccUpstreamDnsServer2'] = acc_upstream_server2
+        return self.do_patch_request("CustomDnsAccRegion", data)
+
+    def delete_custom_dns_acc_region(self, name):
+        data = {}
+        data['Name'] = name
+        return self.do_delete_request("CustomDnsAccRegion", data)

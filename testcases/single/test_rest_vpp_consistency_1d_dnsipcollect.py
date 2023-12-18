@@ -366,6 +366,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
     def test_glx_segment_delivery_batch_route_when_routelabel_change(self):
         # 获取chnroute.txt中的路由数目
         # self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wget -P /opt -N https://cdn.jsdelivr.net/gh/QiuSimons/Chnroute/dist/chnroute/chnroute.txt")
+        timeout = 10
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("wc -l /opt/chnroute.txt")
         glx_assert(err == "")
         outlist = out.split(' ')
@@ -374,7 +375,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, route_label="0x777")
         # 创建SegmentAccProperties，添加BatchRouteFilePath
         self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, batch_route_file_path="/opt/chnroute.txt", acc_fib_type="acc")
-        time.sleep(5)
+        time.sleep(timeout)
         # 获取acc table中的路由数目
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep 0x0000000777 | wc -l")
         glx_assert(err == "")
@@ -382,7 +383,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(acc_route_num_before == chnroute_num)
         #修改routelabel
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, route_label="0x999")
-        time.sleep(5)
+        time.sleep(timeout)
         # 检测比较acc table是否增加了相应条数路由
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep 0x0000000777 | wc -l")
         glx_assert(err == "")
@@ -394,7 +395,7 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(acc_route_num_after == chnroute_num)
         # 删除SegmentAccProperties BatchRouteFilePath属性
         self.topo.dut1.get_rest_device().update_segment_acc_prop(segment_id=0, batch_route_file_path="")
-        time.sleep(5)
+        time.sleep(timeout)
         # 获取acc table中的路由数目
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128 | grep 0x0000000999 | wc -l")
         glx_assert(err == "")

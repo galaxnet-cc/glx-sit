@@ -13,8 +13,7 @@ from topo.topo_1t_4d import Topo1T4D
 SKIP_SETUP = False
 SKIP_TEARDOWN = False
 
-class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
-
+class TestBasic1T4DCustomDnsAccRegion(unittest.TestCase):
     # 创建一个最基本的加速场景：
     # 其中dut1作为cpe接入加速网络。dut4作为internet edge通过nat访问一个目标ip
     # 为减少外部依赖，我们可以通过dut4的wan访问与dut3互联的ip。
@@ -163,7 +162,8 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         # wait for all passive link to be aged.
         time.sleep(20)
 
-    def test_dns_bypass_flow(self):
+    def test_01_basic(self):
+        name = "test"
         # dut1 turn off other WAN NAT
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", False)
@@ -172,23 +172,28 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         # dut4 also disable WAN2
         self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
 
+        # clear sessions
         _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl nat44 del session all")
         glx_assert(err == '')
         # dut1 (acc cpe) 准备
         # 1. 开启acc
         # 2. 设置加速ip
-        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
-        glx_assert(result.status_code == 200)
-        self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
-        self.topo.dut1.get_rest_device().create_edge_route(route_prefix="8.8.8.8/32", route_label="0x3400010", is_acc=True)
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
+        glx_assert(201 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
+        glx_assert(201 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().create_edge_route(route_prefix="8.8.8.8/32", route_label="0x3400010", is_acc=True)
+        glx_assert(201 == resp.status_code)
 
         # dut4 (int edge)准备
         # 配置回程路由　
         # 开启int edge
-        result = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
-        glx_assert(result.status_code == 200)
-        self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+        resp = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+        glx_assert(201 == resp.status_code)
 
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
         glx_assert(err == '')
@@ -199,40 +204,28 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
 
-        # 开启local dns server enable
-        options=[
-            {"OptionCode": 3, "OptionValue": "192.168.1.1"}
-        ]
-        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.1.100", 
-                                                                  ip_num=10, lease_time="12h",
-                                                                  acc_dns_server1="8.8.8.8",local_dns_server1="114.114.114.114",
-                                                                  acc_domain_list="a.b.c", local_domain_list="x.y.z", 
-                                                                  local_dns_server_enable=True, options=options)
+        resp = self.topo.dut1.get_rest_device().create_custom_dns_acc_region(name=name, region=name, acc_domain_list="a.b.c", acc_upstream_server1="8.8.8.8")
+        glx_assert(201 == resp.status_code)
         time.sleep(3)
 
         # dig检测是否正确分流
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.1.1 a.b.c +tries=5 +timeout=1")
         glx_assert(err == '')
-        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions | grep -B 10 -C 10 8.8.8.8")
         glx_assert(err == '')
         glx_assert("8.8.8.8" in out)
-        glx_assert("114.114.114.114" not in out)
+        glx_assert("222.222.222.222" in out)
 
-        # 检测是否有nat session
-        _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.1.1 x.y.z +tries=5 +timeout=1")
-        glx_assert(err == '')
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
-        glx_assert(err == '')
-        glx_assert("114.114.114.114" in out)
 
         # 清除dns配置
-        self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq("default")
+        resp = self.topo.dut1.get_rest_device().delete_custom_dns_acc_region(name)
+        glx_assert(410 == resp.status_code)
         time.sleep(3)
         
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
         glx_assert(err == '')
-        glx_assert("/var/run/glx/dnsmasq/default/base.conf" not in out)
+        glx_assert("/var/run/glx/dnsmasq/base.conf" not in out)
         # dut1 turn on WAN NAT
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
         self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", True)
@@ -246,56 +239,95 @@ class TestBasic1T4DDhcpAndDnsSettings(unittest.TestCase):
         # dut4 also disable WAN2
         self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
 
-    def test_dhcp_Configuration_distribution(self):
-        # 开启dhcp能力
-        options=[
-            {"OptionCode": 3, "OptionValue": "192.168.1.1"}, {"OptionCode": 6, "OptionValue": "8.8.8.8"}
-        ]
-        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name="default", start_ip="192.168.1.100", 
-                                                                  ip_num=10, lease_time="1h", 
-                                                                  dhcp_enable=True, options=options)
+    def test_02_with_custom_acc_region(self):
+        name = "test"
+        acc_route_label = "0x3400010"
+        # dut1 turn off other WAN NAT
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", False)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
+
+        # dut4 also disable WAN2
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
+
+        _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl nat44 del session all")
+        glx_assert(err == '')
+        # dut1 (acc cpe) 准备
+        # 1. 开启acc
+        # 2. 设置加速ip
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
+        glx_assert(201 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label=acc_route_label, is_acc=True)
+        glx_assert(201 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().create_edge_route(route_prefix="8.8.8.8/32", route_label=acc_route_label, is_acc=True)
+        glx_assert(201 == resp.status_code)
+
+        # dut4 (int edge)准备
+        # 配置回程路由　
+        # 开启int edge
+        resp = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+        glx_assert(201 == resp.status_code)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # 开启dns-ip-collect
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_enable=True, acc_enable=True)
+        glx_assert(200 == resp.status_code)
+        # 创建自定义出口
+        resp = self.topo.dut1.get_rest_device().create_custom_acc_region(name, acc_route_label=acc_route_label)
+        glx_assert(201 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().create_custom_dns_acc_region(name=name, region=name, acc_domain_list="a.b.c", acc_upstream_server1="8.8.8.8")
+        glx_assert(201 == resp.status_code)
         time.sleep(3)
 
-        # 检查配置是否下发
-        self.topo.tst.get_ns_cmd_result("dut1", "dhcpcd --test enp6s0 > test_dhcp")
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "cat test_dhcp")
+        # dig检测是否正确分流
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.1.1 a.b.c +tries=5 +timeout=1")
         glx_assert(err == '')
-        glx_assert("new_dhcp_lease_time='3600'" in out)
-        glx_assert("new_routers='192.168.1.1'" in out)
-        glx_assert("new_domain_name_servers='8.8.8.8'" in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "cat test_dhcp | grep new_ip_address")
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions | grep -B 10 -C 10 8.8.8.8")
         glx_assert(err == '')
-        glx_assert(out > "new_ip_address='192.168.1.100'")
-        glx_assert(out < "new_ip_address='192.168.1.110'")
+        glx_assert("8.8.8.8" in out)
+        glx_assert("222.222.222.222" in out)
 
-        # update
-        options=[
-            {"OptionCode": 3, "OptionValue": "192.168.1.1"}, {"OptionCode": 6, "OptionValue": "114.114.114.114,192.168.1.1"}
-        ]
-        self.topo.dut1.get_rest_device().update_host_stack_dnsmasq(name="default", start_ip="192.168.1.200",
-                                                                   ip_num=10, lease_time="2h", 
-                                                                   dhcp_enable=True, options=options)
+
+        # 清除dns配置
+        resp = self.topo.dut1.get_rest_device().delete_custom_acc_region(name)
+        glx_assert(410 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().delete_custom_dns_acc_region(name)
+        glx_assert(410 == resp.status_code)
         time.sleep(3)
-
-        # 检查配置是否下发
-        self.topo.tst.get_ns_cmd_result("dut1", "dhcpcd --test enp6s0 > test_dhcp")
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "cat test_dhcp")
-        glx_assert(err == '')
-        glx_assert("new_dhcp_lease_time='7200'" in out)
-        glx_assert("new_routers='192.168.1.1'" in out)
-        glx_assert("new_domain_name_servers='114.114.114.114 192.168.1.1'" in out)
-        out, err = self.topo.tst.get_ns_cmd_result("dut1", "cat test_dhcp | grep new_ip_address")
-        glx_assert(err == '')
-        glx_assert(out > "new_ip_address='192.168.1.200'")
-        glx_assert(out < "new_ip_address='192.168.1.210'")
         
-        # 清除dhcp配置
-        self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq("default")
-        time.sleep(3)
+
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
             f"ip netns exec ctrl-ns ps -ef | grep dnsmasq")
         glx_assert(err == '')
-        glx_assert("/var/run/glx/dnsmasq/default/base.conf" not in out)
+        glx_assert("/var/run/glx/dnsmasq/base.conf" not in out)
+        # dut1 turn on WAN NAT
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", True)
+        self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+
+        # remove route
+        self.topo.dut1.get_rest_device().delete_edge_route("8.8.8.8/32", is_acc=True)
+        self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24", is_acc=True)
+        self.topo.dut4.get_rest_device().delete_edge_route("222.222.222.222/32")
+
+        # dut4 also disable WAN2
+        self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
+
+        # 关闭dns-ip-collect
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, dns_ip_collect_enable=False, acc_enable=False)
+        glx_assert(200 == resp.status_code)
 
 if __name__ == '__main__':
     unittest.main()

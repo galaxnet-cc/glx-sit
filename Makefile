@@ -30,6 +30,10 @@ test-multi-tunnel-config-sync:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_tunnel_config_sync.py
 test-multi-glx-trace:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_glx_trace.py
+test-multi-custom-acc-region:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_custom_acc_region.py
+test-multi-custom-dns-acc-region:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_custom_dns_acc_region.py
 	
 
 # sjs
@@ -127,6 +131,12 @@ test-single-dpi:
 test-single-objgroup:
 	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_object_group.py
 
+test-single-custom-acc-region:
+	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_custom_acc_region.py
+
+test-single-custom-dns-acc-region:
+	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_custom_dns_acc_region.py
+
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。
@@ -135,6 +145,6 @@ MTESTS += test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-mul
 MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dnat test-multi-object-group
 MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
 MTESTS += test-multi-vrrp test-multi-acc-ip-binding test-multi-ip6 test-multi-p2p test-multi-tunnel-config-sync
-MTESTS += test-multi-glx-trace
+MTESTS += test-multi-glx-trace test-mult-custom-acc-region test-multi-custom-dns-acc-region
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"
