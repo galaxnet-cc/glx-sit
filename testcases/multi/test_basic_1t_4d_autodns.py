@@ -139,6 +139,9 @@ class TestBasic1T4DAutoDns(unittest.TestCase):
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
+        self.topo.tst.del_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
+        self.topo.tst.add_ns_if_to_default_ns("dut1", self.topo.tst.if1)
+        self.topo.tst.add_ns_if_to_default_ns("dut4", self.topo.tst.if2)
 
         # 删除label-fwd表项
         # to dut4

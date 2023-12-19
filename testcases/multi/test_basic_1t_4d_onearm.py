@@ -109,6 +109,8 @@ class TestBasic1T4DOneArm(unittest.TestCase):
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if5, "192.168.201.201/24")
         self.topo.tst.del_ns_if_ip("dut1", "lo", "201.201.201.201/32")
         self.topo.tst.del_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
+        self.topo.tst.add_ns_if_to_default_ns("dut1", self.topo.tst.if5)
+        self.topo.tst.add_ns_if_to_default_ns("dut4", self.topo.tst.if2)
 
         # 删除edge route.
         self.topo.dut4.get_rest_device().delete_edge_route("192.168.201.0/24")

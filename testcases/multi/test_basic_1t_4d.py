@@ -107,6 +107,8 @@ class TestBasic1T4D(unittest.TestCase):
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
         self.topo.tst.del_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
+        self.topo.tst.add_ns_if_to_default_ns("dut1", self.topo.tst.if1)
+        self.topo.tst.add_ns_if_to_default_ns("dut4", self.topo.tst.if2)
 
         # 删除edge route.
         self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24")
@@ -190,6 +192,11 @@ class TestBasic1T4D(unittest.TestCase):
         glx_assert(err == '')
         # 此时应当恢复
         glx_assert("0% packet loss" in out)
+
+        # 测试ttl为1的时候能收到icmp error
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 1 -t 1")
+        glx_assert(err == '')
+        glx_assert("Time to live exceeded" in out)
 
     # 测试tunnel bfd联动机制以及fwdmd
     def test_tunnel_bfd(self):

@@ -110,6 +110,15 @@ class TestBasic1T4DMseg(unittest.TestCase):
         self.topo.tst.del_ns_if_ip("dut1s2", self.topo.tst.if3, "192.168.1.2/24")
         self.topo.tst.del_ns_if_ip("dut4s2", self.topo.tst.if4, "192.168.4.2/24")
 
+        self.topo.tst.add_ns_if_to_default_ns("dut1", self.topo.tst.if1)
+        self.topo.tst.add_ns_if_to_default_ns("dut4", self.topo.tst.if2)
+        self.topo.tst.add_ns_if_to_default_ns("dut1s2", self.topo.tst.if3)
+        self.topo.tst.add_ns_if_to_default_ns("dut4s2", self.topo.tst.if4)
+
+        # 该ns须删除.
+        self.topo.tst.del_ns("dut1s2")
+        self.topo.tst.del_ns("dut4s2")
+
         # 删除label-fwd表项
         # to dut4
         self.topo.dut2.get_rest_device().delete_glx_route_label_fwd(route_label="0x3400000")
@@ -147,6 +156,7 @@ class TestBasic1T4DMseg(unittest.TestCase):
 
         self.topo.dut3.get_rest_device().set_logical_interface_dhcp("WAN1")
         self.topo.dut4.get_rest_device().set_logical_interface_dhcp("WAN1")
+
 
         # wait for all passive link to be aged.
         time.sleep(20)

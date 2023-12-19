@@ -106,6 +106,8 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
         self.topo.tst.del_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
+        self.topo.tst.add_ns_if_to_default_ns("dut1", self.topo.tst.if1)
+        self.topo.tst.add_ns_if_to_default_ns("dut4", self.topo.tst.if2)
 
         # 删除edge route.
         self.topo.dut1.get_rest_device().delete_edge_route("192.168.4.0/24")
@@ -273,7 +275,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         # 等待link up
         # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
         # 考虑pppoe地址同步到fwdmd，增加5s
-        time.sleep(90)
+        time.sleep(30)
 
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
         glx_assert(err == '')
@@ -305,7 +307,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                          route_label="0x1200010")
         
         # 等待link up
-        time.sleep(90)
+        time.sleep(60)
 
         out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
         glx_assert(err == '')
@@ -342,7 +344,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                          is_tcp=True)
 
         # 等待link up
-        time.sleep(90)
+        time.sleep(60)
         
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show glx link")
         glx_assert(err == '')
@@ -397,7 +399,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                          route_label="0x1200010")
 
         # 确保pppoe ready.
-        time.sleep(30)
+        time.sleep(60)
 
         # bizpol牵引流量至WAN3
         # 清空nat session.
@@ -541,7 +543,7 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
                                                          tunnel_id=12,
                                                          route_label="0x1200010")
 
-        time.sleep(30)
+        time.sleep(60)
 
         self.topo.tst.add_ns_route("dut1", "30.30.30.0/24", "192.168.1.1")
         self.topo.tst.add_ns_route("dut1", "20.20.20.0/24", "192.168.1.1")

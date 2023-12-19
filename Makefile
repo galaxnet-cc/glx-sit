@@ -95,6 +95,9 @@ test-single-all:
 test-single-basic:
 	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_basic.py
 
+test-single-basic-multi-segment:
+	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_basicmultisegment.py
+
 test-single-glx:
 	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_glx.py
 
@@ -145,6 +148,6 @@ MTESTS += test-multi-glx-nego test-multi-l3subif test-multi-wan-dynaddr test-mul
 MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dnat test-multi-object-group
 MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
 MTESTS += test-multi-vrrp test-multi-acc-ip-binding test-multi-ip6 test-multi-p2p test-multi-tunnel-config-sync
-MTESTS += test-multi-glx-trace test-mult-custom-acc-region test-multi-custom-dns-acc-region
+MTESTS += test-multi-glx-trace test-multi-custom-acc-region test-multi-custom-dns-acc-region
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"

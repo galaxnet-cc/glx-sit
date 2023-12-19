@@ -86,7 +86,7 @@ class RestDevice:
         host_stack_dnsmasq_data['Options'] = options
         return self.do_patch_request("DhcpAndDnsSettings", host_stack_dnsmasq_data)
 
-    def set_host_stack_dnsmasq(self, name, start_ip="", ip_num="", lease_time="", acc_dns_server1="", acc_dns_server2="", local_dns_server1="", local_dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
+    def set_host_stack_dnsmasq(self, name, start_ip="", ip_num=0, lease_time="", acc_dns_server1="", acc_dns_server2="", local_dns_server1="", local_dns_server2="", net_mask="255.255.255.0", acc_domain_list="", local_domain_list="", dhcp_enable=False, local_dns_server_enable=False, options=[]):
         host_stack_dnsmasq_data = {}
         host_stack_dnsmasq_data['Name'] = name
         host_stack_dnsmasq_data['StartIP'] = start_ip
@@ -732,7 +732,7 @@ class RestDevice:
         data={}
         data["IsAll"] = is_all
         data["Segment"] = segment_id
-        return self.do_action_request("BatchRouteFlush", data)
+        return self.do_action_request("FlushCollectedDnsRoute", data)
 
     def create_addr_group(self, group_name, addr_with_prefix1):
         data = {}

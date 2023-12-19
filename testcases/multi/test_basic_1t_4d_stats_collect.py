@@ -111,6 +111,9 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         if SKIP_TEARDOWN:
             return
 
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
+        glx_assert(err == '')
+
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
         self.topo.dut1.get_rest_device().delete_edge_route(route_prefix="192.168.4.0/24")
 
@@ -125,6 +128,9 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
+        self.topo.tst.del_ns_if_ip("dut4", self.topo.tst.if2, "192.168.4.2/24")
+        self.topo.tst.add_ns_if_to_default_ns("dut1", self.topo.tst.if1)
+        self.topo.tst.add_ns_if_to_default_ns("dut4", self.topo.tst.if2)
 
         # 删除label-fwd表项
         # to dut4
@@ -220,6 +226,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         glx_assert(err == '')
         _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10")
         glx_assert(err == '')
+
 
         # 每个包大小应约为1400bytes
         # link0 tx
