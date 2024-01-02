@@ -31,12 +31,6 @@ class SSHDevice:
             out, err = self.get_cmd_result(f'ip link set {if_name} netns {ns_name}')
             if err != "":
                 return out, err
-<<<<<<< HEAD
-=======
-        out, err = self.get_ns_cmd_result(ns_name, f'ip link set {if_name} up')
-        if err != "":
-            return out, err
->>>>>>> d2aca84 ([glx-sit] move interface into default ns when tear down)
         # lqk
         # Flush the bvi's old mac address which was cached in ARP cache, because when we have done a factory init request,
         # we will regenerate a new mac address to bvi.
