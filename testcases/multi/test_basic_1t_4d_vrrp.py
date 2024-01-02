@@ -66,23 +66,23 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         _, err = self.topo.tst.get_ns_cmd_result("dut4", f"ip link show {self.topo.tst.if2}")
         if err == '':
             self.topo.tst.add_ns_if_to_default_ns("dut4", self.topo.tst.if2)
-        
-
         # 创建tst网桥
         br_name = "br_dut1_dut4"
+        self.topo.tst.del_if(br_name)
         self.topo.tst.add_br(br_name)
+
         # 给网桥添加ip
         self.topo.tst.add_if_ip(br_name, "192.168.88.1/24")
+
         # 启用网桥
         self.topo.tst.up_down_if(br_name, True)
+
         # 将设备加入网桥
         self.topo.tst.add_br_if(br_name, self.topo.tst.if1)
         self.topo.tst.add_br_if(br_name, self.topo.tst.if2)
+
         # 启用网桥
         self.topo.tst.up_down_if(br_name, True)
-        # 增加nat路由
-        self.topo.tst.add_route("192.168.12.0/24", "192.168.88.100")
-        self.topo.tst.add_route("192.168.34.0/24", "192.168.88.100")
 
         # 增加bizpol允许流量通过
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
@@ -130,16 +130,13 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         self.topo.dut4.get_rest_device().delete_glx_route_label_policy_type_table(route_label="0x3400010")
 
 
-
-        self.topo.tst.del_route("192.168.12.0/24", "192.168.88.100")
-        self.topo.tst.del_route("192.168.34.0/24", "192.168.88.100")
-
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.
-        self.topo.tst.up_down_if("br_dut1_dut4", False)
-        self.topo.tst.del_br("br_dut1_dut4")
+        br_name = "br_dut1_dut4"
+        self.topo.tst.up_down_if(br_name, False)
+        self.topo.tst.del_br(br_name)
         # make sure to delete it.
-        self.topo.tst.del_if("br_dut1_dut4")
+        self.topo.tst.del_if(br_name)
 
 
         # revert to default.
@@ -187,6 +184,11 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(vmac in out)
 
+        # 增加nat路由
+        _, err = self.topo.tst.add_route("192.168.12.0/24", vip)
+        glx_assert(err == '')
+        _, err = self.topo.tst.add_route("192.168.34.0/24", vip)
+        glx_assert(err == '')
         # 测试访问dut2是否能通
         out, err = self.topo.tst.get_cmd_result(f"ping {dut2_wan1} -c 5 -i {master_down_int}")
         glx_assert(err == '')
@@ -198,6 +200,9 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         glx_assert("100% packet loss" in out)
         self.topo.dut1.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
         self.topo.dut4.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
+        self.topo.tst.del_route("192.168.12.0/24", vip)
+        self.topo.tst.del_route("192.168.34.0/24", vip)
+
     def test_02_master_down(self):
         vr_id = 51
         vip = "192.168.88.100"
@@ -220,6 +225,13 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         resp = self.topo.dut4.get_rest_device().create_vrrp(vip=vip_with_prefix, vr_id=vr_id, bridge=br_name, priority=default_priority, adv_interval=adv_interval)
         glx_assert(201 == resp.status_code)
 
+        time.sleep(1)
+
+        # 增加nat路由
+        _, err = self.topo.tst.add_route("192.168.12.0/24", vip)
+        glx_assert(err == '')
+        _, err = self.topo.tst.add_route("192.168.34.0/24", vip)
+        glx_assert(err == '')
 
         # 测试流量
         out, err = self.topo.tst.get_cmd_result(f"ping {dut2_wan1} -c 5 -i {master_down_int}")
@@ -259,6 +271,8 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         time.sleep(10)
         self.topo.dut1.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
         self.topo.dut4.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
+        self.topo.tst.del_route("192.168.12.0/24", vip)
+        self.topo.tst.del_route("192.168.34.0/24", vip)
     def test_03_dns(self):
         vr_id = 51
         vip = "192.168.88.100"
@@ -274,21 +288,20 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         master_down_int = int(3*adv_interval + (((256-master_priority)*adv_interval) / 256)+ 1)
         upstream_dns_server = "223.5.5.5"
         dns_setting_name = "default"
-        run_path = "/var/run"
-        dnsmasq_conf = f"{run_path}/glx_dnsmasq_base_default.conf"
-        dnsmasq_dns_conf = f"{run_path}/glx_dnsmasq_dns_default.conf"
-        dnsmasq_pid_file = f"{run_path}/glx_dnsmasq_default.pid"
+        run_path = "/var/run/glx/dnsmasq"
+        dnsmasq_conf = f"{run_path}/{dns_setting_name}/base.conf"
+        dnsmasq_dns_conf = f"{run_path}/{dns_setting_name}/dns_default.conf"
+        dnsmasq_pid_file = f"{run_path}/{dns_setting_name}/glx_dnsmasq.pid"
         domain = "www.baidu.com"
         domain_ip = "22.22.22.22"
         ns = "ctrl-ns"
 
 
         # 开启dut1 dns服务器
-        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
+        self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
         # 开启dut4 dns服务器
-        self.topo.dut4.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
+        self.topo.dut4.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
         time.sleep(3)
-
 
         self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"echo 'address=/{domain}/{domain_ip}' >> {dnsmasq_dns_conf}")
         self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"echo 'address=/{domain}/{domain_ip}' >> {dnsmasq_dns_conf}")
@@ -306,8 +319,15 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut4_dnsmasq_pid}")
         glx_assert(err == '')
 
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"rm -f {dnsmasq_pid_file}")
+        glx_assert(err == '')
+
         out, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result(ns, f"dnsmasq -C {dnsmasq_conf}")
         glx_assert(err == '')
+
+        _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"rm -f {dnsmasq_pid_file}")
+        glx_assert(err == '')
+
         out, err = self.topo.dut4.get_vpp_ssh_device().get_ns_cmd_result(ns, f"dnsmasq -C {dnsmasq_conf}")
         glx_assert(err == '')
 
@@ -324,11 +344,19 @@ class Testbasic1T4DVRRP(unittest.TestCase):
 
         time.sleep(master_down_int)
 
+        # 增加nat路由
+        _, err = self.topo.tst.add_route("192.168.12.0/24", vip)
+        glx_assert(err == '')
+        _, err = self.topo.tst.add_route("192.168.34.0/24", vip)
+        glx_assert(err == '')
+
         out, err = self.topo.tst.get_cmd_result(f"dig @{vip} {domain} +tries=5 +timeout=1")
         glx_assert(err == '')
         glx_assert(domain_ip in out)
 
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
+        glx_assert(err == '')
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"rm -f {dnsmasq_pid_file}")
         glx_assert(err == '')
 
         # 停止dut1 vpp
@@ -353,13 +381,17 @@ class Testbasic1T4DVRRP(unittest.TestCase):
 
         _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut4_dnsmasq_pid}")
         glx_assert(err == '')
+        _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"rm -f {dnsmasq_pid_file}")
+        glx_assert(err == '')
 
         self.topo.dut1.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
         self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq(name=dns_setting_name)
         self.topo.dut4.get_rest_device().delete_host_stack_dnsmasq(name=dns_setting_name)
         self.topo.dut4.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
+        self.topo.tst.del_route("192.168.12.0/24", vip)
+        self.topo.tst.del_route("192.168.34.0/24", vip)
         
-    def test_dns2(self):
+    def test_04_dns(self):
         vr_id = 51
         vip = "192.168.88.100"
         vip_with_prefix = vip + "/32"
@@ -375,10 +407,10 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         upstream_dns_server = "223.5.5.5"
         dns_setting_name = "default"
         domain = "www.baidu.com"
-        run_path = "/var/run"
-        dnsmasq_conf = f"{run_path}/glx_dnsmasq_base_default.conf"
-        dnsmasq_dns_conf = f"{run_path}/glx_dnsmasq_dns_default.conf"
-        dnsmasq_pid_file = f"{run_path}/glx_dnsmasq_default.pid"
+        run_path = "/var/run/glx/dnsmasq"
+        dnsmasq_conf = f"{run_path}/{dns_setting_name}/base.conf"
+        dnsmasq_dns_conf = f"{run_path}/{dns_setting_name}/dns_default.conf"
+        dnsmasq_pid_file = f"{run_path}/{dns_setting_name}/glx_dnsmasq.pid"
         domain = "www.baidu.com"
         domain_ip = "22.22.22.22"
         ns = "ctrl-ns"
@@ -391,6 +423,14 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         # backup
         resp = self.topo.dut4.get_rest_device().create_vrrp(vip=vip_with_prefix, vr_id=vr_id, bridge=br_name, priority=default_priority, adv_interval=adv_interval)
         glx_assert(201 == resp.status_code)
+
+        time.sleep(1)
+
+        # 增加nat路由
+        _, err = self.topo.tst.add_route("192.168.12.0/24", vip)
+        glx_assert(err == '')
+        _, err = self.topo.tst.add_route("192.168.34.0/24", vip)
+        glx_assert(err == '')
 
         # 开启dut1 dns服务器
         self.topo.dut1.get_rest_device().set_host_stack_dnsmasq(name=dns_setting_name, start_ip="192.168.88.100", ip_num=8, lease_time="1h", local_dns_server_enable=True, local_dns_server1=upstream_dns_server)
@@ -413,8 +453,15 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut4_dnsmasq_pid}")
         glx_assert(err == '')
 
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"rm -f {dnsmasq_pid_file}")
+        glx_assert(err == '')
+
         out, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result(ns, f"dnsmasq -C {dnsmasq_conf}")
         glx_assert(err == '')
+
+        _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"rm -f {dnsmasq_pid_file}")
+        glx_assert(err == '')
+
         out, err = self.topo.dut4.get_vpp_ssh_device().get_ns_cmd_result(ns, f"dnsmasq -C {dnsmasq_conf}")
         glx_assert(err == '')
 
@@ -430,6 +477,8 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut1_dnsmasq_pid}")
         glx_assert(err == '')
 
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"rm -f {dnsmasq_pid_file}")
+        glx_assert(err == '')
         # 停止dut1 vpp
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl stop vpp")
         resp = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"systemctl stop fwdmd")
@@ -454,10 +503,14 @@ class Testbasic1T4DVRRP(unittest.TestCase):
         _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"kill -9 {dut4_dnsmasq_pid}")
         glx_assert(err == '')
 
+        _, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"rm -f {dnsmasq_pid_file}")
+        glx_assert(err == '')
         self.topo.dut1.get_rest_device().delete_vrrp(vr_id=vr_id, segment=0)
         self.topo.dut1.get_rest_device().delete_host_stack_dnsmasq(name=dns_setting_name)
         self.topo.dut4.get_rest_device().delete_host_stack_dnsmasq(name=dns_setting_name)
         self.topo.dut4.get_rest_device().delete_vrrp(vr_id=vr_id,segment=0)
+        self.topo.tst.del_route("192.168.12.0/24", vip)
+        self.topo.tst.del_route("192.168.34.0/24", vip)
         
 
 

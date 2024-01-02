@@ -64,7 +64,7 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
                                                          is_tcp=False)
 
         # 5s init register timer, so 10s should enough for both link to come up.
-        time.sleep(10)
+        time.sleep(15)
 
         # verify dut1.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -114,7 +114,7 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
 
         # 5s init register timer, so 10s should enough for both link to come up.
         # tcp handkshake should not last long in LAN network.
-        time.sleep(10)
+        time.sleep(15)
 
         # verify dut1.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -164,7 +164,7 @@ class TestBasic1T4DGlxNego(unittest.TestCase):
 
         # 5s init register timer, so 10s should enough for both link to come up.
         # tcp handkshake should not last long in LAN network.
-        time.sleep(10)
+        time.sleep(15)
 
         # verify dut1.
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(

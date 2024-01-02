@@ -114,6 +114,7 @@ class TestBasic1T4DAcc(unittest.TestCase):
         # 删除tst节点ip（路由内核自动清除）
         # ns不用删除，后面其他用户可能还会用.
         self.topo.tst.del_ns_if_ip("dut1", self.topo.tst.if1, "192.168.1.2/24")
+        self.topo.tst.add_ns_if_to_default_ns("dut1", self.topo.tst.if1)
 
         # 删除label-fwd表项
         # to dut4
@@ -233,6 +234,11 @@ class TestBasic1T4DAcc(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("222.222.222.223" in out)
 
+        # 测试ttl为1的时候能收到icmp error
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.34.1 -c 1 -t 1")
+        glx_assert(err == '')
+        glx_assert("Time to live exceeded" in out)
+
     def test_basic_traffic_using_bizpol(self):
         # 这里的测试配置，需要在teardown中无条件进行各种清理，恢复系统到初始状态。
 
@@ -282,6 +288,11 @@ class TestBasic1T4DAcc(unittest.TestCase):
         out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result(f"vppctl show nat44 sessions")
         glx_assert(err == '')
         glx_assert("222.222.222.222" in out)
+
+        # 测试ttl为1的时候能收到icmp error
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.34.1 -c 1 -t 1")
+        glx_assert(err == '')
+        glx_assert("Time to live exceeded" in out)
 
         # 移除bizpol.
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
