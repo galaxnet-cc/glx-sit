@@ -1372,5 +1372,30 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         # delete the bizpol.
         self.topo.dut1.get_rest_device().delete_bizpol(name=name)
 
+    def test_glx_link_transport_hash(self):
+        # test1: create another link to the same remote endpoint should be failed.
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        result = self.topo.dut1.get_rest_device().create_glx_link(link_id=11, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        # this should be failed with 500.
+        glx_assert(result.status_code == 500)
+
+        # test2: delete the previous link 1 and link id 11 should be ok.
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
+        result = self.topo.dut1.get_rest_device().create_glx_link(link_id=11, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        # this should be ok.
+        glx_assert(result.status_code == 201)
+        result = self.topo.dut1.get_rest_device().delete_glx_link(link_id=11)
+        glx_assert(result.status_code == 410)
+
+        # test3: multiple wan can connect to the same endpoint.
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        result = self.topo.dut1.get_rest_device().create_glx_link(link_id=11, wan_name="WAN2", remote_ip="1.1.1.1", tunnel_id=1)
+        # this should be ok.
+        glx_assert(result.status_code == 201)
+        result = self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
+        glx_assert(result.status_code == 410)
+        result = self.topo.dut1.get_rest_device().delete_glx_link(link_id=11)
+        glx_assert(result.status_code == 410)
+
 if __name__ == '__main__':
     unittest.main()
