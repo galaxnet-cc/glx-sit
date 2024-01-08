@@ -1397,5 +1397,35 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         result = self.topo.dut1.get_rest_device().delete_glx_link(link_id=11)
         glx_assert(result.status_code == 410)
 
+        # test4: mod transport ip.
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        result = self.topo.dut1.get_rest_device().create_glx_link(link_id=11, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        # this should be failed with 500.
+        glx_assert(result.status_code == 500)
+        # mod link 1 to use another ip.
+        self.topo.dut1.get_rest_device().update_glx_link_remote_ip(link_id=1, remote_ip="1.1.1.2")
+        result = self.topo.dut1.get_rest_device().create_glx_link(link_id=11, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        # this time should be ok 201.
+        glx_assert(result.status_code == 201)
+        result = self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
+        glx_assert(result.status_code == 410)
+        result = self.topo.dut1.get_rest_device().delete_glx_link(link_id=11)
+        glx_assert(result.status_code == 410)
+
+        # test4: mod transport wan if.
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        result = self.topo.dut1.get_rest_device().create_glx_link(link_id=11, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        # this should be failed with 500.
+        glx_assert(result.status_code == 500)
+        # mod link 1 to use wan2.
+        self.topo.dut1.get_rest_device().update_glx_link_wan(link_id=1, wan_name="WAN2")
+        result = self.topo.dut1.get_rest_device().create_glx_link(link_id=11, wan_name="WAN1", remote_ip="1.1.1.1", tunnel_id=1)
+        # this time should be ok 201.
+        glx_assert(result.status_code == 201)
+        result = self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
+        glx_assert(result.status_code == 410)
+        result = self.topo.dut1.get_rest_device().delete_glx_link(link_id=11)
+        glx_assert(result.status_code == 410)
+
 if __name__ == '__main__':
     unittest.main()
