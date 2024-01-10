@@ -99,8 +99,8 @@ do
     ssh root@$dip apt-get -y install redis-server bridge-utils dnsmasq iperf3
     # install frr
     ssh root@$dip 'curl -s https://deb.frrouting.org/frr/keys.asc | apt-key add -'
-    # pin to frr-8
-    ssh root@$dip 'echo "deb https://deb.frrouting.org/frr $(lsb_release -s -c) frr-8" | tee /etc/apt/sources.list.d/frr.list'
+    # pin to frr-9.1 
+    ssh root@$dip 'echo "deb https://deb.frrouting.org/frr $(lsb_release -s -c) frr-9.1" | tee /etc/apt/sources.list.d/frr.list'
     ssh root@$dip 'apt update && apt install -y frr frr-pythontools'
     # mark default frr as stopped.
     ssh root@$dip 'systemctl stop frr'

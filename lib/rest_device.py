@@ -228,7 +228,7 @@ class RestDevice:
         if add_ip2 != "":
             logif_data["AdditionalIps"].append({"IpAddr": add_ip2})
         return self.do_patch_request("LogicalInterface", logif_data)
-    
+
     def delete_logical_interface_additional_ips(self, name):
         logif_data = {}
         logif_data['Name'] = name
@@ -430,8 +430,8 @@ class RestDevice:
         label_data["RouteLabel"] = route_label
         return self.do_delete_request("EdgeRouteLabelFwdEntry", label_data)
 
-    def create_edge_route(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0, tag1="", tag2="",
-                          next_hop_ip=""):
+    def create_edge_route(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0,
+                          next_hop_ip="", advertise_enable=False, tag1="", tag2=""):
         route_data = {}
         route_data["Segment"] = segment
         route_data["DestPrefix"] = route_prefix
@@ -443,9 +443,46 @@ class RestDevice:
         route_data["RouteLabel"] = route_label
         route_data["IsAcc"] = is_acc
         route_data["IsAccReverse"] = is_acc_reverse
+        route_data["AdvertiseEnable"] = advertise_enable
         route_data['Tag1'] = tag1
         route_data['Tag2'] = tag2
         return self.do_post_request("EdgeRoute", route_data)
+
+    def enable_edge_route_advertise(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0,
+                          next_hop_ip="", tag1="", tag2=""):
+        route_data = {}
+        route_data["Segment"] = segment
+        route_data["DestPrefix"] = route_prefix
+        route_data["RouteProtocol"] = route_protocol
+        if route_protocol == "static":
+            # 当前仅支持ip模式
+            route_data["NexthopType"] = "ip"
+            route_data["NexthopIp"] = next_hop_ip
+        route_data["RouteLabel"] = route_label
+        route_data["IsAcc"] = is_acc
+        route_data["IsAccReverse"] = is_acc_reverse
+        route_data["AdvertiseEnable"] = True
+        route_data['Tag1'] = tag1
+        route_data['Tag2'] = tag2
+        return self.do_patch_request("EdgeRoute", route_data)
+
+    def disable_edge_route_advertise(self, route_prefix, route_label, route_protocol="overlay", is_acc=False, is_acc_reverse=False, segment=0,
+                          next_hop_ip="", tag1="", tag2=""):
+        route_data = {}
+        route_data["Segment"] = segment
+        route_data["DestPrefix"] = route_prefix
+        route_data["RouteProtocol"] = route_protocol
+        if route_protocol == "static":
+            # 当前仅支持ip模式
+            route_data["NexthopType"] = "ip"
+            route_data["NexthopIp"] = next_hop_ip
+        route_data["RouteLabel"] = route_label
+        route_data["IsAcc"] = is_acc
+        route_data["IsAccReverse"] = is_acc_reverse
+        route_data["AdvertiseEnable"] = False
+        route_data['Tag1'] = tag1
+        route_data['Tag2'] = tag2
+        return self.do_patch_request("EdgeRoute", route_data)
 
     def delete_edge_route(self, route_prefix, route_protocol="overlay", segment=0, is_acc=False):
         route_data = {}
@@ -552,6 +589,7 @@ class RestDevice:
         return self.do_delete_request("BusinessPolicy", bizpol_data)
 
 
+    # Deprecated
     #  areas is an object list, only key in object supported now is AreaId(int)
     def create_ospf_setting(self, segment=0, overlayAdvertiseEnable=False, areas=[]):
         ospf_data = {}
@@ -560,17 +598,20 @@ class RestDevice:
         ospf_data["Areas"] = areas
         return self.do_post_request("OspfSetting", ospf_data)
 
+    # Deprecated
     def delete_ospf_setting(self, segment=0):
         ospf_data = {}
         ospf_data["Segment"] = segment
         return self.do_delete_request("OspfSetting", ospf_data)
 
+    # Deprecated
     def create_ospf_interface(self, interface, areaId):
         ospf_interface_data = {}
         ospf_interface_data["Interface"] = interface
         ospf_interface_data["AreaId"] = areaId
         return self.do_post_request("OspfInterface", ospf_interface_data)
 
+    # Deprecated
     def delete_ospf_interface(self, interface, areaId):
         ospf_interface_data = {}
         ospf_interface_data["Interface"] = interface
@@ -1054,3 +1095,22 @@ class RestDevice:
         data = {}
         data['Name'] = name
         return self.do_delete_request("CustomDnsAccRegion", data)
+
+    def create_dynamic_routing_setting(self, segment=0, enableOSPF=True, enableBGP=True):
+        data = {}
+        data['Segment'] = segment
+        data['EnableOSPF'] = enableOSPF
+        data['EnableBGP'] = enableBGP
+        return self.do_post_request("DynamicRoutingSetting", data)
+
+    def update_dynamic_routing_setting(self, segment=0, enableOSPF=True, enableBGP=True):
+        data = {}
+        data['Segment'] = segment
+        data['EnableOSPF'] = enableOSPF
+        data['EnableBGP'] = enableBGP
+        return self.do_patch_request("DynamicRoutingSetting", data)
+
+    def delete_dynamic_routing_setting(self, segment=0):
+        data = {}
+        data['Segment'] = segment
+        return self.do_delete_request("DynamicRoutingSetting", data)
