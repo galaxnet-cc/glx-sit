@@ -16,21 +16,23 @@ class TestRestVppConsistency1DConfigureFilter(unittest.TestCase):
 
     def test_get_configobjs_and_stateobjs_filter(self):
         # 创建link
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, wan_name="WAN1",
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=1, wan_name="WAN1",
                                                          remote_ip="192.168.12.2", remote_port=2288,
                                                          tunnel_id=12,
                                                          route_label="0x1200010",
                                                          tag1="kk",
                                                          tag2="1")
+        glx_assert(201 == resp.status_code)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 1" in out)
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=2, wan_name="WAN1",
-                                                         remote_ip="192.168.12.2", remote_port=2288,
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=2, wan_name="WAN1",
+                                                         remote_ip="192.168.12.3", remote_port=2288,
                                                          tunnel_id=12,
                                                          route_label="0x1200010",
                                                          tag1="kk",
                                                          tag2="2")
+        glx_assert(201 == resp.status_code)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 2" in out)
@@ -267,15 +269,32 @@ class TestRestVppConsistency1DConfigureFilter(unittest.TestCase):
         glx_assert("No glx tunnel configured" in out)
 
     def test_update_links_config_filter(self):
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, tag1="kk")
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=1, wan_name="WAN1",
+                                                         remote_ip="192.168.12.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010",
+                                                         tag1="kk")
+        glx_assert(201 == resp.status_code)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 1" in out)
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=2, tag1="2")
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=2, wan_name="WAN1",
+                                                         remote_ip="192.168.12.3", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010",
+                                                         tag1="2")
+        glx_assert(201 == resp.status_code)
+        glx_assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 2" in out)
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=3, tag1="kk")
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=3, wan_name="WAN1",
+                                                         remote_ip="192.168.12.4", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010",
+                                                         tag1="kk")
+        glx_assert(201 == resp.status_code)
+        glx_assert(err == '')
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 3" in out)

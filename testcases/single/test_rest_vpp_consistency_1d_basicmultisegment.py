@@ -146,7 +146,7 @@ class TestRestVppConsistency1DBasicMultiSegment(unittest.TestCase):
         # 重启vpp
         _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl restart vpp")
         glx_assert(err == "")
-        time.sleep(10)
+        time.sleep(15)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"ip netns exec ctrl-ns-seg-1 ip addr")
         glx_assert(err == "")

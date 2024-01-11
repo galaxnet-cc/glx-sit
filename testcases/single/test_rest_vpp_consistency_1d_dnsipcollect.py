@@ -12,15 +12,15 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         self.topo = Topo1D()
 
     def tearDown(self):
-        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset flush")
+        self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "ipset flush")
 
     def test_glx_segment_dnsipcollect_enable(self):
         # 开启 segment DnsIpCollectEnable
         self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True)
         # 向set中写入数据
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 1.1.1.0/24")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "ipset add local 1.1.1.0/24")
         glx_assert(err == '')
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "ipset add acc 2.2.2.0/24")
         glx_assert(err == '')
         # 增加一点延迟以便go处理完毕
         time.sleep(5)
@@ -32,9 +32,9 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(err == "")
         glx_assert("2.2.2.0/24" in out)
         # 从set中删除数据
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset del local 1.1.1.0/24")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns","ipset del local 1.1.1.0/24")
         glx_assert(err == '')
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset del acc 2.2.2.0/24")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns","ipset del acc 2.2.2.0/24")
         glx_assert(err == '')
         # 增加一点延迟以便go处理完毕
         time.sleep(5)
@@ -46,15 +46,15 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         glx_assert(err == "")
         glx_assert("2.2.2.0/24" not in out)
         # 向set中写入数据
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add local 1.1.1.0/24")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns","ipset add local 1.1.1.0/24")
         glx_assert(err == '')
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 2.2.2.0/24")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns","ipset add acc 2.2.2.0/24")
         glx_assert(err == '')
         # 重启vpp，模拟vpp crash场景
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("sudo systemctl restart vpp")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl restart vpp")
         glx_assert(err == '')
         # 等待fwdmd配置
-        time.sleep(10)
+        time.sleep(15)
         # 检测路由是否已经重新配置
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
         glx_assert(err == "")
@@ -62,8 +62,22 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
         glx_assert(err == "")
         glx_assert("2.2.2.0/24" in out)
-        # 关闭 segment DnsIpCollectEnable
-        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False, dns_ip_collect_enable=False)
+        # 关闭fwdmd和vpp
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl stop fwdmd")
+        glx_assert(err == "")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl stop vpp")
+        glx_assert(err == "")
+        # 手动清空ipset
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "ipset flush local")
+        glx_assert(err == "")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "ipset flush acc")
+        glx_assert(err == "")
+        # 启动vpp和fwdmd，等待配置
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl start vpp")
+        glx_assert(err == "")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl start fwdmd")
+        glx_assert(err == "")
+        time.sleep(15)
         # 检测路由是否已删除
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 0")
         glx_assert(err == "")
@@ -71,6 +85,9 @@ class TestRestVppConsistency1DDnsIpCollect(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("vppctl show ip fib table 128")
         glx_assert(err == "")
         glx_assert("2.2.2.0/24" not in out)
+        # 关闭 segment DnsIpCollectEnable
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False, dns_ip_collect_enable=False)
+
 
     def test_glx_segment_delivery_batch_route(self):
         # 获取chnroute.txt中的路由数目

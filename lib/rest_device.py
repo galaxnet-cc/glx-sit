@@ -887,6 +887,7 @@ class RestDevice:
                     timeout=1,
                     fail_threshold=5,
                     ok_threshold=10,
+                    probe_only=False,
                     tag1="",
                     tag2=""):
         data = {}
@@ -900,6 +901,7 @@ class RestDevice:
         data["Timeout"] = timeout
         data["FailThreshold"] = fail_threshold
         data["OkThreshold"] = ok_threshold
+        data["ProbeOnly"] = probe_only
         data["Tag1"] = tag1
         data["Tag2"] = tag2
         return self.do_post_request("Probe", data)
@@ -915,6 +917,7 @@ class RestDevice:
                     timeout=1,
                     fail_threshold=5,
                     ok_threshold=10,
+                    probe_only=False,
                     tag1="",
                     tag2=""):
         data = {}
@@ -928,6 +931,7 @@ class RestDevice:
         data["Timeout"] = timeout
         data["FailThreshold"] = fail_threshold
         data["OkThreshold"] = ok_threshold
+        data["ProbeOnly"] = probe_only
         data["Tag1"] = tag1
         data["Tag2"] = tag2
         return self.do_patch_request("Probe", data)

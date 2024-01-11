@@ -15,11 +15,13 @@ class TestRestVppConsistency1DStatsCollect(unittest.TestCase):
 
     def test_glx_link_get_stats_from_vpp(self):
         # 创建link
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=1)
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=1)
+        glx_assert(201 == resp.status_code)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 1" in out)
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=2)
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=2, is_tcp=True)
+        glx_assert(201 == resp.status_code)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 2" in out)
@@ -54,11 +56,13 @@ class TestRestVppConsistency1DStatsCollect(unittest.TestCase):
 
     def test_glx_tunnel_get_stats_from_vpp(self):
         # 由于tunnel未创建link时较默认数据无变动，所以为tunnel创建link
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=1, tunnel_id=1)
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=1, tunnel_id=1)
+        glx_assert(201 == resp.status_code)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 1" in out)
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=2, tunnel_id=2)
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=2, tunnel_id=2, is_tcp=True)
+        glx_assert(201 == resp.status_code)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
         glx_assert(err == '')
         glx_assert(f"link-id 2" in out)
