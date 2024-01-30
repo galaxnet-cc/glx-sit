@@ -1114,3 +1114,40 @@ class RestDevice:
         data = {}
         data['Segment'] = segment
         return self.do_delete_request("DynamicRoutingSetting", data)
+
+    def create_flowstats_setting(self, name="default", segment=0, collector_address="169.254.100.2", collector_src_address="169.254.100.1", active_interval=15, age_interval=120):
+        data = {}
+        data['Name'] = name
+        data['Segment'] = segment
+        data['CollectorAddress'] = collector_address
+        data['CollectorSrcAddress'] = collector_src_address
+        data['ActiveInterval'] = active_interval
+        data['AgeInterval'] = age_interval
+        return self.do_post_request("FlowStatsSetting", data)
+
+    def update_flowstats_setting(self, name="default", segment=0, collector_address="169.254.100.2", collector_src_address="169.254.100.1", active_interval=15, age_interval=120):
+        data = {}
+        data['Name'] = name
+        data['Segment'] = segment
+        data['CollectorAddress'] = collector_address
+        data['CollectorSrcAddress'] = collector_src_address
+        data['ActiveInterval'] = active_interval
+        data['AgeInterval'] = age_interval
+        return self.do_patch_request("FlowStatsSetting", data)
+
+    def delete_flowstats_setting(self, name="default"):
+        data = {}
+        data['name'] = name
+        return self.do_delete_request("FlowStatsSetting", data)
+
+    def enable_disable_ipfix_collector(self, enable=True, output_path=""):
+        data = {}
+        data['Enable'] = enable
+        data['OutputPath'] = output_path
+        return self.do_action_request("EnableIPFIXCollector", data)
+
+    def flush_ipfix_collector_records(self, output_path=""):
+        data = {}
+        data['OutputPath'] = output_path
+        return self.do_action_request("FlushIPFIXCollectorRecords", data)
+
