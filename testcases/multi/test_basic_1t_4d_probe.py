@@ -771,6 +771,47 @@ class TestBasic1T4DProbe(unittest.TestCase):
         self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"rm /tmp/digdnswan1.conf")
         self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"rm /tmp/digdnswan2.conf")
 
+    def test_probe_only(self):
+        # bizpol，强制全部流量走WAN1
+        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="0.0.0.0",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN1",
+                                                       protocol=0,
+                                                       direct_enable=True)
+        glx_assert(201 == resp.status_code)
+
+        # 配置probe only，访问一个不存在的ip
+        resp = self.topo.dut1.get_rest_device().create_probe(name="probe1",                                                             
+                                                      type="WAN",
+                                                      if_name="WAN1",
+                                                      mode="CMD_PING",
+                                                      dst_addr="1.1.1.1",
+                                                      dst_port=1111,
+                                                      interval=1,
+                                                      timeout=1,
+                                                      fail_threshold=2,
+                                                      ok_threshold=2,
+                                                      probe_only=True,
+                                                      tag1="",
+                                                      tag2="")
+        glx_assert(201 == resp.status_code)
+        time.sleep(10)
+
+        # 不影响正常的nat转发
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.22.1 -c 100 -i 0.01")
+        glx_assert(err == '')
+        glx_assert("100% packet loss" not in out)
+        time.sleep(5)
+
+        # 清理环境
+        resp = self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+        glx_assert(410 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().delete_probe(name="probe1")
+        glx_assert(410 == resp.status_code)
+
 if __name__ == '__main__':
     unittest.main()
  

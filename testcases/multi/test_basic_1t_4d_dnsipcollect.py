@@ -334,5 +334,32 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
             f"redis-cli keys " + key)
         glx_assert(err == '')
 
+        # 测试重启vpp
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl restart vpp")
+        glx_assert(err == '')
+        time.sleep(15)
+
+        # ipset add acc table
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ip netns exec ctrl-ns ipset add acc 1.1.1.1/32")
+        # ensure get collected.
+        time.sleep(0.1)
+
+        # 检测dut4上是否有nat session
+        self.topo.tst.get_ns_cmd_result("dut1", "ping 1.1.1.1 -c 5 -i 0.05")
+        out, err = self.topo.dut4.get_vpp_ssh_device().get_cmd_result("vppctl show nat44 sessions")
+        glx_assert(err == '')
+        glx_assert("1.1.1.1" in out)
+
+        time.sleep(2)
+        key = "DnsCollectedRouteContext#0#1.1.1.1/32"
+        cmd = f"redis-cli hgetall {key}"  
+        # 检测redis中是否有ip过期时间
+        fields, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            cmd)
+
+        glx_assert(err == '')
+        glx_assert("IpExpiredTime" in fields)
+
+
 if __name__ == '__main__':
     unittest.main()
