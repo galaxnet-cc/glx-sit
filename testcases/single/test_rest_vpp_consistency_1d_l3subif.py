@@ -324,3 +324,38 @@ class TestRestVppConsistency1DL3SubIf(unittest.TestCase):
         result = self.topo.dut1.get_rest_device().delete_l3subif("WAN1", 100)
         # should be failed because link refer to it.
         glx_assert(result.status_code == 410)
+
+    def test_l3subif_with_dns_intercept(self):
+        # enable segment acc.
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_ip_collect_enable=True)
+        glx_assert(result.status_code == 200)
+
+        # create a sub if.
+        result = self.topo.dut1.get_rest_device().create_l3subif("WAN1", 100, 100)
+        # should be ok to create a l3sub if.
+        glx_assert(result.status_code == 201)
+
+        # enable segment dns intercept should be ok.
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True, dns_intercept_enable=True, dns_ip_collect_enable=True)
+        glx_assert(result.status_code == 200)
+        # sub if should have intercept node enabled.
+        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int feat {wan1VppIf}.100")
+        glx_assert(err == '')
+        glx_assert(f"dns-intercept" in out)
+
+        # disable segment acc and all the acc stuffs.
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
+        glx_assert(result.status_code == 200)
+        # sub if should have intercept node enabled.
+        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"vppctl show int feat {wan1VppIf}.100")
+        glx_assert(err == '')
+        glx_assert(f"dns-intercept" not in out)
+
+        # delete the l3subif.
+        result = self.topo.dut1.get_rest_device().delete_l3subif("WAN1", 100)
+        # should be failed because link refer to it.
+        glx_assert(result.status_code == 410)
