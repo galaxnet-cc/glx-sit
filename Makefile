@@ -24,17 +24,27 @@ test-multi-tcp:
 
 test-multi-glx-nego:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_glx_nego.py
+
 test-multi-vrrp:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_vrrp.py
+
 test-multi-tunnel-config-sync:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_tunnel_config_sync.py
+
 test-multi-glx-trace:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_glx_trace.py
+
 test-multi-custom-acc-region:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_custom_acc_region.py
+
 test-multi-custom-dns-acc-region:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_custom_dns_acc_region.py
 	
+test-multi-flowstats:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_flowstats.py
+
+test-multi-flowstats-onearm:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_flowstats_onearm.py
 
 # sjs
 # test-multi-auto-dns:
@@ -140,6 +150,9 @@ test-single-custom-acc-region:
 test-single-custom-dns-acc-region:
 	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_custom_dns_acc_region.py
 
+test-single-flowstats:
+	python3 -m unittest -v testcases/single/test_rest_vpp_consistency_1d_flowstats.py
+
 # 验证所有多节点用例目标
 # 这里定义成依赖方式，以方便调试因某个用例导致的全量用例无法执行通过。
 # 1025: dynroute不太稳定，暂时先不运行这部分功能用例，不加入依赖。
@@ -149,5 +162,6 @@ MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dn
 MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
 MTESTS += test-multi-vrrp test-multi-acc-ip-binding test-multi-ip6 test-multi-p2p test-multi-tunnel-config-sync
 MTESTS += test-multi-glx-trace test-multi-custom-acc-region test-multi-custom-dns-acc-region test-multi-dynroute
+MTESTS += test-multi-flowstats test-multi-flowstats-onearm
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"
