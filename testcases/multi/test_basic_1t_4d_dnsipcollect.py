@@ -238,7 +238,7 @@ class TestBasic1T4DDnsIpCollect(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("2.2.2.2" in out)
 
-    def dns_ip_collect_timeout(self):
+    def test_dns_ip_collect_timeout(self):
         # dut1 (acc cpe) 准备
         # 1. 开启acc
         # 2. 设置加速ip

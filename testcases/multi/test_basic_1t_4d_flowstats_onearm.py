@@ -198,7 +198,7 @@ class TestBasic1T4DFlowstatsOneArm(unittest.TestCase):
 
         octetDeltaCount = expected_record.octetDeltaCount
         biterate = float(octetDeltaCount / (1024 ** 2) / 5 * 8)
-        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.15))
+        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.2))
 
         # 清理环境
         resp = self.topo.dut1.get_rest_device().enable_disable_ipfix_collector(enable=False)

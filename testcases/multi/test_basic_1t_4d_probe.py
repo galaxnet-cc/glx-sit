@@ -191,16 +191,6 @@ class TestBasic1T4DProbe(unittest.TestCase):
 
     # mandatory wan1, mainly for auto switch
     def test_probe_with_mandatory_bizpol(self):
-        # bizpol
-        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
-                                                       src_prefix="192.168.1.0/24",
-                                                       dst_prefix="192.168.22.0/24",
-                                                       steering_type=1,
-                                                       steering_mode=1, # mandatory
-                                                       steering_interface="WAN1",
-                                                       protocol=0,
-                                                       direct_enable=True)
-
         # create probe
         self.topo.dut1.get_rest_device().create_probe(name="probe1",                                                             
                                                       type="WAN",
@@ -214,6 +204,16 @@ class TestBasic1T4DProbe(unittest.TestCase):
                                                       ok_threshold=2,
                                                       tag1="",
                                                       tag2="")
+        # bizpol
+        self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.22.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=1, # mandatory
+                                                       steering_interface="WAN1",
+                                                       protocol=0,
+                                                       direct_enable=True)
+
         time.sleep(10)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -772,23 +772,12 @@ class TestBasic1T4DProbe(unittest.TestCase):
         self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"rm /tmp/digdnswan2.conf")
 
     def test_probe_only(self):
-        # bizpol，强制全部流量走WAN1
-        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
-                                                       src_prefix="192.168.1.0/24",
-                                                       dst_prefix="0.0.0.0",
-                                                       steering_type=1,
-                                                       steering_mode=1,
-                                                       steering_interface="WAN1",
-                                                       protocol=0,
-                                                       direct_enable=True)
-        glx_assert(201 == resp.status_code)
-
         # 配置probe only，访问一个不存在的ip
         resp = self.topo.dut1.get_rest_device().create_probe(name="probe1",                                                             
                                                       type="WAN",
                                                       if_name="WAN1",
                                                       mode="CMD_PING",
-                                                      dst_addr="1.1.1.1",
+                                                      dst_addr="5.5.5.5",
                                                       dst_port=1111,
                                                       interval=1,
                                                       timeout=1,
@@ -798,6 +787,18 @@ class TestBasic1T4DProbe(unittest.TestCase):
                                                       tag1="",
                                                       tag2="")
         glx_assert(201 == resp.status_code)
+
+        # bizpol，强制全部流量走WAN1
+        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       steering_type=1,
+                                                       steering_mode=1,
+                                                       steering_interface="WAN1",
+                                                       protocol=0,
+                                                       direct_enable=True)
+        glx_assert(201 == resp.status_code)
+
         time.sleep(10)
 
         # 不影响正常的nat转发

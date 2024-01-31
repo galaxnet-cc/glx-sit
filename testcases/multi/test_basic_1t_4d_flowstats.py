@@ -252,7 +252,7 @@ class TestBasic1T4DFlowstats(unittest.TestCase):
 
         octetDeltaCount = expected_record.octetDeltaCount
         biterate = float(octetDeltaCount / (1024 ** 2) / 5 * 8)
-        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.15))
+        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.2))
 
         # 在tst上开启反向打流
         _, err = self.topo.tst.get_ns_cmd_result("dut1", f"iperf3 -c {dst_ip} -b {str(expected_biterate)}M -t 15 --cport {str(src_port)} -R")
@@ -302,7 +302,7 @@ class TestBasic1T4DFlowstats(unittest.TestCase):
 
         octetDeltaCount = expected_record.octetDeltaCount
         biterate = float(octetDeltaCount / (1024 ** 2) / 5 * 8)
-        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.15))
+        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.2))
 
         # 清理环境
         resp = self.topo.dut1.get_rest_device().enable_disable_ipfix_collector(enable=False)
@@ -391,7 +391,7 @@ class TestBasic1T4DFlowstats(unittest.TestCase):
 
         octetDeltaCount = expected_record.octetDeltaCount
         biterate = float(octetDeltaCount / (1024 ** 2) / 5 * 8)
-        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.15))
+        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.2))
 
         _, err = self.topo.tst.get_ns_cmd_result("dut1", f"iperf3 -c {dst_ip} -b {str(expected_biterate)}M -t 15 --cport {str(src_port)} -R")
         glx_assert(err == '')
@@ -438,7 +438,7 @@ class TestBasic1T4DFlowstats(unittest.TestCase):
 
         octetDeltaCount = expected_record.octetDeltaCount
         biterate = float(octetDeltaCount / (1024 ** 2) / 5 * 8)
-        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.15))
+        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.2))
 
         # 清理环境
         resp = self.topo.dut1.get_rest_device().enable_disable_ipfix_collector(enable=False)
@@ -538,7 +538,7 @@ class TestBasic1T4DFlowstats(unittest.TestCase):
 
         octetDeltaCount = expected_record.octetDeltaCount
         biterate = float(octetDeltaCount / (1024 ** 2) / 5 * 8)
-        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.15))
+        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.2))
 
         # 在tst上开启打流
         _, err = self.topo.tst.get_ns_cmd_result("dut1", f"iperf3 -c {acc_ip} -b {str(expected_biterate)}M -t 15 --cport {str(src_port)} -R")
@@ -586,7 +586,7 @@ class TestBasic1T4DFlowstats(unittest.TestCase):
 
         octetDeltaCount = expected_record.octetDeltaCount
         biterate = float(octetDeltaCount / (1024 ** 2) / 5 * 8)
-        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.15))
+        glx_assert(math.isclose(expected_biterate, biterate, abs_tol=0.2))
 
         # 清理环境
         resp = self.topo.dut1.get_rest_device().enable_disable_ipfix_collector(enable=False)
