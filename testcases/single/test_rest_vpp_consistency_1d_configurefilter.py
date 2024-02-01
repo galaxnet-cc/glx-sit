@@ -725,3 +725,56 @@ class TestRestVppConsistency1DConfigureFilter(unittest.TestCase):
         # 删除
         resp = self.topo.dut1.get_rest_device().delete_segment(segment_id=2)
         glx_assert(resp.status_code == 410)
+
+    def test_update_large_scale_edge_routes_config_filter(self):
+        # enable acc.
+        self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+
+        # 通过批量方式推送大量路由，并统计时间
+        data={}
+        data["IgnoreNotSpecifiedTable"] = True
+        edgerouteTable = {}
+        edgerouteTable["Table"] = "EdgeRoute"
+        # 可能不同的组合在vpp下发的性能并不一致，这里先简单匹配一下。
+        # 创建大量路由192.x.y.0/24。
+        # 约64k路由。
+        edgerouteTable["Items"] = []
+        for x in range(1, 255):
+            for y in range(1, 255):
+                edgeroute1 = {}
+                edgeroute1["Segment"] = 0
+                edgeroute1["DestPrefix"] = "192.{0}.{1}.0/24".format(x, y)
+                edgeroute1["RouteProtocol"] = "overlay"
+                edgeroute1["IsAcc"] = True
+                edgeroute1["RouteLabel"] = "0x222"
+                edgeroute1["Tag1"] = "lsroute"
+                edgerouteTable["Items"].append(edgeroute1)
+        data["Tables"] = []
+        data["Tables"].append(edgerouteTable)
+        start_add = time.time()
+        resp = self.topo.dut1.get_rest_device().update_config_action(data)
+        end_add = time.time()
+        print("batch add large scale route time cost {0}".format(end_add - start_add))
+        # 暂定下发6w条sla为80s，实测为50s
+        glx_assert((end_add - start_add) < 80)
+        glx_assert(resp.status_code == 200)
+
+        # 删除，通过匹配tag但设置为空，触发全量路由删除。
+        data={}
+        data["IgnoreNotSpecifiedTable"] = True
+        edgerouteTable = {}
+        edgerouteTable["Table"] = "EdgeRoute"
+        edgerouteTable["Filters"] = "Filter[Tag1][eq]=lsroute"
+        data["Tables"] = []
+        data["Tables"].append(edgerouteTable)
+        start_del = time.time()
+        resp = self.topo.dut1.get_rest_device().update_config_action(data)
+        end_del = time.time()
+        print("batch del large scale route time cost {0}".format(end_del - start_del))
+        # 暂定下发6w条sla为80s，实测为50s
+        glx_assert((end_del - start_del) < 80)
+        glx_assert(resp.status_code == 200)
+
+        # 关闭acc应该成功
+        result = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=False)
+        glx_assert(result.status_code == 200)
