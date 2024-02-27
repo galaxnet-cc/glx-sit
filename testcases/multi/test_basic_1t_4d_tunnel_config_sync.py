@@ -122,7 +122,6 @@ class Testbasic1T4DTunnelConfigSync(unittest.TestCase):
 
         # 删除dut2/3资源
         self.topo.dut2.get_rest_device().delete_glx_tunnel(tunnel_id=23)
-        self.topo.dut3.get_rest_device().delete_glx_tunnel(tunnel_id=23)
         # 创建dut2->dut3的link
         self.topo.dut2.get_rest_device().delete_glx_link(link_id=23)
 
@@ -182,6 +181,7 @@ class Testbasic1T4DTunnelConfigSync(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("cfg-state: config_synced" in out)
         glx_assert("cfg-ver: 2" in out)
+        glx_assert("passive-mld-enable: 1" in out)
         # check passive side
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
         glx_assert(err == '')
@@ -199,13 +199,30 @@ class Testbasic1T4DTunnelConfigSync(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("cfg-state: config_synced" in out)
         glx_assert("cfg-ver: 2" in out)
+        glx_assert("passive-fec-enable: 1" in out)
         # check passive side
         out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
         glx_assert(err == '')
         glx_assert("fec-enable: 1" in out)
         glx_assert("cfg-ver: 2" in out)
 
-
+    def test_02_passive_flow_link_learning(self):
+        # check dut1 -> dut2 tunnel
+        # check active side
+        tunnel_id = 12
+        resp = self.topo.dut1.get_rest_device().update_glx_tunnel(tunnel_id, passive_flow_link_learning_enable=True);
+        glx_assert(resp.status_code == 200)
+        time.sleep(5)
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
+        glx_assert(err == '')
+        glx_assert("cfg-state: config_synced" in out)
+        glx_assert("cfg-ver: 2" in out)
+        glx_assert("passive-flow-link-learning-enable: 1" in out)
+        # check passive side
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
+        glx_assert(err == '')
+        glx_assert("flow-link-learning-enable: 1" in out)
+        glx_assert("cfg-ver: 2" in out)
 
 
         
