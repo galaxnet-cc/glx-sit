@@ -46,6 +46,9 @@ test-multi-flowstats:
 test-multi-flowstats-onearm:
 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_flowstats_onearm.py
 
+test-multi-tunnel-flow-link-learning:
+	python3 -m unittest -v testcases/multi/test_basic_1t_4d_tunnel_flow_link_learning.py
+
 # sjs
 # test-multi-auto-dns:
 # 	python3 -m unittest -v testcases/multi/test_basic_1t_4d_autodns.py
@@ -162,6 +165,6 @@ MTESTS += test-multi-segment-detection test-multi-dhcp-and-dns test-multi-wan-dn
 MTESTS += test-multi-sched test-multi-qos-level test-multi-probe test-multi-onearm test-multi-bizpol-qos
 MTESTS += test-multi-vrrp test-multi-acc-ip-binding test-multi-ip6 test-multi-p2p test-multi-tunnel-config-sync
 MTESTS += test-multi-glx-trace test-multi-custom-acc-region test-multi-custom-dns-acc-region test-multi-dynroute
-MTESTS += test-multi-flowstats test-multi-flowstats-onearm
+MTESTS += test-multi-flowstats test-multi-flowstats-onearm test-multi-tunnel-flow-link-learning
 test-multi-all: $(MTESTS)
 	echo "test-multi-all-finished"
