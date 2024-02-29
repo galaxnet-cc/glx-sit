@@ -267,7 +267,7 @@ class RestDevice:
         bridge_data['BviIp6AddrWithPrefix'] = bvi_ip6_w_prefix
         return self.do_patch_request("Bridge", bridge_data)
 
-    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff", is_tcp=False, no_encryption=False, tag1="", tag2=""):
+    def create_glx_link(self, link_id, wan_name="WAN1", remote_ip="127.0.0.1", remote_port=2288, tunnel_id=0, route_label="0xffffffffff", is_tcp=False, no_encryption=False, steering_label=0, tag1="", tag2=""):
         link_data = {}
         link_data['LinkId'] = link_id
         link_data['LocalWanName'] = wan_name
@@ -277,26 +277,29 @@ class RestDevice:
         link_data['RouteLabel'] = route_label
         link_data['IsTcp'] = is_tcp
         link_data['NoEncryption'] = no_encryption
+        link_data['SteeringLabel'] = steering_label
         link_data['Tag1'] = tag1
         link_data['Tag2'] = tag2
         return self.do_post_request("Link", link_data)
 
-    def update_glx_link(self, link_id, qos_level=0):
+    def update_glx_link(self, link_id, qos_level=0, steering_label=0):
         link_data = {}
         link_data['LinkId'] = link_id
         link_data['QosLevel'] = qos_level
+        link_data['SteeringLabel'] = steering_label
         return self.do_patch_request("Link", link_data)
 
-    def update_glx_link_wan(self, link_id, wan_name="WAN1"):
+    def update_glx_link_wan(self, link_id, wan_name="WAN1", steering_label=0):
         link_data = {}
         link_data['LinkId'] = link_id
         link_data['LocalWanName'] = wan_name
         return self.do_patch_request("Link", link_data)
 
-    def update_glx_link_remote_ip(self, link_id, remote_ip="127.0.0.1"):
+    def update_glx_link_remote_ip(self, link_id, remote_ip="127.0.0.1", steering_label=0):
         link_data = {}
         link_data['LinkId'] = link_id
         link_data['RemoteIp'] = remote_ip
+        link_data['SteeringLabel'] = steering_label
         return self.do_patch_request("Link", link_data)
 
     def delete_glx_link(self, link_id):
@@ -496,7 +499,7 @@ class RestDevice:
 
     def create_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
                       direct_enable=False,
-                      steering_type=0, steering_mode=0, steering_interface="",
+                      steering_type=0, steering_mode=0, steering_interface="", steering_link_steering_label=0,
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
                       src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group="",
                       src_port_first=0, src_port_last=65535,
@@ -517,6 +520,7 @@ class RestDevice:
         bizpol_data["SteeringType"] = steering_type
         bizpol_data["SteeringMode"] = steering_mode
         bizpol_data["SteeringInterface"] = steering_interface
+        bizpol_data["SteeringLinkSteeringLabel"] = steering_link_steering_label
         bizpol_data["AppId"] = app_id
         bizpol_data["OverlayEnable"] = overlay_enable
         bizpol_data["AccEnable"] = acc_enable
@@ -541,7 +545,7 @@ class RestDevice:
 
     def update_bizpol(self, name, priority, src_prefix, dst_prefix, protocol, app_id=65535,
                       direct_enable=False,
-                      steering_type=0, steering_mode=0, steering_interface="",
+                      steering_type=0, steering_mode=0, steering_interface="", steering_link_steering_label=0,
                       overlay_enable=False, acc_enable=False, route_label="0xffffffffff",
                       src_addr_group="", dst_addr_group="", src_port_group="", dst_port_group="",
                       src_port_first=0, src_port_last=65535,
@@ -562,6 +566,7 @@ class RestDevice:
         bizpol_data["SteeringType"] = steering_type
         bizpol_data["SteeringMode"] = steering_mode
         bizpol_data["SteeringInterface"] = steering_interface
+        bizpol_data["SteeringLinkSteeringLabel"] = steering_link_steering_label
         bizpol_data["AppId"] = app_id
         bizpol_data["OverlayEnable"] = overlay_enable
         bizpol_data["AccEnable"] = acc_enable

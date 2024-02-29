@@ -413,8 +413,50 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {wan1VppIf} | grep {wan1VppIf} | awk '{{print $2}}'")
         # remove the possible extra newline.
         ifindex = ifindex.rstrip()
-        glx_assert(f'[nat]  [link-steering type 1 mode 1 steering-sw-if-index {ifindex}]' in out)
+        glx_assert(f'[nat]  [link-steering type 0 mode 1 steering-sw-if-index {ifindex}]' in out)
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
+
+    def test_glx_bizpol_nat_config_link_steering_label_steering(self):
+        link_id = 1
+        steering_label = 1
+        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_sit", priority=1,
+                                                       src_prefix="192.168.89.0/24",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       direct_enable=True,
+                                                       steering_type=2,
+                                                       steering_mode=1,
+                                                       steering_link_steering_label=steering_label)
+        glx_assert(resp.status_code == 201)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
+        glx_assert(err == '')
+        glx_assert('192.168.89.0/24' in out)
+        glx_assert('[nat]' in out)
+        glx_assert('steering' in out)
+        glx_assert(f'[nat]  [link-steering type 1 mode 1 steering-link-steering-label {steering_label}]' in out)
+
+        steering_label = 2
+        resp = self.topo.dut1.get_rest_device().update_bizpol(name="bizpol_sit", priority=1,
+                                                       src_prefix="192.168.89.0/24",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       direct_enable=True,
+                                                       steering_type=2,
+                                                       steering_mode=1,
+                                                       steering_link_steering_label=steering_label)
+        glx_assert(resp.status_code == 200)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
+        glx_assert(err == '')
+        glx_assert('192.168.89.0/24' in out)
+        glx_assert('[nat]' in out)
+        glx_assert('steering' in out)
+        glx_assert(f'[nat]  [link-steering type 1 mode 1 steering-link-steering-label {steering_label}]' in out)
+
+        resp = self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
+        glx_assert(resp.status_code == 410)
+
 
     def test_glx_bizpol_nat_pppoe_mode_switch(self):
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_sit", priority=1,
