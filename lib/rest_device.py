@@ -1156,4 +1156,9 @@ class RestDevice:
         data = {}
         data['OutputPath'] = output_path
         return self.do_action_request("FlushIPFIXCollectorRecords", data)
+    
+    def close_fd(self, fd):
+        data = {}
+        data['Fd'] = fd
+        return self.do_action_request("CloseFd", data)
 
