@@ -340,6 +340,48 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(f'{wan1VppIf}' in out)
 
+    def test_change_pppoe_when_link_exists(self):
+        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
+        
+        ifIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {wan1VppIf} | grep {wan1VppIf} | awk '{{print $2}}'")
+        glx_assert(err == '')
+
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
+        glx_assert(resp.status_code == 200)
+
+        pppoxIfIndex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int pppox0 | grep pppox0 | awk '{{print $2}}'")
+        glx_assert(err == '')
+
+        # 建两条link，保证每条link上对应的WAN口都被刷新
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=1)
+        glx_assert(resp.status_code == 201)
+        resp = self.topo.dut1.get_rest_device().create_glx_link(link_id=2, remote_ip="100.64.0.1")
+        glx_assert(resp.status_code == 201)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link id 1")
+        glx_assert(err == '')
+        glx_assert(f"wan-sw-if-index {pppoxIfIndex}" in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link id 2")
+        glx_assert(err == '')
+        glx_assert(f"wan-sw-if-index {pppoxIfIndex}" in out)
+
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+        glx_assert(resp.status_code == 200)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link id 1")
+        glx_assert(err == '')
+        glx_assert(f"wan-sw-if-index {ifIndex}" in out)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link id 2")
+        glx_assert(err == '')
+        glx_assert(f"wan-sw-if-index {ifIndex}" in out)
+
+        resp = self.topo.dut1.get_rest_device().delete_glx_link(link_id=1)
+        glx_assert(resp.status_code == 410)
+        resp = self.topo.dut1.get_rest_device().delete_glx_link(link_id=2)
+        glx_assert(resp.status_code == 410)
+
     def test_pppoe_address_subscribe(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         pppoeLink = "pppoe-WAN1"
