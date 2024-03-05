@@ -457,6 +457,26 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         resp = self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
         glx_assert(resp.status_code == 410)
 
+    def test_glx_bizpol_nat_config_link_lb(self):
+        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_sit", priority=1,
+                                                       src_prefix="192.168.89.0/24",
+                                                       dst_prefix="0.0.0.0/0",
+                                                       protocol=0,
+                                                       direct_enable=True,
+                                                       steering_type=3,
+                                                       steering_mode=1)
+        glx_assert(resp.status_code == 201)
+
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
+        glx_assert(err == '')
+        glx_assert('192.168.89.0/24' in out)
+        glx_assert('[nat]' in out)
+        glx_assert('steering' in out)
+        glx_assert(f'[nat]  [link-steering type 2 mode 1]' in out)
+
+        resp = self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
+        glx_assert(resp.status_code == 410)
+
 
     def test_glx_bizpol_nat_pppoe_mode_switch(self):
         self.topo.dut1.get_rest_device().create_bizpol(name="bizpol_sit", priority=1,
