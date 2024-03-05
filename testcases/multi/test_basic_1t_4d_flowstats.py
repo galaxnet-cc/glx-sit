@@ -612,6 +612,69 @@ class TestBasic1T4DFlowstats(unittest.TestCase):
         resp = self.topo.dut4.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
         glx_assert(resp.status_code == 200)
 
+    def test_04_dpi(self):
+        output_path = "/tmp/glx-flowstats"
+        dst_ip = "192.168.4.2"
+        # 开启流统计能力
+        age_interval = 15
+
+        self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"rm -rf {output_path}")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"mkdir -p {output_path}")
+        glx_assert(err == '')
+
+        resp = self.topo.dut1.get_rest_device().create_flowstats_setting(active_interval=5, age_interval=age_interval)
+        glx_assert(201 == resp.status_code)
+
+        # 启动收集器
+        resp = self.topo.dut1.get_rest_device().enable_disable_ipfix_collector()
+        glx_assert(200 == resp.status_code)
+
+        # 等待收集器收集到模板信息
+        time.sleep(10)
+
+        # 开启dpi
+        resp = self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=True)
+        glx_assert(resp.status_code == 200)
+
+        # 在tst上发起dns请求，对应的app id为5
+        self.topo.tst.get_ns_cmd_result("dut1", "dig @192.168.4.2 www.baidu.com +tries=10")
+
+        # 等待流老化
+        time.sleep(age_interval)
+    
+        resp = self.topo.dut1.get_rest_device().flush_ipfix_collector_records(output_path=f"{output_path}/flows.json")
+        glx_assert(200 == resp.status_code)
+
+        time.sleep(1)
+        # 读取流数据
+        data, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"cat {output_path}/flows.json")
+        glx_assert(err == '')
+
+        # 查找流信息，匹配五元组
+        exported_flow_list = lib.flowstats_record.parse_json_to_struct(data)
+        expected_record = None
+        for exported_flow in exported_flow_list:
+            for record in exported_flow.records:
+                # 检查五元组
+                if (record.sourceIPv4Address == "192.168.1.2" and record.destinationIPv4Address == dst_ip) and  \
+                (record.protocolIdentifier == 17 and record.destinationTransportPort == 53):
+                    expected_record = record
+                    break 
+            if expected_record is not None:
+                break
+
+        # 检查自定义信息
+        glx_assert(expected_record is not None) 
+        glx_assert(expected_record.glxAppId == 5)
+
+        # 清理环境
+        resp = self.topo.dut1.get_rest_device().enable_disable_ipfix_collector(enable=False)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().delete_flowstats_setting()
+        glx_assert(410 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().update_dpi_setting(dpi_enable=False)
+        glx_assert(200 == resp.status_code)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -286,9 +286,6 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         # 此时不应当再丢包
         glx_assert("0% packet loss" in out)
 
-        # 删除link
-        self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
-
         time.sleep(10)
 
         # dut1切到static
@@ -300,12 +297,6 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
         # dut1网络配置
         self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN3", "dut1", "dut1")
 
-        # 创建1->2 link
-        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN3",
-                                                         remote_ip="20.20.20.2", remote_port=2288,
-                                                         tunnel_id=12,
-                                                         route_label="0x1200010")
-        
         # 等待link up
         time.sleep(60)
 
@@ -813,6 +804,109 @@ class TestBasic1T4DWanDynAddr(unittest.TestCase):
 
         _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
         glx_assert(err == '')
+
+    def test_change_pppoe_to_static_with_main_interface_peer_static(self):
+        # dut1网络配置
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN3", "dut1", "dut1")
+
+        # dut2网络配置
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN4", "20.20.20.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_gw("WAN4", "20.20.20.1")
+
+        # 创建1->2 link
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN3",
+                                                         remote_ip="20.20.20.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+
+        # 等待link up
+        # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
+        # 考虑pppoe地址同步到fwdmd，增加5s
+        time.sleep(30)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # dut1切到static
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN3", "11.11.11.2/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_gw("WAN3", "11.11.11.1")
+
+        time.sleep(10)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # 删除link，新测试例需重配置
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+
+        time.sleep(10)
+
+        # 恢复默认网络配置
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
+
+    def test_change_static_to_pppoe_with_main_interface_peer_static(self):
+        # dut1切到static
+        self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN3", "11.11.11.2/24")
+        self.topo.dut1.get_rest_device().set_logical_interface_static_gw("WAN3", "11.11.11.1")
+
+        # dut2网络配置
+        self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN4", "20.20.20.2/24")
+        self.topo.dut2.get_rest_device().set_logical_interface_static_gw("WAN4", "20.20.20.1")
+
+        # 创建1->2 link
+        self.topo.dut1.get_rest_device().create_glx_link(link_id=12, wan_name="WAN3",
+                                                         remote_ip="20.20.20.2", remote_port=2288,
+                                                         tunnel_id=12,
+                                                         route_label="0x1200010")
+        time.sleep(10)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # dut1网络配置
+        self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN3", "dut1", "dut1")
+
+        # 等待link up
+        # 端口注册时间5s，10s应该都可以了（考虑arp首包丢失也应该可以了）。
+        # 考虑pppoe地址同步到fwdmd，增加5s
+        time.sleep(30)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        # 删除link，新测试例需重配置
+        self.topo.dut1.get_rest_device().delete_glx_link(link_id=12)
+
+        time.sleep(10)
+
+        # 恢复默认网络配置
+        self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3")
+        self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
 
 if __name__ == '__main__':
     unittest.main()
