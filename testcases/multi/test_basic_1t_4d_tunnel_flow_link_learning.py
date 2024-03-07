@@ -22,7 +22,6 @@ SKIP_SETUP = False
 SKIP_TEARDOWN = False
 
 class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
-
     # 创建一个最基本的加速场景：
     # 其中dut1作为cpe接入加速网络。dut4作为internet edge通过nat访问一个目标ip
     # 为减少外部依赖，我们可以通过dut4的wan访问与dut3互联的ip。
@@ -195,7 +194,7 @@ class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
 
         # wait for all passive link to be aged.
         time.sleep(20)
-    
+
     def test_01_baisc(self):
         # dut1 (acc cpe) 准备
         # 1. 开启acc
@@ -279,6 +278,7 @@ class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
         glx_assert("192.168.4.2" in out)
         # iperf server port
         glx_assert("5201" in out)
+        glx_assert(f"tunnel-id {tunnel_id}" in out)
         glx_assert(f"link-id {link_id}" in out)
 
         # 等待session老化
@@ -290,12 +290,13 @@ class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
         glx_assert("192.168.4.2" not in out)
         # iperf server port
         glx_assert("5201" not in out)
+        glx_assert(f"tunnel-id {tunnel_id}" not in out)
         glx_assert(f"link-id {link_id}" not in out)
 
         _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
         glx_assert(err == '')
 
-    def test_02_steering(self):
+    def test_02_steering_interface(self):
         # dut1 (acc cpe) 准备
         # 1. 开启acc
         # 2. 设置加速ip
@@ -394,6 +395,7 @@ class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
         glx_assert("192.168.4.2" in out)
         # iperf server port
         glx_assert("5201" in out)
+        glx_assert(f"tunnel-id {tunnel_id}" in out)
         glx_assert(f"link-id {backup_link_id}" in out)
 
         # 等待session老化
@@ -405,12 +407,13 @@ class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
         glx_assert("192.168.4.2" not in out)
         # iperf server port
         glx_assert("5201" not in out)
+        glx_assert(f"tunnel-id {tunnel_id}" not in out)
         glx_assert(f"link-id {backup_link_id}" not in out)
 
         _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
         glx_assert(err == '')
 
-    def test_03_change_steering(self):
+    def test_03_change_steering_interface(self):
         # dut1 (acc cpe) 准备
         # 1. 开启acc
         # 2. 设置加速ip
@@ -517,6 +520,9 @@ class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
         link_rx_bytes = link_rx_bytes.rstrip()
         glx_assert(err == '')
 
+        print(f"link{link_id} rx bytes: ", link_rx_bytes)
+        print(f"link{backup_link_id} rx bytes: ", back_link_rx_bytes)
+
         total_rx_bytes = int(link_rx_bytes) + int(back_link_rx_bytes)
         total_rx_packets = int(link_rx_packets) + int(back_link_rx_packets)
         print(f"link rx: ", total_rx_bytes / total_rx_packets)
@@ -532,8 +538,503 @@ class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
         glx_assert(err == '')
         print(f"tunnel rx: ", int(tunnel_rx_bytes) / int(tunnel_rx_packets))
         glx_assert(math.isclose(1400, int(tunnel_rx_bytes) / int(tunnel_rx_packets), abs_tol=200))
+        # 等待session老化
+        time.sleep(25)
 
-    def test_04_multi(self):
+    def test_04_steering_interface_no_mandatory(self):
+        # dut1 (acc cpe) 准备
+        # 1. 开启acc
+        # 2. 设置加速ip
+        # 3. 开启flow link learning
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
+        glx_assert(resp.status_code == 201)
+        resp = self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
+        glx_assert(resp.status_code == 201)
+
+        # dut4 (int edge)准备
+        # 配置回程路由　
+        # 开启int edge
+        resp = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+        glx_assert(resp.status_code == 201)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        tunnel_id = 12
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
+        glx_assert(err == '')
+        match = re.search(r'member \[0\] link-id (\d+)', out)
+        glx_assert(match)
+        link_id = match.group(1)
+        match = re.search(r'member \[1\] link-id (\d+)', out)
+        glx_assert(match)
+        backup_link_id = match.group(1) 
+
+        # 调度到link[1]的接口
+        backup_interface = "WAN2" if link_id == "12" else "WAN1"
+        
+        # 配置策略强制走link[1]
+        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=1,
+                                                       steering_mode=0,
+                                                       steering_interface=backup_interface,
+                                                       protocol=0,
+                                                       direct_enable=False)
+        glx_assert(resp.status_code == 201)
+
+        # 开启flow link learning
+        resp = self.topo.dut1.get_rest_device().update_glx_tunnel(tunnel_id=tunnel_id, passive_flow_link_learning_enable=True)
+        glx_assert(resp.status_code == 200)
+        # 更新link让link不可用
+        resp = self.topo.dut1.get_rest_device().update_glx_link_remote_ip(link_id=int(backup_link_id))
+        glx_assert(resp.status_code == 200)
+        time.sleep(5)
+
+        # 清除接口计数
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        glx_assert(err == '')
+        # 打流
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "iperf3 -s -D")
+        glx_assert(err == '')
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10 -R")
+        glx_assert(err == '')
+
+        # link rx
+        link_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{link_id} RxPackets")
+        link_rx_packets = link_rx_packets.rstrip()
+        glx_assert(err == '')
+        link_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{link_id} RxBytes")
+        link_rx_bytes = link_rx_bytes.rstrip()
+        glx_assert(err == '')
+
+        print(f"link{link_id} rx: ", int(link_rx_bytes) / int(link_rx_packets))
+        glx_assert(math.isclose(1400, int(link_rx_bytes) / int(link_rx_packets), abs_tol=200))
+
+        tunnel_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#{tunnel_id} RxPackets")
+        tunnel_rx_packets = tunnel_rx_packets.rstrip()
+        glx_assert(err == '')
+        tunnel_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#{tunnel_id} RxBytes")
+        tunnel_rx_bytes = tunnel_rx_bytes.rstrip()
+        glx_assert(err == '')
+        print(f"tunnel{tunnel_id} rx: ", int(tunnel_rx_bytes) / int(tunnel_rx_packets))
+        glx_assert(math.isclose(1400, int(tunnel_rx_bytes) / int(tunnel_rx_packets), abs_tol=200))
+
+        # 检查session
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx flow link sessions")
+        glx_assert(err == '')
+
+        glx_assert("222.222.222.222" in out)
+        glx_assert("192.168.4.2" in out)
+        # iperf server port
+        glx_assert("5201" in out)
+        glx_assert(f"tunnel-id {tunnel_id}" in out)
+        glx_assert(f"link-id {link_id}" in out)
+
+        # 等待session老化
+        time.sleep(25)
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx flow link sessions")
+        glx_assert(err == '')
+
+        glx_assert("222.222.222.222" not in out)
+        glx_assert("192.168.4.2" not in out)
+        # iperf server port
+        glx_assert("5201" not in out)
+        glx_assert(f"tunnel-id {tunnel_id}" not in out)
+        glx_assert(f"link-id {link_id}" not in out)
+
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
+        glx_assert(err == '')
+
+    def test_05_steering_link_steering_label(self):
+        # dut1 (acc cpe) 准备
+        # 1. 开启acc
+        # 2. 设置加速ip
+        # 3. 开启flow link learning
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
+        glx_assert(resp.status_code == 201)
+        resp = self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
+        glx_assert(resp.status_code == 201)
+
+        # dut4 (int edge)准备
+        # 配置回程路由　
+        # 开启int edge
+        resp = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+        glx_assert(resp.status_code == 201)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        tunnel_id = 12
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
+        glx_assert(err == '')
+        match = re.search(r'member \[0\] link-id (\d+)', out)
+        glx_assert(match)
+        link_id = match.group(1)
+        match = re.search(r'member \[1\] link-id (\d+)', out)
+        glx_assert(match)
+        backup_link_id = match.group(1) 
+
+        backup_link_steering_label = 1
+        resp = self.topo.dut1.get_rest_device().update_glx_link(link_id=int(backup_link_id), steering_label=backup_link_steering_label)
+        glx_assert(resp.status_code == 200)
+        
+        # 配置策略强制走link[1]
+        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=2,
+                                                       steering_mode=1,
+                                                       steering_link_steering_label=backup_link_steering_label,
+                                                       protocol=0,
+                                                       direct_enable=False)
+        glx_assert(resp.status_code == 201)
+
+        # 开启flow link learning
+        resp = self.topo.dut1.get_rest_device().update_glx_tunnel(tunnel_id=tunnel_id, passive_flow_link_learning_enable=True)
+        glx_assert(resp.status_code == 200)
+        time.sleep(5)
+
+        # 清除接口计数
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        glx_assert(err == '')
+        # 打流
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "iperf3 -s -D")
+        glx_assert(err == '')
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10 -R")
+        glx_assert(err == '')
+
+        # link rx
+        link_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{backup_link_id} RxPackets")
+        link_rx_packets = link_rx_packets.rstrip()
+        glx_assert(err == '')
+        link_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{backup_link_id} RxBytes")
+        link_rx_bytes = link_rx_bytes.rstrip()
+        glx_assert(err == '')
+
+        print(f"link{backup_link_id} rx: ", int(link_rx_bytes) / int(link_rx_packets))
+        glx_assert(math.isclose(1400, int(link_rx_bytes) / int(link_rx_packets), abs_tol=200))
+
+        tunnel_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#{tunnel_id} RxPackets")
+        tunnel_rx_packets = tunnel_rx_packets.rstrip()
+        glx_assert(err == '')
+        tunnel_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#{tunnel_id} RxBytes")
+        tunnel_rx_bytes = tunnel_rx_bytes.rstrip()
+        glx_assert(err == '')
+        print(f"tunnel{tunnel_id} rx: ", int(tunnel_rx_bytes) / int(tunnel_rx_packets))
+        glx_assert(math.isclose(1400, int(tunnel_rx_bytes) / int(tunnel_rx_packets), abs_tol=200))
+
+        # 检查session
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx flow link sessions")
+        glx_assert(err == '')
+
+        glx_assert("222.222.222.222" in out)
+        glx_assert("192.168.4.2" in out)
+        # iperf server port
+        glx_assert("5201" in out)
+        glx_assert(f"tunnel-id {tunnel_id}" in out)
+        glx_assert(f"link-id {backup_link_id}" in out)
+
+        # 等待session老化
+        time.sleep(25)
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx flow link sessions")
+        glx_assert(err == '')
+
+        glx_assert("222.222.222.222" not in out)
+        glx_assert("192.168.4.2" not in out)
+        # iperf server port
+        glx_assert("5201" not in out)
+        glx_assert(f"tunnel-id {tunnel_id}" not in out)
+        glx_assert(f"link-id {backup_link_id}" not in out)
+
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
+        glx_assert(err == '')
+
+    def test_06_steering_link_steering_label_no_mandatory(self):
+        # dut1 (acc cpe) 准备
+        # 1. 开启acc
+        # 2. 设置加速ip
+        # 3. 开启flow link learning
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
+        glx_assert(resp.status_code == 201)
+        resp = self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
+        glx_assert(resp.status_code == 201)
+
+        # dut4 (int edge)准备
+        # 配置回程路由　
+        # 开启int edge
+        resp = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+        glx_assert(resp.status_code == 201)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        tunnel_id = 12
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
+        glx_assert(err == '')
+        match = re.search(r'member \[0\] link-id (\d+)', out)
+        glx_assert(match)
+        link_id = match.group(1)
+        match = re.search(r'member \[1\] link-id (\d+)', out)
+        glx_assert(match)
+        backup_link_id = match.group(1) 
+
+        backup_link_steering_label = 1
+        resp = self.topo.dut1.get_rest_device().update_glx_link(link_id=int(backup_link_id), steering_label=backup_link_steering_label)
+        glx_assert(resp.status_code == 200)
+
+        
+        # 配置策略强制走link[1]
+        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=2,
+                                                       steering_mode=0,
+                                                       steering_link_steering_label=backup_link_steering_label,
+                                                       protocol=0,
+                                                       direct_enable=False)
+        glx_assert(resp.status_code == 201)
+
+        # 开启flow link learning
+        resp = self.topo.dut1.get_rest_device().update_glx_tunnel(tunnel_id=tunnel_id, passive_flow_link_learning_enable=True)
+        glx_assert(resp.status_code == 200)
+        # 更新link让link不可用
+        resp = self.topo.dut1.get_rest_device().update_glx_link_remote_ip(link_id=int(backup_link_id), steering_label=backup_link_steering_label)
+        glx_assert(resp.status_code == 200)
+        time.sleep(5)
+
+        # 清除接口计数
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        glx_assert(err == '')
+        # 打流
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "iperf3 -s -D")
+        glx_assert(err == '')
+        _, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10 -R")
+        glx_assert(err == '')
+
+        # link rx
+        link_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{link_id} RxPackets")
+        link_rx_packets = link_rx_packets.rstrip()
+        glx_assert(err == '')
+        link_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{link_id} RxBytes")
+        link_rx_bytes = link_rx_bytes.rstrip()
+        glx_assert(err == '')
+
+        print(f"link{link_id} rx: ", int(link_rx_bytes) / int(link_rx_packets))
+        glx_assert(math.isclose(1400, int(link_rx_bytes) / int(link_rx_packets), abs_tol=200))
+
+        tunnel_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#{tunnel_id} RxPackets")
+        tunnel_rx_packets = tunnel_rx_packets.rstrip()
+        glx_assert(err == '')
+        tunnel_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#{tunnel_id} RxBytes")
+        tunnel_rx_bytes = tunnel_rx_bytes.rstrip()
+        glx_assert(err == '')
+        print(f"tunnel{tunnel_id} rx: ", int(tunnel_rx_bytes) / int(tunnel_rx_packets))
+        glx_assert(math.isclose(1400, int(tunnel_rx_bytes) / int(tunnel_rx_packets), abs_tol=200))
+
+        # 检查session
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx flow link sessions")
+        glx_assert(err == '')
+
+        glx_assert("222.222.222.222" in out)
+        glx_assert("192.168.4.2" in out)
+        # iperf server port
+        glx_assert("5201" in out)
+        glx_assert(f"tunnel-id {tunnel_id}" in out)
+        glx_assert(f"link-id {link_id}" in out)
+
+        # 等待session老化
+        time.sleep(25)
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx flow link sessions")
+        glx_assert(err == '')
+
+        glx_assert("222.222.222.222" not in out)
+        glx_assert("192.168.4.2" not in out)
+        # iperf server port
+        glx_assert("5201" not in out)
+        glx_assert(f"tunnel-id {tunnel_id}" not in out)
+        glx_assert(f"link-id {link_id}" not in out)
+
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
+        glx_assert(err == '')
+
+    def test_07_change_steering_link_steering_label(self):
+        # dut1 (acc cpe) 准备
+        # 1. 开启acc
+        # 2. 设置加速ip
+        # 3. 开启flow link learning
+        resp = self.topo.dut1.get_rest_device().update_segment(segment_id=0, acc_enable=True)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut1.get_rest_device().create_segment_acc_prop(segment_id=0, acc_ip1="222.222.222.222")
+        glx_assert(resp.status_code == 201)
+        resp = self.topo.dut1.get_rest_device().create_edge_route(route_prefix="192.168.4.0/24", route_label="0x3400010", is_acc=True)
+        glx_assert(resp.status_code == 201)
+
+        # dut4 (int edge)准备
+        # 配置回程路由　
+        # 开启int edge
+        resp = self.topo.dut4.get_rest_device().update_segment(segment_id=0, int_edge_enable=True)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut4.get_rest_device().create_edge_route(route_prefix="222.222.222.222/32", route_label="0x1200010", is_acc_reverse=True)
+        glx_assert(resp.status_code == 201)
+
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 首包会因为arp而丢失，不为０即可
+        glx_assert("100% packet loss" not in out)
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "ping 192.168.4.2 -c 5 -i 0.05")
+        glx_assert(err == '')
+        # 此时不应当再丢包
+        glx_assert("0% packet loss" in out)
+
+        tunnel_id = 12
+        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx tunnel id {tunnel_id}")
+        glx_assert(err == '')
+        match = re.search(r'member \[0\] link-id (\d+)', out)
+        glx_assert(match)
+        link_id = match.group(1)
+        match = re.search(r'member \[1\] link-id (\d+)', out)
+        glx_assert(match)
+        backup_link_id = match.group(1) 
+
+        # 调度到link[1]的接口
+        backup_link_steering_label = 1 if link_id == "12" else 2
+        link_steering_label = 2 if backup_link_steering_label == 1 else 1
+
+        resp = self.topo.dut1.get_rest_device().update_glx_link(int(backup_link_id), steering_label=backup_link_steering_label)
+        glx_assert(resp.status_code == 200)
+        resp = self.topo.dut1.get_rest_device().update_glx_link(int(link_id), steering_label=link_steering_label)
+        glx_assert(resp.status_code == 200)
+        
+        # 配置策略强制走link[1]
+        resp = self.topo.dut1.get_rest_device().create_bizpol(name="bizpol1", priority=1,
+                                                       src_prefix="192.168.1.0/24",
+                                                       dst_prefix="192.168.4.0/24",
+                                                       steering_type=2,
+                                                       steering_mode=1,
+                                                       steering_link_steering_label=backup_link_steering_label,
+                                                       protocol=0,
+                                                       direct_enable=False)
+        glx_assert(resp.status_code == 201)
+
+        # 等待一段时间切换到link[0]
+        delay_thread = threading.Thread(target=lambda: delayed_update_bizpol(
+            self.topo.dut1.get_rest_device().update_bizpol,
+            5,  # 延时5秒
+            name="bizpol1", 
+            priority=1,
+            src_prefix="192.168.1.0/24",
+            dst_prefix="192.168.4.0/24",
+            steering_type=2,
+            steering_mode=1,
+            steering_link_steering_label=link_steering_label,
+            protocol=0,
+            direct_enable=False
+        ))
+
+        # 开启flow link learning
+        resp = self.topo.dut1.get_rest_device().update_glx_tunnel(tunnel_id=tunnel_id, passive_flow_link_learning_enable=True)
+        glx_assert(resp.status_code == 200)
+        time.sleep(5)
+
+        # 清除接口计数
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl clear interfaces")
+        glx_assert(err == '')
+        # 打流
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "iperf3 -s -D")
+        glx_assert(err == '')
+
+        # 启动切换线程
+        delay_thread.start()
+        out, err = self.topo.tst.get_ns_cmd_result("dut1", "iperf3 -c 192.168.4.2 -t 10 -R")
+        glx_assert(err == '')
+
+        _, err = self.topo.tst.get_ns_cmd_result("dut4", "pkill iperf3")
+        glx_assert(err == '')
+
+        # link rx
+        back_link_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{backup_link_id} RxPackets")
+        back_link_rx_packets = back_link_rx_packets.rstrip()
+        glx_assert(err == '')
+        back_link_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{backup_link_id} RxBytes")
+        back_link_rx_bytes = back_link_rx_bytes.rstrip()
+        glx_assert(err == '')
+        link_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{link_id} RxPackets")
+        link_rx_packets = link_rx_packets.rstrip()
+        glx_assert(err == '')
+        link_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget LinkState#{link_id} RxBytes")
+        link_rx_bytes = link_rx_bytes.rstrip()
+        glx_assert(err == '')
+
+        print(f"link{link_id} rx bytes: ", link_rx_bytes)
+        print(f"link{backup_link_id} rx bytes: ", back_link_rx_bytes)
+
+        total_rx_bytes = int(link_rx_bytes) + int(back_link_rx_bytes)
+        total_rx_packets = int(link_rx_packets) + int(back_link_rx_packets)
+        print(f"link rx: ", total_rx_bytes / total_rx_packets)
+        glx_assert(math.isclose(1400, total_rx_bytes / total_rx_packets, abs_tol=200))
+
+        tunnel_rx_packets, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#{tunnel_id} RxPackets")
+        tunnel_rx_packets = tunnel_rx_packets.rstrip()
+        glx_assert(err == '')
+        tunnel_rx_bytes, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
+            f"redis-cli hget TunnelState#{tunnel_id} RxBytes")
+        tunnel_rx_bytes = tunnel_rx_bytes.rstrip()
+        glx_assert(err == '')
+        print(f"tunnel rx: ", int(tunnel_rx_bytes) / int(tunnel_rx_packets))
+        glx_assert(math.isclose(1400, int(tunnel_rx_bytes) / int(tunnel_rx_packets), abs_tol=200))
+        # 等待session老化
+        time.sleep(25)
+
+    def test_08_multi(self):
         # dut1 (acc cpe) 准备
         # 1. 开启acc
         # 2. 设置加速ip
@@ -663,6 +1164,8 @@ class TestBasic1T4DTunnelFlowLinkLearning(unittest.TestCase):
         glx_assert(err == '')
         _, err = self.topo.dut4.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "pkill iperf3")
         glx_assert(err == '')
+
+
 
 
 if __name__ == '__main__':
