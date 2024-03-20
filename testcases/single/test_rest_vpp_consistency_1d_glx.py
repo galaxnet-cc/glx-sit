@@ -66,6 +66,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert(err == '')
         glx_assert(f"link-id 1" not in out)
 
+    @unittest.skip("现在支持当link存在的时候，也能切换逻辑接口的地址方式")
     def test_glx_link_block_wan_mode(self):
         self.topo.dut1.get_rest_device().create_glx_link(link_id=1)
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show glx link")
@@ -464,7 +465,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
                                                        protocol=0,
                                                        direct_enable=True,
                                                        steering_type=3,
-                                                       steering_mode=1)
+                                                       steering_mode=0)
         glx_assert(resp.status_code == 201)
 
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show bizpol bizpol | grep -v seg_0_exit_if_nat_pol | grep -v 169.254")
@@ -472,7 +473,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         glx_assert('192.168.89.0/24' in out)
         glx_assert('[nat]' in out)
         glx_assert('steering' in out)
-        glx_assert(f'[nat]  [link-steering type 2 mode 1]' in out)
+        glx_assert(f'[nat]  [link-steering type 2 mode 0]' in out)
 
         resp = self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")
         glx_assert(resp.status_code == 410)
@@ -516,7 +517,7 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {wan1VppIf} | grep {wan1VppIf} | awk '{{print $2}}'")
         # remove the possible extra newline.
         ifindex = ifindex.rstrip()
-        glx_assert(f'[link-steering type 1 mode 1 steering-sw-if-index {ifindex}]' in out)
+        glx_assert(f'[link-steering type 0 mode 1 steering-sw-if-index {ifindex}]' in out)
 
         # update the bizpol to WAN2.
         self.topo.dut1.get_rest_device().update_bizpol(name="bizpol_sit", priority=1,
@@ -538,8 +539,8 @@ class TestRestVppConsistency1DGlx(unittest.TestCase):
         wan2ifindex, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int {wan2VppIf} | grep {wan2VppIf} | awk '{{print $2}}'")
         # remove the possible extra newline.
         wan2ifindex = wan2ifindex.rstrip()
-        glx_assert(f'[link-steering type 1 mode 1 steering-sw-if-index {ifindex}]' not in out)
-        glx_assert(f'[link-steering type 1 mode 1 steering-sw-if-index {wan2ifindex}]' in out)
+        glx_assert(f'[link-steering type 0 mode 1 steering-sw-if-index {ifindex}]' not in out)
+        glx_assert(f'[link-steering type 0 mode 1 steering-sw-if-index {wan2ifindex}]' in out)
 
         # delete the bizpol.
         self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol_sit")

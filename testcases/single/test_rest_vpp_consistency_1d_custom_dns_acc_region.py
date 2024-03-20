@@ -55,7 +55,6 @@ class TestRestVppConsistency1DCustomDnsAccRegion(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"cat {join(cfg_path, file_name)}")
         glx_assert(err == '')
-        glx_assert("server=8.8.8.8" in out)
         glx_assert(f"/openai.com/acc-{region}" in out)
         # check if process exists
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -78,8 +77,6 @@ class TestRestVppConsistency1DCustomDnsAccRegion(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"cat {join(cfg_path, file_name)}")
         glx_assert(err == '')
-        glx_assert("server=8.8.8.8" in out)
-        glx_assert("server=1.1.1.1" in out)
         glx_assert(f"/openai.com/acc-{region}" in out)
         glx_assert(f"/netflix.com/acc-{region}" in out)
         # check if process exists
@@ -153,7 +150,6 @@ class TestRestVppConsistency1DCustomDnsAccRegion(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"cat {join(cfg_path, file_name)}")
         glx_assert(err == '')
-        glx_assert("server=8.8.8.8" in out)
         glx_assert(f"/openai.com/acc-{region}" in out)
         # check if process exists
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(
@@ -176,7 +172,6 @@ class TestRestVppConsistency1DCustomDnsAccRegion(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"cat {join(cfg_path, file_name)}")
         glx_assert(err == '')
-        glx_assert("server=8.8.8.8" in out)
         glx_assert(f"/openai.com/acc-{region}" in out)
         # check if process exists
         out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(

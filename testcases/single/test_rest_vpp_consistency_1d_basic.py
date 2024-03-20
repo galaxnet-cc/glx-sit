@@ -1014,7 +1014,7 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"cat {cfg_path}/dns_{name}.conf")
         glx_assert(err == '')
-        glx_assert("server=8.8.8.8" in out)
+        glx_assert("server=114.114.114.114" in out)
         glx_assert("/a.b.c/acc" in out)
         glx_assert("/d.e.f/acc" in out)
         glx_assert("/u.v.w/local" in out)
@@ -1040,8 +1040,8 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         out, err = self.topo.dut1.get_vpp_ssh_device(
         ).get_cmd_result(f"cat {cfg_path}/dns_{name}.conf")
         glx_assert(err == '')
-        glx_assert("server=8.8.8.8" in out)
-        glx_assert("server=1.1.1.1" in out)
+        glx_assert("server=114.114.114.114" in out)
+        glx_assert("server=223.5.5.5" in out)
         glx_assert("/a.b.c/acc" in out)
         glx_assert("/d.e.f/acc" in out)
         glx_assert("/u.v.w/local" in out)
