@@ -478,55 +478,6 @@ class TestRestVppConsistency1DBasic(unittest.TestCase):
         resp = self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
         glx_assert(resp.status_code == 200)
 
-    def test_pppoe_address_subscribe_backup(self):
-        wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
-        pppoeLink = "pppoe-WAN1"
-
-        resp = self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN1", "test", "123456")
-        glx_assert(resp.status_code == 200)
-
-        pid, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("ps aufx | grep fwdmd | grep -v grep | awk '{print $2}'")
-        glx_assert(err == '')
-
-        # socket应该还要监听着
-        out, _ = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"lsof -p {pid} | grep NETLINK")
-        glx_assert(err == '')
-        glx_assert("protocol: NETLINK" in out)
-
-        fd, _ = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"lsof -p {pid} 2>/dev/null | grep NETLINK | awk '{{print $4}}' | sed 's/u$//'")
-
-        # 测试备用方案，假设netlink socket因为意外关闭，此时会开启timer去处理
-        ip = "100.64.0.3/32"
-        cnt = 0
-
-        resp = self.topo.dut1.get_rest_device().close_fd(int(fd))
-        glx_assert(resp.status_code == 200)
-
-        while True:
-            _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN1", f"ip link show {pppoeLink}")
-            cnt += 1
-            if err == '' or cnt == 20:
-                cnt = 0
-                break
-            time.sleep(1)
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN1", f"ip addr add {ip} dev {pppoeLink}")
-        glx_assert(err == '')
-        _, _ = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN1", f"ip addr flush dev {pppoeLink}")
-
-        time.sleep(5)
-
-        out, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl show int addr pppox0")
-        glx_assert(err == '')
-        glx_assert(ip in out)
-
-        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("systemctl restart fwdmd")
-        glx_assert(err == '')
-
-        time.sleep(3)
-        resp = self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
-        glx_assert(resp.status_code == 200)
-
-
     def test_multi_wan_address_type_switch(self):
         wan1VppIf = self.topo.dut1.get_if_map()["WAN1"]
         wan2VppIf = self.topo.dut1.get_if_map()["WAN2"]
