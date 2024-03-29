@@ -155,6 +155,132 @@ class TestBasic1T4DWanDnat(unittest.TestCase):
         glx_assert(err == '')
         glx_assert("Connection to 192.168.21.2 7777 port [tcp/*] succeeded!" in out)
 
+    def test_change_address_type(self):
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN3", True)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol1")
+        glx_assert(410 == resp.status_code)
+        self.topo.dut1.get_rest_device().delete_bizpol(name="bizpol2")
+        glx_assert(410 == resp.status_code)
+
+        # dut2 turn off WAN1 NAT.
+        resp = self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", False)
+        glx_assert(200 == resp.status_code)
+        # dut1 turn off other WAN NAT
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", False)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", False)
+        glx_assert(200 == resp.status_code)
+        
+        # dut1网络配置
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_pppoe("WAN3", "dut1", "dut1")
+        glx_assert(200 == resp.status_code)
+
+        # dut2网络配置
+        resp = self.topo.dut2.get_rest_device().set_logical_interface_static_ip("WAN4", "20.20.20.2/24")
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut2.get_rest_device().set_logical_interface_static_gw("WAN4", "20.20.20.1")
+        glx_assert(200 == resp.status_code)
+        
+        # 等待pppoe
+        time.sleep(10)
+
+        # 获取dut1的WAN口地址
+        ip, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN3", "ip addr show pppoe-WAN3 | awk '/inet / {print $2}' | cut -d '/' -f 1")
+        glx_assert(err == '')
+        ip = ip.strip()
+        
+        resp = self.topo.dut1.get_rest_device().create_port_mapping(logic_if="WAN3")
+        glx_assert(201 == resp.status_code)
+
+        # 检查连接是否建立
+        _, _ = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("pkill nc")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "sh -c 'nohup nc -l -v -n 169.254.100.2 7777 > /dev/null 2>&1 &'")
+        glx_assert(err == '')
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN4", f"sh -c 'nohup nc -w 3 -v {ip} 7777 > /tmp/wan_dnat.txt 2>&1 &'")
+        glx_assert(err == '')
+        time.sleep(3)
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("cat /tmp/wan_dnat.txt")
+        glx_assert(err == '')
+        glx_assert(f"Connection to {ip} 7777 port [tcp/*] succeeded!" in out)
+
+        # 模拟接口重新获取pppoe地址，因为要等超时client重新发起PADI，需要久一点
+        interface = self.topo.dut1.get_if_map()["WAN3"]
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl set int state {interface} down")
+        glx_assert(err == '')
+        # 直到pppoe口消失
+        while(True):
+            _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN3", "ip link show pppoe-WAN3")
+            if err != '':
+                break;
+            time.sleep(1)
+        # 重新up
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_cmd_result(f"vppctl set int state {interface} up")
+        glx_assert(err == '')
+        # 直到拿到地址
+        while(True):
+            ip, _ = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN3", "ip addr show pppoe-WAN3 | awk '/inet / {print $2}' | cut -d '/' -f 1")
+            ip = ip.strip()
+            if ip != '':
+                break
+            time.sleep(1)
+
+        # 检查连接是否建立
+        _, _ = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("pkill nc")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "sh -c 'nohup nc -l -v -n 169.254.100.2 7777 > /dev/null 2>&1 &'")
+        glx_assert(err == '')
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN4", f"sh -c 'nohup nc -w 3 -v {ip} 7777 > /tmp/wan_dnat.txt 2>&1 &'")
+        glx_assert(err == '')
+        time.sleep(3)
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("cat /tmp/wan_dnat.txt")
+        glx_assert(err == '')
+        glx_assert(f"Connection to {ip} 7777 port [tcp/*] succeeded!" in out)
+
+        # 修改成静态地址
+        ip = "11.11.11.2"
+        cidr = ip + "/24"
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_static_ip("WAN3", cidr)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_static_gw("WAN3", "11.11.11.1")
+        glx_assert(200 == resp.status_code)
+
+        _, _ = self.topo.dut1.get_vpp_ssh_device().get_cmd_result("pkill nc")
+        _, err = self.topo.dut1.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns", "sh -c 'nohup nc -l -v -n 169.254.100.2 7777 > /dev/null 2>&1 &'")
+        glx_assert(err == '')
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_ns_cmd_result("ctrl-ns-wan-WAN4", f"sh -c 'nohup nc -w 3 -v {ip} 7777 > /tmp/wan_dnat.txt 2>&1 &'")
+        glx_assert(err == '')
+        time.sleep(3)
+        out, err = self.topo.dut2.get_vpp_ssh_device().get_cmd_result("cat /tmp/wan_dnat.txt")
+        glx_assert(err == '')
+        glx_assert(f"Connection to {ip} 7777 port [tcp/*] succeeded!" in out)
+
+        resp = self.topo.dut1.get_rest_device().delete_port_mapping(logic_if="WAN3")
+        glx_assert(410 == resp.status_code)
+
+        # dut2 turn on WAN1 NAT.
+        resp = self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN1", True)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut2.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+        glx_assert(200 == resp.status_code)
+        # dut1 turn on other WAN NAT
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN2", True)
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_nat_direct("WAN4", True)
+        glx_assert(200 == resp.status_code)
+
+        # logif切回到dhcp
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN3")
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN4")
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut1.get_rest_device().set_logical_interface_dhcp("WAN1")
+        glx_assert(200 == resp.status_code)
+        resp = self.topo.dut2.get_rest_device().set_logical_interface_dhcp("WAN1")
+        glx_assert(200 == resp.status_code)
+
+        self.topo.tst.del_ns_route("dut1", "20.20.20.0/24", "192.168.1.1")
+
+
 if __name__ == '__main__':
     unittest.main()
  
